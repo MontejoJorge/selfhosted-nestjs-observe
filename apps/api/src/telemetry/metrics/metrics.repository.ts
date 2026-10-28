@@ -1,19 +1,20 @@
 import type {
-  CustomMetricSummary,
-  RuntimeSeriesPoint,
+  RuntimeInstance,
+  RuntimeMetrics,
 } from '@selfhosted-observe/contracts';
+import type { TelemetryScope } from '../common/scope.js';
 import type { TimeWindow } from '../common/time-window.js';
 
-/** Read port for runtime and custom metrics. */
+/** Read port for runtime metrics. */
 export abstract class MetricsRepository {
-  /** Runtime samples of one service averaged per bucket. */
+  /** KPI summary and bucketed series of the runtime samples in scope (one application). */
   abstract runtime(
-    serviceId: string,
+    scope: TelemetryScope,
     window: TimeWindow,
-  ): Promise<RuntimeSeriesPoint[]>;
-  /** Latest value of each custom metric seen in the window. */
-  abstract custom(
+  ): Promise<RuntimeMetrics>;
+  /** Instances that sent runtime samples in the window, with their newest sample. */
+  abstract instances(
+    scope: TelemetryScope,
     window: TimeWindow,
-    serviceId?: string,
-  ): Promise<CustomMetricSummary[]>;
+  ): Promise<RuntimeInstance[]>;
 }

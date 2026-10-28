@@ -2,7 +2,9 @@
  * Query API consumed by the dashboard. All routes are under `/api`.
  * Timestamps are ISO strings, durations are milliseconds.
  *
- * Every list endpoint accepts `TimeRangeQuery` plus `service` (serviceId, optional).
+ * Telemetry is scoped by project and application (see `ScopeQuery`): every telemetry route
+ * requires `project` (id or slug) and accepts `application` (id) and `instance` (the agent's
+ * serviceId). Projects, applications and API keys are managed under `/api/projects`.
  * Defaults: `range=1h` when neither `range` nor `from`/`to` is given; `limit=50` (max 500).
  * Lists are newest first (time desc, id desc). `cursor` is opaque: pass `nextCursor` back
  * with the same filters. `count` on error groups is all-time (within retention).
@@ -10,13 +12,23 @@
 
 import type { LogLevel, Primitive, Protocol, WireError } from './wire.js';
 
-export type TimeRange = '15m' | '1h' | '6h' | '24h' | '7d' | '14d';
+export type TimeRange = '1h' | '24h' | '7d';
 
 export interface TimeRangeQuery {
   /** Relative window ending now. Ignored when `from`/`to` are given. */
   range?: TimeRange;
   from?: string;
   to?: string;
+}
+
+/** Scope of every telemetry query. */
+export interface ScopeQuery {
+  /** Project id or slug (required). */
+  project: string;
+  /** Application id; must belong to the project. Omit for the whole project. */
+  application?: string;
+  /** The agent's `serviceId` (an instance of an application). */
+  instance?: string;
 }
 
 export interface PageQuery {
@@ -52,8 +64,9 @@ export interface TimeBucket {
   status5xx: number;
 }
 
-// GET /api/services
-export interface ServiceSummary {
+// GET /api/instances  (serviceIds that sent telemetry, per application)
+export interface InstanceSummary {
+  applicationId: string;
   serviceId: string;
   serviceVersion: string | null;
   firstSeenAt: string;
@@ -93,6 +106,7 @@ export interface OperationStats {
 export interface RequestListItem {
   id: string;
   traceId: string;
+  applicationId: string;
   serviceId: string;
   operationId: string;
   protocol: Protocol | string;
@@ -131,6 +145,7 @@ export interface JobListItem {
   id: string;
   jobId: string;
   traceId: string;
+  applicationId: string;
   serviceId: string;
   queue: string;
   name: string;
@@ -154,7 +169,9 @@ export interface JobDetail extends JobListItem {
 export interface ErrorGroup {
   id: string;
   fingerprint: string;
-  /** Error groups are per service. */
+  /** Error groups are per application. */
+  applicationId: string;
+  /** serviceId of the most recent occurrence. */
   serviceId: string;
   errorClass: string | null;
   message: string;
@@ -175,6 +192,7 @@ export interface ErrorGroupDetail extends ErrorGroup {
     executionId: string;
     source: 'request' | 'job';
     traceId: string;
+    applicationId: string;
     serviceId: string;
     occurredAt: string;
   }>;
@@ -183,6 +201,7 @@ export interface ErrorGroupDetail extends ErrorGroup {
 // GET /api/logs  (filters: level, traceId, context, q (substring)) -> Page<LogItem>
 export interface LogItem {
   id: string;
+  applicationId: string;
   serviceId: string;
   timestamp: string;
   level: LogLevel | null;
@@ -215,24 +234,174 @@ export interface TraceSpan {
   children: TraceSpan[];
 }
 
-// GET /api/metrics/runtime  (requires service) -> RuntimeSeriesPoint[]
+// GET /api/metrics/runtime  (application required; instance optional) -> RuntimeMetrics
+/**
+ * Runtime samples per bucket. Gauges (cpuPercent, memory, heap, event loop) are averaged;
+ * per-interval deltas (CPU ms, GC counts and durations) are summed, also across instances
+ * when no instance is selected. Memory values are megabytes.
+ */
 export interface RuntimeSeriesPoint {
   t: string;
   cpuPercent: number | null;
+  /** CPU time in user mode during the bucket (ms) */
+  cpuUserMs: number | null;
+  /** CPU time in kernel mode during the bucket (ms) */
+  cpuSystemMs: number | null;
+  /** RSS (MB) */
   memoryRss: number | null;
+  /** RSS as percent of OS memory */
+  memoryPercent: number | null;
   heapUsed: number | null;
   heapTotal: number | null;
   eventLoopLagMs: number | null;
   eventLoopUtilization: number | null;
   gcCount: number | null;
   gcDurationMs: number | null;
+  gcMinorCount: number | null;
+  gcMinorMs: number | null;
+  gcMajorCount: number | null;
+  gcMajorMs: number | null;
+  gcIncrementalCount: number | null;
+  gcIncrementalMs: number | null;
 }
 
-// GET /api/metrics/custom  (latest value per metric in the range) -> CustomMetricSummary[]
-export interface CustomMetricSummary {
-  name: string;
-  type: 'counter' | 'gauge' | 'summary';
-  description: string | null;
-  lastValue: number | null;
+/** KPI values of a set of runtime samples. Memory values are megabytes. */
+export interface RuntimeSnapshot {
+  cpuPercent: number | null;
+  memoryPercent: number | null;
+  memoryRss: number | null;
+  heapUsed: number | null;
+  eventLoopLagMs: number | null;
+  eventLoopUtilization: number | null;
+}
+
+export interface RuntimeMetrics {
+  /** averages over the range */
+  avg: RuntimeSnapshot;
+  /** newest sample in the range (of any instance in scope), null when there is none */
+  latest: (RuntimeSnapshot & { sampledAt: string; serviceId: string }) | null;
+  series: RuntimeSeriesPoint[];
+}
+
+// GET /api/metrics/runtime/instances  (application required) -> RuntimeInstance[]
+/** An instance (serviceId) that reported runtime samples in the range, with its newest sample. */
+export interface RuntimeInstance extends RuntimeSnapshot {
+  serviceId: string;
+  serviceVersion: string | null;
   lastSeenAt: string;
+}
+
+// ---------------------------------------------------------------------------
+// Projects, applications and API keys (management API)
+// ---------------------------------------------------------------------------
+
+/** Requests per timeline bucket, for sparklines. */
+export interface ActivityBucket {
+  /** bucket start */
+  t: string;
+  count: number;
+  errors: number;
+  /** mean duration (ms), null when the bucket has no requests */
+  avgDurationMs: number | null;
+}
+
+// GET /api/projects/:project
+export interface Project {
+  id: string;
+  /** URL-safe, unique, generated from the name at creation and never changed. */
+  slug: string;
+  name: string;
+  description: string | null;
+  createdAt: string;
+  applicationCount: number;
+}
+
+// GET /api/projects -> Page<ProjectSummary>  (sorted by name)
+export interface ProjectSummary extends Project {
+  /** most recent telemetry from any of its applications */
+  lastSeenAt: string | null;
+  /** requests in the range */
+  requestCount: number;
+  avgDurationMs: number | null;
+  activity: ActivityBucket[];
+}
+
+// POST /api/projects
+export interface CreateProjectInput {
+  name: string;
+  description?: string | null;
+}
+
+// PATCH /api/projects/:project
+export interface UpdateProjectInput {
+  name?: string;
+  description?: string | null;
+}
+
+// GET /api/projects/:project/applications/:applicationId
+export interface Application {
+  id: string;
+  projectId: string;
+  name: string;
+  /** at most 3 */
+  tags: string[];
+  createdAt: string;
+  lastSeenAt: string | null;
+}
+
+// GET /api/projects/:project/applications -> Page<ApplicationSummary>  (sorted by name)
+export interface ApplicationSummary extends Application {
+  /** requests in the range */
+  requestCount: number;
+  requestsPerSecond: number;
+  /** ratio 0..1 of failed requests in the range */
+  errorRate: number;
+  avgDurationMs: number | null;
+  /** from the latest runtime sample in the range (any instance) */
+  cpuPercent: number | null;
+  memoryPercent: number | null;
+  /** RSS in megabytes */
+  memoryRssMb: number | null;
+  activity: ActivityBucket[];
+}
+
+export interface CreateApplicationInput {
+  name: string;
+  tags?: string[];
+}
+
+export interface UpdateApplicationInput {
+  name?: string;
+  tags?: string[];
+}
+
+export type ApiKeyStatus = 'active' | 'expired' | 'revoked';
+
+// GET /api/projects/:project/keys -> Page<ApiKey>  (newest first)
+export interface ApiKey {
+  id: string;
+  name: string;
+  /** Public key id, sent by the agent as `x-api-key` (`appKey`). */
+  keyId: string;
+  applicationId: string;
+  applicationName: string;
+  status: ApiKeyStatus;
+  lastUsedAt: string | null;
+  /** null means no expiry */
+  expiresAt: string | null;
+  revokedAt: string | null;
+  createdAt: string;
+}
+
+// POST /api/projects/:project/keys
+export interface CreateApiKeyInput {
+  name: string;
+  applicationId: string;
+  expiresAt?: string | null;
+}
+
+/** Returned only by create: the secret is never shown again. */
+export interface CreatedApiKey extends ApiKey {
+  /** Sent by the agent as `x-api-secret` (`appSecret`). */
+  secret: string;
 }

@@ -2,7 +2,6 @@ import { plainToInstance, Transform } from 'class-transformer';
 import {
   IsBoolean,
   IsInt,
-  IsOptional,
   IsString,
   Max,
   Min,
@@ -16,9 +15,6 @@ interface RawTransform {
   obj: Record<string, unknown>;
   key: string;
 }
-
-const emptyToUndefined = ({ obj, key }: RawTransform) =>
-  obj[key] === '' ? undefined : obj[key];
 
 const toBoolean = ({ obj, key }: RawTransform) => {
   const value = obj[key];
@@ -52,16 +48,6 @@ export class Env {
   @Transform(toBoolean)
   @IsBoolean()
   DATABASE_MIGRATE_ON_START: boolean = true;
-
-  @Transform(emptyToUndefined)
-  @IsOptional()
-  @IsString()
-  INGEST_API_KEY?: string;
-
-  @Transform(emptyToUndefined)
-  @IsOptional()
-  @IsString()
-  INGEST_API_SECRET?: string;
 
   @IsInt()
   @Min(1)

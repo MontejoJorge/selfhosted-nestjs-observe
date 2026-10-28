@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ApiKeysModule } from '../projects/api-keys/api-keys.module.js';
 import { IngestProfilesUseCase } from './application/ingest-profiles.use-case.js';
 import { IngestTelemetryUseCase } from './application/ingest-telemetry.use-case.js';
 import { ProfileWriter, TelemetryWriter } from './application/ports.js';
@@ -8,6 +9,7 @@ import { PostgresProfileWriter } from './infrastructure/postgres-profile.writer.
 import { PostgresTelemetryWriter } from './infrastructure/postgres-telemetry.writer.js';
 
 @Module({
+  imports: [ApiKeysModule],
   controllers: [IngestController],
   providers: [
     IngestTelemetryUseCase,

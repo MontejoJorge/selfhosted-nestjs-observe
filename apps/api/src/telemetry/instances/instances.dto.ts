@@ -1,7 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import type { ServiceSummary } from '@selfhosted-observe/contracts';
+import type { InstanceSummary } from '@selfhosted-observe/contracts';
 
-export class ServiceSummaryDto implements ServiceSummary {
+export class InstanceSummaryDto implements InstanceSummary {
+  applicationId: string;
+  /** The agent's serviceId. */
   serviceId: string;
   @ApiProperty({ type: String, nullable: true })
   serviceVersion: string | null;

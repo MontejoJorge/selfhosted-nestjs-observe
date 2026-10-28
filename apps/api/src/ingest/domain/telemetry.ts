@@ -124,7 +124,12 @@ export interface RuntimeSample {
   memoryPercent: number | null;
   gcCount: number | null;
   gcDurationMs: number | null;
-  gcBreakdown: Record<string, unknown> | null;
+  gcMinorCount: number | null;
+  gcMinorMs: number | null;
+  gcMajorCount: number | null;
+  gcMajorMs: number | null;
+  gcIncrementalCount: number | null;
+  gcIncrementalMs: number | null;
   eventLoopLagMs: number | null;
   eventLoopUtilization: number | null;
 }
@@ -152,6 +157,8 @@ export interface ObjectiveRecord {
 }
 
 export interface TelemetryBatchRecord {
+  /** Application the batch was authenticated for; stamped on every stored row. */
+  applicationId: string;
   service: ServiceSighting;
   requests: RequestExecution[];
   jobs: JobExecution[];
@@ -164,6 +171,7 @@ export interface TelemetryBatchRecord {
 }
 
 export interface ProfileUpload {
+  applicationId: string;
   receivedAt: Date;
   serviceNode: string | null;
   sampleRateHz: number | null;

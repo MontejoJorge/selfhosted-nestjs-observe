@@ -1,44 +1,63 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import type {
-  CustomMetricSummary,
-  RuntimeSeriesPoint,
+  RuntimeInstance,
+  RuntimeMetrics,
 } from '@selfhosted-observe/contracts';
+import { ScopeResolver } from '../common/scope.js';
 import { resolveWindow } from '../common/time-window.js';
 import {
-  CustomMetricsQueryDto,
-  CustomMetricSummaryDto,
+  RuntimeInstanceDto,
+  RuntimeInstancesQueryDto,
+  RuntimeMetricsDto,
   RuntimeMetricsQueryDto,
-  RuntimeSeriesPointDto,
 } from './metrics.dto.js';
 import { MetricsRepository } from './metrics.repository.js';
 
 @ApiTags('metrics')
 @Controller('metrics')
 export class MetricsController {
-  constructor(private readonly metrics: MetricsRepository) {}
+  constructor(
+    private readonly metrics: MetricsRepository,
+    private readonly scopes: ScopeResolver,
+  ) {}
 
   @Get('runtime')
   @ApiOperation({
     operationId: 'getRuntimeMetrics',
-    summary: 'CPU, memory, event loop and GC series for one service',
+    summary:
+      'Runtime KPIs and CPU, memory, event loop and GC series of one application (or one of its instances)',
   })
-  @ApiOkResponse({ type: [RuntimeSeriesPointDto] })
-  runtime(
+  @ApiOkResponse({ type: RuntimeMetricsDto })
+  @ApiNotFoundResponse()
+  async runtime(
     @Query() query: RuntimeMetricsQueryDto,
-  ): Promise<RuntimeSeriesPoint[]> {
-    return this.metrics.runtime(query.service, resolveWindow(query));
+  ): Promise<RuntimeMetrics> {
+    return this.metrics.runtime(
+      await this.scopes.resolve(query),
+      resolveWindow(query),
+    );
   }
 
-  @Get('custom')
+  @Get('runtime/instances')
   @ApiOperation({
-    operationId: 'listCustomMetrics',
-    summary: 'Latest value of each custom metric in the range',
+    operationId: 'listRuntimeInstances',
+    summary:
+      'Instances of an application that sent runtime samples in the range, with their newest sample',
   })
-  @ApiOkResponse({ type: [CustomMetricSummaryDto] })
-  custom(
-    @Query() query: CustomMetricsQueryDto,
-  ): Promise<CustomMetricSummary[]> {
-    return this.metrics.custom(resolveWindow(query), query.service);
+  @ApiOkResponse({ type: [RuntimeInstanceDto] })
+  @ApiNotFoundResponse()
+  async instances(
+    @Query() query: RuntimeInstancesQueryDto,
+  ): Promise<RuntimeInstance[]> {
+    return this.metrics.instances(
+      await this.scopes.resolve(query),
+      resolveWindow(query),
+    );
   }
 }

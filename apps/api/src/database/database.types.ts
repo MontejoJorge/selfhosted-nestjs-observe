@@ -9,7 +9,43 @@ import type { ColumnType, Generated, Kysely } from 'kysely';
 export type Json<T = unknown> = ColumnType<T, string, string>;
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
+export interface ProjectsTable {
+  id: Generated<string>;
+  slug: string;
+  name: string;
+  description: string | null;
+  created_at: ColumnType<Date, Date | string | undefined, Date | string>;
+}
+
+export interface ApplicationsTable {
+  id: Generated<string>;
+  project_id: string;
+  name: string;
+  tags: ColumnType<string[], string[] | undefined, string[]>;
+  created_at: ColumnType<Date, Date | string | undefined, Date | string>;
+  last_seen_at: Timestamp | null;
+}
+
+export interface ApiKeysTable {
+  id: Generated<string>;
+  project_id: string;
+  application_id: string;
+  name: string;
+  key_id: string;
+  secret_hash: Buffer;
+  expires_at: Timestamp | null;
+  revoked_at: Timestamp | null;
+  last_used_at: Timestamp | null;
+  created_at: ColumnType<Date, Date | string | undefined, Date | string>;
+}
+
+export interface ApplicationPurgesTable {
+  application_id: string;
+  requested_at: ColumnType<Date, Date | string | undefined, Date | string>;
+}
+
 export interface ServicesTable {
+  application_id: string;
   service_id: string;
   service_version: string | null;
   first_seen_at: Timestamp;
@@ -17,6 +53,7 @@ export interface ServicesTable {
 }
 
 export interface RequestsTable {
+  application_id: string;
   id: string;
   called_at: Timestamp;
   service_id: string;
@@ -37,6 +74,7 @@ export interface RequestsTable {
 }
 
 export interface JobsTable {
+  application_id: string;
   id: string;
   called_at: Timestamp;
   service_id: string;
@@ -58,6 +96,7 @@ export interface JobsTable {
 }
 
 export interface SpansTable {
+  application_id: string;
   execution_id: string;
   called_at: Timestamp;
   source: string;
@@ -81,9 +120,10 @@ export interface SpansTable {
 
 export interface ErrorGroupsTable {
   id: Generated<number>;
-  service_id: string;
+  application_id: string;
   fingerprint: string;
   source: string;
+  service_id: string;
   error_class: string | null;
   message: string;
   stack: string | null;
@@ -99,6 +139,7 @@ export interface ErrorGroupCulpritsTable {
 }
 
 export interface ErrorOccurrencesTable {
+  application_id: string;
   group_id: number;
   occurred_at: Timestamp;
   execution_id: string;
@@ -109,6 +150,7 @@ export interface ErrorOccurrencesTable {
 }
 
 export interface LogsTable {
+  application_id: string;
   id: string;
   timestamp: Timestamp;
   service_id: string;
@@ -121,6 +163,7 @@ export interface LogsTable {
 }
 
 export interface RuntimeMetricsTable {
+  application_id: string;
   sampled_at: Timestamp;
   service_id: string;
   cpu_user: number | null;
@@ -134,12 +177,18 @@ export interface RuntimeMetricsTable {
   memory_percent: number | null;
   gc_count: number | null;
   gc_duration_ms: number | null;
-  gc_breakdown: Json | null;
+  gc_minor_count: number | null;
+  gc_minor_ms: number | null;
+  gc_major_count: number | null;
+  gc_major_ms: number | null;
+  gc_incremental_count: number | null;
+  gc_incremental_ms: number | null;
   event_loop_lag_ms: number | null;
   event_loop_utilization: number | null;
 }
 
 export interface CustomMetricsTable {
+  application_id: string;
   recorded_at: Timestamp;
   service_id: string;
   name: string;
@@ -151,6 +200,7 @@ export interface CustomMetricsTable {
 }
 
 export interface ObjectivesTable {
+  application_id: string;
   service_id: string;
   operation_id: string;
   handler: string;
@@ -160,6 +210,7 @@ export interface ObjectivesTable {
 }
 
 export interface ProfilesTable {
+  application_id: string;
   id: Generated<number>;
   received_at: Timestamp;
   service_node: string | null;
@@ -168,6 +219,10 @@ export interface ProfilesTable {
 }
 
 export interface Database {
+  projects: ProjectsTable;
+  applications: ApplicationsTable;
+  api_keys: ApiKeysTable;
+  application_purges: ApplicationPurgesTable;
   services: ServicesTable;
   requests: RequestsTable;
   jobs: JobsTable;
@@ -186,6 +241,21 @@ export type Db = Kysely<Database>;
 
 /** Injection token for the shared Kysely instance. */
 export const KYSELY = Symbol('KYSELY');
+
+/** Telemetry tables carrying `application_id`, purged when an application is deleted. */
+export const APPLICATION_SCOPED_TABLES = [
+  'requests',
+  'jobs',
+  'spans',
+  'error_occurrences',
+  'logs',
+  'runtime_metrics',
+  'custom_metrics',
+  'error_groups',
+  'objectives',
+  'services',
+  'profiles',
+] as const satisfies readonly (keyof Database)[];
 
 /** Day-partitioned tables and their partition key. */
 export const PARTITIONED_TABLES = {

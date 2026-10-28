@@ -60,6 +60,8 @@ export class JobListItemDto implements JobListItem {
   /** Queue job id. */
   jobId: string;
   traceId: string;
+  applicationId: string;
+  /** Instance (the agent's serviceId). */
   serviceId: string;
   queue: string;
   name: string;

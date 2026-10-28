@@ -59,6 +59,7 @@ function asTrace(value: unknown): WireTraceNode[] {
 
 /** Maps a validated wire batch to domain records. Malformed items are skipped, not rejected. */
 export function mapTelemetryBatch(
+  applicationId: string,
   batch: WireTelemetryBatch,
   receivedAt: Date,
   window: AcceptanceWindow,
@@ -135,6 +136,7 @@ export function mapTelemetryBatch(
   }
 
   return {
+    applicationId,
     service: { serviceId, serviceVersion, seenAt: receivedAt },
     requests,
     jobs,
@@ -283,6 +285,10 @@ function mapRuntime(
   const memory = asRecord(runtime.m) ?? {};
   const gc = asRecord(runtime.g) ?? {};
   const eventLoop = asRecord(runtime.e) ?? {};
+  const breakdown = asRecord(gc.b) ?? {};
+  const minor = asRecord(breakdown.m) ?? {};
+  const major = asRecord(breakdown.j) ?? {};
+  const incremental = asRecord(breakdown.i) ?? {};
   return {
     sampledAt,
     serviceId,
@@ -297,7 +303,12 @@ function mapRuntime(
     memoryPercent: asNumber(memory.p),
     gcCount: asNumber(gc.c),
     gcDurationMs: asNumber(gc.td),
-    gcBreakdown: asRecord(gc.b),
+    gcMinorCount: asNumber(minor.count),
+    gcMinorMs: asNumber(minor.duration),
+    gcMajorCount: asNumber(major.count),
+    gcMajorMs: asNumber(major.duration),
+    gcIncrementalCount: asNumber(incremental.count),
+    gcIncrementalMs: asNumber(incremental.duration),
     eventLoopLagMs: asNumber(eventLoop.l),
     eventLoopUtilization: asNumber(eventLoop.u),
   };

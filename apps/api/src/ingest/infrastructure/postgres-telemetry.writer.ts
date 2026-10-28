@@ -44,8 +44,9 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
       await this.insertExecutions(trx, batch);
       await this.insertSignals(trx, batch);
       await this.upsertObjectives(trx, batch);
-      await this.upsertErrors(trx, batch.errors);
+      await this.upsertErrors(trx, batch.applicationId, batch.errors);
       await this.upsertService(trx, batch);
+      await this.touchApplication(trx, batch);
     });
   }
 
@@ -62,12 +63,14 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
     trx: Transaction<Database>,
     batch: TelemetryBatchRecord,
   ) {
+    const application_id = batch.applicationId;
     await insertMany(
       trx,
       'requests',
       batch.requests.map((r) => ({
         id: r.id,
         called_at: r.calledAt,
+        application_id,
         service_id: r.serviceId,
         service_version: r.serviceVersion,
         trace_id: r.traceId,
@@ -92,6 +95,7 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
       batch.jobs.map((j) => ({
         id: j.id,
         called_at: j.calledAt,
+        application_id,
         service_id: j.serviceId,
         service_version: j.serviceVersion,
         job_id: j.jobId,
@@ -117,6 +121,7 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
       batch.spans.map((s) => ({
         execution_id: s.executionId,
         called_at: s.calledAt,
+        application_id,
         source: s.source,
         service_id: s.serviceId,
         trace_id: s.traceId,
@@ -142,12 +147,14 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
     trx: Transaction<Database>,
     batch: TelemetryBatchRecord,
   ) {
+    const application_id = batch.applicationId;
     await insertMany(
       trx,
       'logs',
       batch.logs.map((l) => ({
         id: l.id,
         timestamp: l.timestamp,
+        application_id,
         service_id: l.serviceId,
         level: l.level,
         context: l.context,
@@ -163,6 +170,7 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
       await insertMany(trx, 'runtime_metrics', [
         {
           sampled_at: r.sampledAt,
+          application_id,
           service_id: r.serviceId,
           cpu_user: r.cpuUser,
           cpu_system: r.cpuSystem,
@@ -175,7 +183,12 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
           memory_percent: r.memoryPercent,
           gc_count: r.gcCount,
           gc_duration_ms: r.gcDurationMs,
-          gc_breakdown: toJson(r.gcBreakdown),
+          gc_minor_count: r.gcMinorCount,
+          gc_minor_ms: r.gcMinorMs,
+          gc_major_count: r.gcMajorCount,
+          gc_major_ms: r.gcMajorMs,
+          gc_incremental_count: r.gcIncrementalCount,
+          gc_incremental_ms: r.gcIncrementalMs,
           event_loop_lag_ms: r.eventLoopLagMs,
           event_loop_utilization: r.eventLoopUtilization,
         },
@@ -187,6 +200,7 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
       'custom_metrics',
       batch.customMetrics.map((m) => ({
         recorded_at: m.recordedAt,
+        application_id,
         service_id: m.serviceId,
         name: m.name,
         type: m.type,
@@ -211,6 +225,7 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
     const rows = [...byKey.entries()]
       .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
       .map(([, o]) => ({
+        application_id: batch.applicationId,
         service_id: o.serviceId,
         operation_id: o.operationId,
         handler: o.handler,
@@ -224,8 +239,9 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
       .values(rows)
       .onConflict((oc) =>
         oc
-          .columns(['service_id', 'operation_id', 'handler'])
+          .columns(['application_id', 'operation_id', 'handler'])
           .doUpdateSet((eb) => ({
+            service_id: eb.ref('excluded.service_id'),
             method: eb.ref('excluded.method'),
             objectives: eb.ref('excluded.objectives'),
             updated_at: eb.ref('excluded.updated_at'),
@@ -236,13 +252,14 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
 
   private async upsertErrors(
     trx: Transaction<Database>,
+    applicationId: string,
     errors: ErrorOccurrence[],
   ) {
     if (errors.length === 0) return;
 
     const deltas = new Map<string, ErrorGroupDelta>();
     for (const error of errors) {
-      const key = `${error.serviceId}\u0000${error.fingerprint}`;
+      const key = error.fingerprint;
       const delta = deltas.get(key);
       if (!delta) {
         deltas.set(key, {
@@ -275,9 +292,10 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
       .insertInto('error_groups')
       .values(
         ordered.map((d) => ({
-          service_id: d.sample.serviceId,
+          application_id: applicationId,
           fingerprint: d.fingerprint,
           source: d.sample.source,
+          service_id: d.sample.serviceId,
           error_class: d.sample.errorClass,
           message: toText(d.sample.message),
           stack: toText(d.sample.stack),
@@ -287,7 +305,7 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
         })),
       )
       .onConflict((oc) =>
-        oc.columns(['service_id', 'fingerprint']).doUpdateSet((eb) => ({
+        oc.columns(['application_id', 'fingerprint']).doUpdateSet((eb) => ({
           count: sql<number>`${eb.ref('error_groups.count')} + ${eb.ref('excluded.count')}`,
           first_seen_at: sql<Date>`least(${eb.ref('error_groups.first_seen_at')}, ${eb.ref('excluded.first_seen_at')})`,
           last_seen_at: sql<Date>`greatest(${eb.ref('error_groups.last_seen_at')}, ${eb.ref('excluded.last_seen_at')})`,
@@ -296,16 +314,15 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
           stack: sql<
             string | null
           >`case when ${eb.ref('excluded.last_seen_at')} >= ${eb.ref('error_groups.last_seen_at')} then ${eb.ref('excluded.stack')} else ${eb.ref('error_groups.stack')} end`,
+          service_id: sql<string>`case when ${eb.ref('excluded.last_seen_at')} >= ${eb.ref('error_groups.last_seen_at')} then ${eb.ref('excluded.service_id')} else ${eb.ref('error_groups.service_id')} end`,
         })),
       )
-      .returning(['id', 'service_id', 'fingerprint'])
+      .returning(['id', 'fingerprint'])
       .execute();
 
-    const groupIds = new Map(
-      groups.map((g) => [`${g.service_id}\u0000${g.fingerprint}`, g.id]),
-    );
-    const idOf = (serviceId: string, fingerprint: string) => {
-      const id = groupIds.get(`${serviceId}\u0000${fingerprint}`);
+    const groupIds = new Map(groups.map((g) => [g.fingerprint, g.id]));
+    const idOf = (fingerprint: string) => {
+      const id = groupIds.get(fingerprint);
       if (id === undefined)
         throw new Error(`error group ${fingerprint} was not upserted`);
       return id;
@@ -314,7 +331,7 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
     const culprits = ordered
       .flatMap((d) =>
         [...d.culprits.entries()].map(([culprit, count]) => ({
-          group_id: idOf(d.sample.serviceId, d.fingerprint),
+          group_id: idOf(d.fingerprint),
           culprit: toText(culprit),
           count,
         })),
@@ -342,8 +359,9 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
       trx,
       'error_occurrences',
       errors.map((e) => ({
-        group_id: idOf(e.serviceId, e.fingerprint),
+        group_id: idOf(e.fingerprint),
         occurred_at: e.occurredAt,
+        application_id: applicationId,
         execution_id: e.executionId,
         source: e.source,
         service_id: e.serviceId,
@@ -361,18 +379,41 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
     await trx
       .insertInto('services')
       .values({
+        application_id: batch.applicationId,
         service_id: serviceId,
         service_version: serviceVersion,
         first_seen_at: seenAt,
         last_seen_at: seenAt,
       })
       .onConflict((oc) =>
-        oc.column('service_id').doUpdateSet((eb) => ({
+        oc.columns(['application_id', 'service_id']).doUpdateSet((eb) => ({
           service_version: sql<
             string | null
           >`coalesce(${eb.ref('excluded.service_version')}, ${eb.ref('services.service_version')})`,
           last_seen_at: sql<Date>`greatest(${eb.ref('services.last_seen_at')}, ${eb.ref('excluded.last_seen_at')})`,
         })),
+      )
+      .execute();
+  }
+
+  /**
+   * Advances `applications.last_seen_at`, at most every 30 s: the condition skips the
+   * write (and the row lock) for most batches of a busy application.
+   */
+  private async touchApplication(
+    trx: Transaction<Database>,
+    batch: TelemetryBatchRecord,
+  ) {
+    const { seenAt } = batch.service;
+    await trx
+      .updateTable('applications')
+      .set({ last_seen_at: seenAt })
+      .where('id', '=', batch.applicationId)
+      .where((eb) =>
+        eb.or([
+          eb('last_seen_at', 'is', null),
+          eb('last_seen_at', '<', new Date(seenAt.getTime() - 30_000)),
+        ]),
       )
       .execute();
   }

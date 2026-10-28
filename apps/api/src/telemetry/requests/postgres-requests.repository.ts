@@ -14,6 +14,7 @@ import {
 } from '../../database/database.types.js';
 import { toPage, type KeysetCursor } from '../common/cursor.js';
 import { windowFromId } from '../common/id-window.js';
+import { inApplications, type TelemetryScope } from '../common/scope.js';
 import {
   avgOf,
   countAll,
@@ -32,6 +33,7 @@ const LIST_COLUMNS = [
   'id',
   'called_at',
   'trace_id',
+  'application_id',
   'service_id',
   'operation_id',
   'protocol',
@@ -65,15 +67,17 @@ export class PostgresRequestsRepository extends RequestsRepository {
     super();
   }
 
-  /** Every query filters on called_at first, so only the partitions in the window are scanned. */
+  /**
+   * Every query filters on called_at, so only the partitions in the window are scanned,
+   * and on application_id, the leading column of the scoped indexes.
+   */
   private filtered<O>(
     query: SelectQueryBuilder<Database, 'requests', O>,
     filter: RequestFilter,
   ): SelectQueryBuilder<Database, 'requests', O> {
-    let q = query
+    let q = scoped(query, filter.scope)
       .where('called_at', '>=', filter.window.from)
       .where('called_at', '<', filter.window.to);
-    if (filter.serviceId) q = q.where('service_id', '=', filter.serviceId);
     if (filter.operationId)
       q = q.where('operation_id', '=', filter.operationId);
     if (filter.traceId) q = q.where('trace_id', '=', filter.traceId);
@@ -137,9 +141,11 @@ export class PostgresRequestsRepository extends RequestsRepository {
     );
   }
 
-  async findById(id: string): Promise<RequestDetail | null> {
-    let query = this.db
-      .selectFrom('requests')
+  async findById(
+    scope: TelemetryScope,
+    id: string,
+  ): Promise<RequestDetail | null> {
+    let query = scoped(this.db.selectFrom('requests'), scope)
       .select(DETAIL_COLUMNS)
       .where('id', '=', id);
     const window = windowFromId(id);
@@ -152,9 +158,11 @@ export class PostgresRequestsRepository extends RequestsRepository {
     return row ? toDetail(row) : null;
   }
 
-  async findByTraceId(traceId: string): Promise<RequestDetail[]> {
-    const rows = await this.db
-      .selectFrom('requests')
+  async findByTraceId(
+    scope: TelemetryScope,
+    traceId: string,
+  ): Promise<RequestDetail[]> {
+    const rows = await scoped(this.db.selectFrom('requests'), scope)
       .select(DETAIL_COLUMNS)
       .where('trace_id', '=', traceId)
       .orderBy('called_at')
@@ -164,10 +172,19 @@ export class PostgresRequestsRepository extends RequestsRepository {
   }
 }
 
+function scoped<O>(
+  query: SelectQueryBuilder<Database, 'requests', O>,
+  scope: TelemetryScope,
+): SelectQueryBuilder<Database, 'requests', O> {
+  const q = query.where(inApplications('application_id', scope.applicationIds));
+  return scope.instance ? q.where('service_id', '=', scope.instance) : q;
+}
+
 function toListItem(row: ListRow): RequestListItem {
   return {
     id: row.id,
     traceId: row.trace_id,
+    applicationId: row.application_id,
     serviceId: row.service_id,
     operationId: row.operation_id,
     protocol: row.protocol,

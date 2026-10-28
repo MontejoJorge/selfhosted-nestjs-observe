@@ -1,5 +1,6 @@
 import type { Migration } from 'kysely/migration';
 import { initialSchema } from './0001-initial-schema.js';
+import { projectsApplications } from './0002-projects-applications.js';
 
 /**
  * All migrations, keyed by name. Names sort lexicographically, so keep the numeric
@@ -8,4 +9,5 @@ import { initialSchema } from './0001-initial-schema.js';
  */
 export const migrations: Record<string, Migration> = {
   '0001-initial-schema': initialSchema,
+  '0002-projects-applications': projectsApplications,
 };

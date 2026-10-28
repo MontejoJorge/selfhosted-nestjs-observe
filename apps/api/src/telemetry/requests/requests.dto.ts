@@ -72,6 +72,8 @@ export class RequestListItemDto implements RequestListItem {
   /** UUIDv7 */
   id: string;
   traceId: string;
+  applicationId: string;
+  /** Instance (the agent's serviceId). */
   serviceId: string;
   operationId: string;
   protocol: string;

@@ -23,10 +23,679 @@
         ]
       }
     },
-    "/api/services": {
+    "/api/projects": {
       "get": {
-        "operationId": "listServices",
+        "operationId": "listProjects",
+        "parameters": [
+          {
+            "name": "range",
+            "required": false,
+            "in": "query",
+            "description": "Relative window ending now (default `1h`). Ignored when `from` is given.",
+            "schema": {
+              "$ref": "#/components/schemas/TimeRange"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Window start (ISO 8601).",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Window end (ISO 8601), defaults to now.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Page size (default 50, max 500).",
+            "schema": {
+              "minimum": 1,
+              "maximum": 500,
+              "default": 50,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Opaque cursor: pass `nextCursor` from the previous page.",
+            "schema": {
+              "maxLength": 512,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectSummaryPageDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Projects sorted by name, with request activity over the range",
+        "tags": [
+          "projects"
+        ]
+      },
+      "post": {
+        "operationId": "createProject",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProjectDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a project (the slug is generated from the name)",
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/projects/{project}": {
+      "get": {
+        "operationId": "getProject",
+        "parameters": [
+          {
+            "name": "project",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "One project",
+        "tags": [
+          "projects"
+        ]
+      },
+      "patch": {
+        "operationId": "updateProject",
+        "parameters": [
+          {
+            "name": "project",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProjectDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Rename a project or change its description (the slug is kept)",
+        "tags": [
+          "projects"
+        ]
+      },
+      "delete": {
+        "operationId": "deleteProject",
+        "parameters": [
+          {
+            "name": "project",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Delete a project with its applications and API keys; telemetry is purged in the background",
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/projects/{project}/applications": {
+      "get": {
+        "operationId": "listApplications",
+        "parameters": [
+          {
+            "name": "project",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "range",
+            "required": false,
+            "in": "query",
+            "description": "Relative window ending now (default `1h`). Ignored when `from` is given.",
+            "schema": {
+              "$ref": "#/components/schemas/TimeRange"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Window start (ISO 8601).",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Window end (ISO 8601), defaults to now.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Page size (default 50, max 500).",
+            "schema": {
+              "minimum": 1,
+              "maximum": 500,
+              "default": 50,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Opaque cursor: pass `nextCursor` from the previous page.",
+            "schema": {
+              "maxLength": 512,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationSummaryPageDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Applications of a project sorted by name, with request and runtime stats over the range",
+        "tags": [
+          "applications"
+        ]
+      },
+      "post": {
+        "operationId": "createApplication",
+        "parameters": [
+          {
+            "name": "project",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateApplicationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          },
+          "409": {
+            "description": ""
+          }
+        },
+        "summary": "Create an application (name unique in the project, up to 3 tags)",
+        "tags": [
+          "applications"
+        ]
+      }
+    },
+    "/api/projects/{project}/applications/{applicationId}": {
+      "get": {
+        "operationId": "getApplication",
+        "parameters": [
+          {
+            "name": "project",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "applicationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "One application",
+        "tags": [
+          "applications"
+        ]
+      },
+      "patch": {
+        "operationId": "updateApplication",
+        "parameters": [
+          {
+            "name": "project",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "applicationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateApplicationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          },
+          "409": {
+            "description": ""
+          }
+        },
+        "summary": "Rename an application or replace its tags",
+        "tags": [
+          "applications"
+        ]
+      },
+      "delete": {
+        "operationId": "deleteApplication",
+        "parameters": [
+          {
+            "name": "project",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "applicationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Delete an application with its API keys; telemetry is purged in the background",
+        "tags": [
+          "applications"
+        ]
+      }
+    },
+    "/api/projects/{project}/keys": {
+      "get": {
+        "operationId": "listApiKeys",
+        "parameters": [
+          {
+            "name": "project",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Page size (default 50, max 500).",
+            "schema": {
+              "minimum": 1,
+              "maximum": 500,
+              "default": 50,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "applicationId",
+            "required": false,
+            "in": "query",
+            "description": "Only the keys of this application.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Opaque cursor: pass `nextCursor` from the previous page.",
+            "schema": {
+              "maxLength": 512,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiKeyPageDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "API keys of a project, newest first (secrets are never returned)",
+        "tags": [
+          "api-keys"
+        ]
+      },
+      "post": {
+        "operationId": "createApiKey",
+        "parameters": [
+          {
+            "name": "project",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateApiKeyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedApiKeyDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Create an API key for an application; the response carries the secret, shown only once",
+        "tags": [
+          "api-keys"
+        ]
+      }
+    },
+    "/api/projects/{project}/keys/{keyId}/revoke": {
+      "post": {
+        "operationId": "revokeApiKey",
+        "parameters": [
+          {
+            "name": "project",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "keyId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiKeyDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Revoke an API key: ingest with it is rejected from now on",
+        "tags": [
+          "api-keys"
+        ]
+      }
+    },
+    "/api/projects/{project}/keys/{keyId}": {
+      "delete": {
+        "operationId": "deleteApiKey",
+        "parameters": [
+          {
+            "name": "project",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "keyId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Delete an API key",
+        "tags": [
+          "api-keys"
+        ]
+      }
+    },
+    "/api/instances": {
+      "get": {
+        "operationId": "listInstances",
+        "parameters": [
+          {
+            "name": "application",
+            "required": false,
+            "in": "query",
+            "description": "Application id (must belong to the project). Omit for the whole project.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "project",
+            "required": true,
+            "in": "query",
+            "description": "Project id or slug.",
+            "schema": {
+              "maxLength": 64,
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -35,16 +704,16 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/ServiceSummaryDto"
+                    "$ref": "#/components/schemas/InstanceSummaryDto"
                   }
                 }
               }
             }
           }
         },
-        "summary": "Services that have sent telemetry",
+        "summary": "Instances (agent serviceIds) that sent telemetry, most recently seen first",
         "tags": [
-          "services"
+          "instances"
         ]
       }
     },
@@ -52,6 +721,16 @@
       "get": {
         "operationId": "getOverview",
         "parameters": [
+          {
+            "name": "application",
+            "required": false,
+            "in": "query",
+            "description": "Application id (must belong to the project). Omit for the whole project.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
           {
             "name": "range",
             "required": false,
@@ -112,12 +791,22 @@
             }
           },
           {
-            "name": "service",
+            "name": "instance",
             "required": false,
             "in": "query",
-            "description": "Filter by serviceId.",
+            "description": "Filter by instance: the `serviceId` an agent reports.",
             "schema": {
               "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "project",
+            "required": true,
+            "in": "query",
+            "description": "Project id or slug.",
+            "schema": {
+              "maxLength": 64,
               "type": "string"
             }
           }
@@ -144,6 +833,16 @@
       "get": {
         "operationId": "listOperations",
         "parameters": [
+          {
+            "name": "application",
+            "required": false,
+            "in": "query",
+            "description": "Application id (must belong to the project). Omit for the whole project.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
           {
             "name": "range",
             "required": false,
@@ -174,12 +873,22 @@
             }
           },
           {
-            "name": "service",
+            "name": "instance",
             "required": false,
             "in": "query",
-            "description": "Filter by serviceId.",
+            "description": "Filter by instance: the `serviceId` an agent reports.",
             "schema": {
               "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "project",
+            "required": true,
+            "in": "query",
+            "description": "Project id or slug.",
+            "schema": {
+              "maxLength": 64,
               "type": "string"
             }
           }
@@ -209,6 +918,16 @@
       "get": {
         "operationId": "listRequests",
         "parameters": [
+          {
+            "name": "application",
+            "required": false,
+            "in": "query",
+            "description": "Application id (must belong to the project). Omit for the whole project.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
           {
             "name": "range",
             "required": false,
@@ -288,22 +1007,32 @@
             }
           },
           {
-            "name": "cursor",
-            "required": false,
+            "name": "project",
+            "required": true,
             "in": "query",
-            "description": "Opaque cursor: pass `nextCursor` from the previous page, with the same filters.",
+            "description": "Project id or slug.",
             "schema": {
-              "maxLength": 512,
+              "maxLength": 64,
               "type": "string"
             }
           },
           {
-            "name": "service",
+            "name": "instance",
             "required": false,
             "in": "query",
-            "description": "Filter by serviceId.",
+            "description": "Filter by instance: the `serviceId` an agent reports.",
             "schema": {
               "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Opaque cursor: pass `nextCursor` from the previous page.",
+            "schema": {
+              "maxLength": 512,
               "type": "string"
             }
           }
@@ -337,6 +1066,26 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "application",
+            "required": false,
+            "in": "query",
+            "description": "Application id (must belong to the project). Omit for the whole project.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "project",
+            "required": true,
+            "in": "query",
+            "description": "Project id or slug.",
+            "schema": {
+              "maxLength": 64,
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -364,6 +1113,16 @@
       "get": {
         "operationId": "listQueues",
         "parameters": [
+          {
+            "name": "application",
+            "required": false,
+            "in": "query",
+            "description": "Application id (must belong to the project). Omit for the whole project.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
           {
             "name": "range",
             "required": false,
@@ -394,12 +1153,22 @@
             }
           },
           {
-            "name": "service",
+            "name": "instance",
             "required": false,
             "in": "query",
-            "description": "Filter by serviceId.",
+            "description": "Filter by instance: the `serviceId` an agent reports.",
             "schema": {
               "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "project",
+            "required": true,
+            "in": "query",
+            "description": "Project id or slug.",
+            "schema": {
+              "maxLength": 64,
               "type": "string"
             }
           }
@@ -429,6 +1198,16 @@
       "get": {
         "operationId": "listJobs",
         "parameters": [
+          {
+            "name": "application",
+            "required": false,
+            "in": "query",
+            "description": "Application id (must belong to the project). Omit for the whole project.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
           {
             "name": "range",
             "required": false,
@@ -506,22 +1285,32 @@
             }
           },
           {
-            "name": "cursor",
-            "required": false,
+            "name": "project",
+            "required": true,
             "in": "query",
-            "description": "Opaque cursor: pass `nextCursor` from the previous page, with the same filters.",
+            "description": "Project id or slug.",
             "schema": {
-              "maxLength": 512,
+              "maxLength": 64,
               "type": "string"
             }
           },
           {
-            "name": "service",
+            "name": "instance",
             "required": false,
             "in": "query",
-            "description": "Filter by serviceId.",
+            "description": "Filter by instance: the `serviceId` an agent reports.",
             "schema": {
               "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Opaque cursor: pass `nextCursor` from the previous page.",
+            "schema": {
+              "maxLength": 512,
               "type": "string"
             }
           }
@@ -555,6 +1344,26 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "application",
+            "required": false,
+            "in": "query",
+            "description": "Application id (must belong to the project). Omit for the whole project.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "project",
+            "required": true,
+            "in": "query",
+            "description": "Project id or slug.",
+            "schema": {
+              "maxLength": 64,
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -582,6 +1391,16 @@
       "get": {
         "operationId": "listErrorGroups",
         "parameters": [
+          {
+            "name": "application",
+            "required": false,
+            "in": "query",
+            "description": "Application id (must belong to the project). Omit for the whole project.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
           {
             "name": "range",
             "required": false,
@@ -632,22 +1451,32 @@
             }
           },
           {
-            "name": "cursor",
-            "required": false,
+            "name": "project",
+            "required": true,
             "in": "query",
-            "description": "Opaque cursor: pass `nextCursor` from the previous page, with the same filters.",
+            "description": "Project id or slug.",
             "schema": {
-              "maxLength": 512,
+              "maxLength": 64,
               "type": "string"
             }
           },
           {
-            "name": "service",
+            "name": "instance",
             "required": false,
             "in": "query",
-            "description": "Filter by serviceId.",
+            "description": "Filter by instance: the `serviceId` an agent reports.",
             "schema": {
               "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Opaque cursor: pass `nextCursor` from the previous page.",
+            "schema": {
+              "maxLength": 512,
               "type": "string"
             }
           }
@@ -683,6 +1512,16 @@
             }
           },
           {
+            "name": "application",
+            "required": false,
+            "in": "query",
+            "description": "Application id (must belong to the project). Omit for the whole project.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
             "name": "range",
             "required": false,
             "in": "query",
@@ -712,12 +1551,22 @@
             }
           },
           {
-            "name": "service",
+            "name": "instance",
             "required": false,
             "in": "query",
-            "description": "Filter by serviceId.",
+            "description": "Filter by instance: the `serviceId` an agent reports.",
             "schema": {
               "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "project",
+            "required": true,
+            "in": "query",
+            "description": "Project id or slug.",
+            "schema": {
+              "maxLength": 64,
               "type": "string"
             }
           }
@@ -747,6 +1596,16 @@
       "get": {
         "operationId": "listLogs",
         "parameters": [
+          {
+            "name": "application",
+            "required": false,
+            "in": "query",
+            "description": "Application id (must belong to the project). Omit for the whole project.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
           {
             "name": "range",
             "required": false,
@@ -826,22 +1685,32 @@
             }
           },
           {
-            "name": "cursor",
-            "required": false,
+            "name": "project",
+            "required": true,
             "in": "query",
-            "description": "Opaque cursor: pass `nextCursor` from the previous page, with the same filters.",
+            "description": "Project id or slug.",
             "schema": {
-              "maxLength": 512,
+              "maxLength": 64,
               "type": "string"
             }
           },
           {
-            "name": "service",
+            "name": "instance",
             "required": false,
             "in": "query",
-            "description": "Filter by serviceId.",
+            "description": "Filter by instance: the `serviceId` an agent reports.",
             "schema": {
               "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Opaque cursor: pass `nextCursor` from the previous page.",
+            "schema": {
+              "maxLength": 512,
               "type": "string"
             }
           }
@@ -873,6 +1742,26 @@
             "required": true,
             "in": "path",
             "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "application",
+            "required": false,
+            "in": "query",
+            "description": "Application id (must belong to the project). Omit for the whole project.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "project",
+            "required": true,
+            "in": "query",
+            "description": "Project id or slug.",
+            "schema": {
+              "maxLength": 64,
               "type": "string"
             }
           }
@@ -932,12 +1821,32 @@
             }
           },
           {
-            "name": "service",
+            "name": "project",
             "required": true,
             "in": "query",
-            "description": "Required: runtime metrics are per service.",
+            "description": "Project id or slug.",
+            "schema": {
+              "maxLength": 64,
+              "type": "string"
+            }
+          },
+          {
+            "name": "instance",
+            "required": false,
+            "in": "query",
+            "description": "Filter by instance: the `serviceId` an agent reports.",
             "schema": {
               "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "application",
+            "required": true,
+            "in": "query",
+            "description": "Required: runtime metrics are per application (aggregated across instances unless `instance` is set).",
+            "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -948,24 +1857,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/RuntimeSeriesPointDto"
-                  }
+                  "$ref": "#/components/schemas/RuntimeMetricsDto"
                 }
               }
             }
+          },
+          "404": {
+            "description": ""
           }
         },
-        "summary": "CPU, memory, event loop and GC series for one service",
+        "summary": "Runtime KPIs and CPU, memory, event loop and GC series of one application (or one of its instances)",
         "tags": [
           "metrics"
         ]
       }
     },
-    "/api/metrics/custom": {
+    "/api/metrics/runtime/instances": {
       "get": {
-        "operationId": "listCustomMetrics",
+        "operationId": "listRuntimeInstances",
         "parameters": [
           {
             "name": "range",
@@ -997,12 +1906,22 @@
             }
           },
           {
-            "name": "service",
-            "required": false,
+            "name": "project",
+            "required": true,
             "in": "query",
-            "description": "Filter by serviceId.",
+            "description": "Project id or slug.",
             "schema": {
-              "maxLength": 100,
+              "maxLength": 64,
+              "type": "string"
+            }
+          },
+          {
+            "name": "application",
+            "required": true,
+            "in": "query",
+            "description": "Required: runtime metrics are per application (aggregated across instances unless `instance` is set).",
+            "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -1015,14 +1934,17 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/CustomMetricSummaryDto"
+                    "$ref": "#/components/schemas/RuntimeInstanceDto"
                   }
                 }
               }
             }
+          },
+          "404": {
+            "description": ""
           }
         },
-        "summary": "Latest value of each custom metric in the range",
+        "summary": "Instances of an application that sent runtime samples in the range, with their newest sample",
         "tags": [
           "metrics"
         ]
@@ -1053,15 +1975,554 @@
           "status"
         ]
       },
-      "ServiceSummaryDto": {
+      "TimeRange": {
+        "type": "string",
+        "enum": [
+          "1h",
+          "24h",
+          "7d"
+        ]
+      },
+      "ActivityBucketDto": {
+        "type": "object",
+        "properties": {
+          "avgDurationMs": {
+            "type": "number",
+            "nullable": true,
+            "description": "Mean duration (ms), null when the bucket has no requests."
+          },
+          "t": {
+            "type": "string",
+            "description": "Bucket start (ISO)."
+          },
+          "count": {
+            "type": "number"
+          },
+          "errors": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "avgDurationMs",
+          "t",
+          "count",
+          "errors"
+        ]
+      },
+      "ProjectSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastSeenAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "Most recent telemetry from any of its applications."
+          },
+          "avgDurationMs": {
+            "type": "number",
+            "nullable": true,
+            "description": "Mean request duration (ms) in the range."
+          },
+          "activity": {
+            "description": "Requests per bucket over the range, gap-filled.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActivityBucketDto"
+            }
+          },
+          "requestCount": {
+            "type": "number",
+            "description": "Requests in the range."
+          },
+          "slug": {
+            "type": "string",
+            "description": "URL-safe and unique; generated from the name at creation and never changed."
+          },
+          "name": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "applicationCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "description",
+          "lastSeenAt",
+          "avgDurationMs",
+          "activity",
+          "requestCount",
+          "slug",
+          "name",
+          "createdAt",
+          "applicationCount"
+        ]
+      },
+      "ProjectSummaryPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectSummaryDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
+      "ProjectDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "slug": {
+            "type": "string",
+            "description": "URL-safe and unique; generated from the name at creation and never changed."
+          },
+          "name": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "applicationCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "description",
+          "slug",
+          "name",
+          "createdAt",
+          "applicationCount"
+        ]
+      },
+      "CreateProjectDto": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 500
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "UpdateProjectDto": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "description": "null or an empty string clears it.",
+            "maxLength": 500
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100
+          }
+        }
+      },
+      "ApplicationSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "lastSeenAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "Last telemetry batch received (updated at most every 30 s)."
+          },
+          "avgDurationMs": {
+            "type": "number",
+            "nullable": true
+          },
+          "cpuPercent": {
+            "type": "number",
+            "nullable": true,
+            "description": "Latest runtime sample in the range (any instance), percent of one core."
+          },
+          "memoryPercent": {
+            "type": "number",
+            "nullable": true,
+            "description": "Latest runtime sample in the range, percent of OS memory used by RSS."
+          },
+          "memoryRssMb": {
+            "type": "number",
+            "nullable": true,
+            "description": "Latest runtime sample in the range, RSS in megabytes."
+          },
+          "activity": {
+            "description": "Requests per bucket over the range, gap-filled.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActivityBucketDto"
+            }
+          },
+          "requestCount": {
+            "type": "number",
+            "description": "Requests in the range."
+          },
+          "requestsPerSecond": {
+            "type": "number"
+          },
+          "errorRate": {
+            "type": "number",
+            "description": "Ratio 0..1 of failed requests in the range."
+          },
+          "name": {
+            "type": "string"
+          },
+          "tags": {
+            "description": "At most 3.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "projectId",
+          "lastSeenAt",
+          "avgDurationMs",
+          "cpuPercent",
+          "memoryPercent",
+          "memoryRssMb",
+          "activity",
+          "requestCount",
+          "requestsPerSecond",
+          "errorRate",
+          "name",
+          "tags",
+          "createdAt"
+        ]
+      },
+      "ApplicationSummaryPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApplicationSummaryDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
+      "ApplicationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "lastSeenAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "Last telemetry batch received (updated at most every 30 s)."
+          },
+          "name": {
+            "type": "string"
+          },
+          "tags": {
+            "description": "At most 3.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "projectId",
+          "lastSeenAt",
+          "name",
+          "tags",
+          "createdAt"
+        ]
+      },
+      "CreateApplicationDto": {
+        "type": "object",
+        "properties": {
+          "tags": {
+            "uniqueItems": true,
+            "maxItems": 3,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 30
+            }
+          },
+          "name": {
+            "type": "string",
+            "description": "Unique within the project.",
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "UpdateApplicationDto": {
+        "type": "object",
+        "properties": {
+          "tags": {
+            "description": "Replaces all tags.",
+            "uniqueItems": true,
+            "maxItems": 3,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 30
+            }
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100
+          }
+        }
+      },
+      "ApiKeyStatus": {
+        "type": "string",
+        "enum": [
+          "active",
+          "expired",
+          "revoked"
+        ]
+      },
+      "ApiKeyDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "applicationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ApiKeyStatus"
+              }
+            ]
+          },
+          "lastUsedAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "Last authenticated ingest (updated at most once a minute)."
+          },
+          "expiresAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "null means no expiry."
+          },
+          "revokedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string"
+          },
+          "keyId": {
+            "type": "string",
+            "description": "Public key id: the agent's `appKey`, sent as `x-api-key`."
+          },
+          "applicationName": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "applicationId",
+          "status",
+          "lastUsedAt",
+          "expiresAt",
+          "revokedAt",
+          "name",
+          "keyId",
+          "applicationName",
+          "createdAt"
+        ]
+      },
+      "ApiKeyPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiKeyDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
+      "CreateApiKeyDto": {
+        "type": "object",
+        "properties": {
+          "applicationId": {
+            "type": "string",
+            "description": "Application (of this project) the key sends telemetry for.",
+            "format": "uuid"
+          },
+          "expiresAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "Omit or null for no expiry. Must be in the future.",
+            "format": "date-time"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "applicationId",
+          "name"
+        ]
+      },
+      "CreatedApiKeyDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "applicationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ApiKeyStatus"
+              }
+            ]
+          },
+          "lastUsedAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "Last authenticated ingest (updated at most once a minute)."
+          },
+          "expiresAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "null means no expiry."
+          },
+          "revokedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string"
+          },
+          "keyId": {
+            "type": "string",
+            "description": "Public key id: the agent's `appKey`, sent as `x-api-key`."
+          },
+          "applicationName": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "secret": {
+            "type": "string",
+            "description": "The agent's `appSecret`, sent as `x-api-secret`. Returned only once, at creation."
+          }
+        },
+        "required": [
+          "id",
+          "applicationId",
+          "status",
+          "lastUsedAt",
+          "expiresAt",
+          "revokedAt",
+          "name",
+          "keyId",
+          "applicationName",
+          "createdAt",
+          "secret"
+        ]
+      },
+      "InstanceSummaryDto": {
         "type": "object",
         "properties": {
           "serviceVersion": {
             "type": "string",
             "nullable": true
           },
-          "serviceId": {
+          "applicationId": {
             "type": "string"
+          },
+          "serviceId": {
+            "type": "string",
+            "description": "The agent's serviceId."
           },
           "firstSeenAt": {
             "type": "string"
@@ -1072,20 +2533,10 @@
         },
         "required": [
           "serviceVersion",
+          "applicationId",
           "serviceId",
           "firstSeenAt",
           "lastSeenAt"
-        ]
-      },
-      "TimeRange": {
-        "type": "string",
-        "enum": [
-          "15m",
-          "1h",
-          "6h",
-          "24h",
-          "7d",
-          "14d"
         ]
       },
       "TimeBucketDto": {
@@ -1328,8 +2779,12 @@
           "traceId": {
             "type": "string"
           },
-          "serviceId": {
+          "applicationId": {
             "type": "string"
+          },
+          "serviceId": {
+            "type": "string",
+            "description": "Instance (the agent's serviceId)."
           },
           "operationId": {
             "type": "string"
@@ -1354,6 +2809,7 @@
           "userId",
           "id",
           "traceId",
+          "applicationId",
           "serviceId",
           "operationId",
           "protocol",
@@ -1570,8 +3026,12 @@
           "traceId": {
             "type": "string"
           },
-          "serviceId": {
+          "applicationId": {
             "type": "string"
+          },
+          "serviceId": {
+            "type": "string",
+            "description": "Instance (the agent's serviceId)."
           },
           "operationId": {
             "type": "string"
@@ -1601,6 +3061,7 @@
           "trace",
           "id",
           "traceId",
+          "applicationId",
           "serviceId",
           "operationId",
           "protocol",
@@ -1690,8 +3151,12 @@
           "traceId": {
             "type": "string"
           },
-          "serviceId": {
+          "applicationId": {
             "type": "string"
+          },
+          "serviceId": {
+            "type": "string",
+            "description": "Instance (the agent's serviceId)."
           },
           "queue": {
             "type": "string"
@@ -1714,6 +3179,7 @@
           "id",
           "jobId",
           "traceId",
+          "applicationId",
           "serviceId",
           "queue",
           "name",
@@ -1809,8 +3275,12 @@
           "traceId": {
             "type": "string"
           },
-          "serviceId": {
+          "applicationId": {
             "type": "string"
+          },
+          "serviceId": {
+            "type": "string",
+            "description": "Instance (the agent's serviceId)."
           },
           "queue": {
             "type": "string"
@@ -1837,6 +3307,7 @@
           "id",
           "jobId",
           "traceId",
+          "applicationId",
           "serviceId",
           "queue",
           "name",
@@ -1876,9 +3347,13 @@
           "fingerprint": {
             "type": "string"
           },
+          "applicationId": {
+            "type": "string",
+            "description": "Error groups are per application."
+          },
           "serviceId": {
             "type": "string",
-            "description": "Error groups are per service."
+            "description": "Instance (serviceId) of the most recent occurrence."
           },
           "message": {
             "type": "string"
@@ -1900,6 +3375,7 @@
           "culprit",
           "id",
           "fingerprint",
+          "applicationId",
           "serviceId",
           "message",
           "count",
@@ -1943,8 +3419,12 @@
           "traceId": {
             "type": "string"
           },
-          "serviceId": {
+          "applicationId": {
             "type": "string"
+          },
+          "serviceId": {
+            "type": "string",
+            "description": "Instance (the agent's serviceId)."
           },
           "occurredAt": {
             "type": "string"
@@ -1954,6 +3434,7 @@
           "source",
           "executionId",
           "traceId",
+          "applicationId",
           "serviceId",
           "occurredAt"
         ]
@@ -2000,9 +3481,13 @@
           "fingerprint": {
             "type": "string"
           },
+          "applicationId": {
+            "type": "string",
+            "description": "Error groups are per application."
+          },
           "serviceId": {
             "type": "string",
-            "description": "Error groups are per service."
+            "description": "Instance (serviceId) of the most recent occurrence."
           },
           "message": {
             "type": "string"
@@ -2027,6 +3512,7 @@
           "occurrences",
           "id",
           "fingerprint",
+          "applicationId",
           "serviceId",
           "message",
           "count",
@@ -2077,8 +3563,12 @@
             "type": "string",
             "description": "UUIDv7"
           },
-          "serviceId": {
+          "applicationId": {
             "type": "string"
+          },
+          "serviceId": {
+            "type": "string",
+            "description": "Instance (the agent's serviceId)."
           },
           "timestamp": {
             "type": "string"
@@ -2094,6 +3584,7 @@
           "spanId",
           "attributes",
           "id",
+          "applicationId",
           "serviceId",
           "timestamp",
           "text"
@@ -2151,28 +3642,90 @@
           "traceId"
         ]
       },
+      "LatestRuntimeSampleDto": {
+        "type": "object",
+        "properties": {
+          "cpuPercent": {
+            "type": "number",
+            "nullable": true
+          },
+          "memoryPercent": {
+            "type": "number",
+            "nullable": true
+          },
+          "memoryRss": {
+            "type": "number",
+            "nullable": true
+          },
+          "heapUsed": {
+            "type": "number",
+            "nullable": true
+          },
+          "eventLoopLagMs": {
+            "type": "number",
+            "nullable": true
+          },
+          "eventLoopUtilization": {
+            "type": "number",
+            "nullable": true,
+            "description": "0..1"
+          },
+          "sampledAt": {
+            "type": "string"
+          },
+          "serviceId": {
+            "type": "string",
+            "description": "Instance that sent it."
+          }
+        },
+        "required": [
+          "cpuPercent",
+          "memoryPercent",
+          "memoryRss",
+          "heapUsed",
+          "eventLoopLagMs",
+          "eventLoopUtilization",
+          "sampledAt",
+          "serviceId"
+        ]
+      },
       "RuntimeSeriesPointDto": {
         "type": "object",
         "properties": {
           "cpuPercent": {
             "type": "number",
             "nullable": true,
-            "description": "As reported by the agent (expected 0..100)."
+            "description": "Percent of one core, as reported by the agent."
+          },
+          "cpuUserMs": {
+            "type": "number",
+            "nullable": true,
+            "description": "CPU time in user mode during the bucket (ms, summed)."
+          },
+          "cpuSystemMs": {
+            "type": "number",
+            "nullable": true,
+            "description": "CPU time in kernel mode during the bucket (ms, summed)."
           },
           "memoryRss": {
             "type": "number",
             "nullable": true,
-            "description": "Megabytes (the agent sends MB, not bytes)."
+            "description": "RSS in megabytes."
+          },
+          "memoryPercent": {
+            "type": "number",
+            "nullable": true,
+            "description": "RSS as percent of OS memory."
           },
           "heapUsed": {
             "type": "number",
             "nullable": true,
-            "description": "Megabytes (the agent sends MB, not bytes)."
+            "description": "Megabytes."
           },
           "heapTotal": {
             "type": "number",
             "nullable": true,
-            "description": "Megabytes (the agent sends MB, not bytes)."
+            "description": "Megabytes."
           },
           "eventLoopLagMs": {
             "type": "number",
@@ -2185,9 +3738,35 @@
           },
           "gcCount": {
             "type": "number",
-            "nullable": true
+            "nullable": true,
+            "description": "Summed."
           },
           "gcDurationMs": {
+            "type": "number",
+            "nullable": true,
+            "description": "Summed (ms)."
+          },
+          "gcMinorCount": {
+            "type": "number",
+            "nullable": true
+          },
+          "gcMinorMs": {
+            "type": "number",
+            "nullable": true
+          },
+          "gcMajorCount": {
+            "type": "number",
+            "nullable": true
+          },
+          "gcMajorMs": {
+            "type": "number",
+            "nullable": true
+          },
+          "gcIncrementalCount": {
+            "type": "number",
+            "nullable": true
+          },
+          "gcIncrementalMs": {
             "type": "number",
             "nullable": true
           },
@@ -2198,55 +3777,147 @@
         },
         "required": [
           "cpuPercent",
+          "cpuUserMs",
+          "cpuSystemMs",
           "memoryRss",
+          "memoryPercent",
           "heapUsed",
           "heapTotal",
           "eventLoopLagMs",
           "eventLoopUtilization",
           "gcCount",
           "gcDurationMs",
+          "gcMinorCount",
+          "gcMinorMs",
+          "gcMajorCount",
+          "gcMajorMs",
+          "gcIncrementalCount",
+          "gcIncrementalMs",
           "t"
         ]
       },
-      "CustomMetricType": {
-        "type": "string",
-        "enum": [
-          "counter",
-          "gauge",
-          "summary"
-        ]
-      },
-      "CustomMetricSummaryDto": {
+      "RuntimeSnapshotDto": {
         "type": "object",
         "properties": {
-          "type": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/CustomMetricType"
-              }
-            ]
-          },
-          "description": {
-            "type": "string",
+          "cpuPercent": {
+            "type": "number",
             "nullable": true
           },
-          "lastValue": {
+          "memoryPercent": {
+            "type": "number",
+            "nullable": true
+          },
+          "memoryRss": {
+            "type": "number",
+            "nullable": true
+          },
+          "heapUsed": {
+            "type": "number",
+            "nullable": true
+          },
+          "eventLoopLagMs": {
+            "type": "number",
+            "nullable": true
+          },
+          "eventLoopUtilization": {
             "type": "number",
             "nullable": true,
-            "description": "Scalar of the latest sample (sum over labels; mean for summaries and ratios; max for peaks)."
-          },
-          "name": {
-            "type": "string"
-          },
-          "lastSeenAt": {
-            "type": "string"
+            "description": "0..1"
           }
         },
         "required": [
-          "type",
-          "description",
-          "lastValue",
-          "name",
+          "cpuPercent",
+          "memoryPercent",
+          "memoryRss",
+          "heapUsed",
+          "eventLoopLagMs",
+          "eventLoopUtilization"
+        ]
+      },
+      "RuntimeMetricsDto": {
+        "type": "object",
+        "properties": {
+          "latest": {
+            "nullable": true,
+            "description": "Newest sample in the range, null when there is none.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LatestRuntimeSampleDto"
+              }
+            ]
+          },
+          "series": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RuntimeSeriesPointDto"
+            }
+          },
+          "avg": {
+            "description": "Averages over the range.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RuntimeSnapshotDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "latest",
+          "series",
+          "avg"
+        ]
+      },
+      "RuntimeInstanceDto": {
+        "type": "object",
+        "properties": {
+          "cpuPercent": {
+            "type": "number",
+            "nullable": true
+          },
+          "memoryPercent": {
+            "type": "number",
+            "nullable": true
+          },
+          "memoryRss": {
+            "type": "number",
+            "nullable": true
+          },
+          "heapUsed": {
+            "type": "number",
+            "nullable": true
+          },
+          "eventLoopLagMs": {
+            "type": "number",
+            "nullable": true
+          },
+          "eventLoopUtilization": {
+            "type": "number",
+            "nullable": true,
+            "description": "0..1"
+          },
+          "serviceVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "serviceId": {
+            "type": "string",
+            "description": "The agent's serviceId."
+          },
+          "lastSeenAt": {
+            "type": "string",
+            "description": "Time of its newest runtime sample."
+          }
+        },
+        "required": [
+          "cpuPercent",
+          "memoryPercent",
+          "memoryRss",
+          "heapUsed",
+          "eventLoopLagMs",
+          "eventLoopUtilization",
+          "serviceVersion",
+          "serviceId",
           "lastSeenAt"
         ]
       }

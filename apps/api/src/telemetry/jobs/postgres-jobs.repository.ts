@@ -14,6 +14,7 @@ import {
 } from '../../database/database.types.js';
 import { toPage, type KeysetCursor } from '../common/cursor.js';
 import { windowFromId } from '../common/id-window.js';
+import { inApplications, type TelemetryScope } from '../common/scope.js';
 import {
   avgOf,
   countAll,
@@ -30,6 +31,7 @@ const LIST_COLUMNS = [
   'called_at',
   'job_id',
   'trace_id',
+  'application_id',
   'service_id',
   'queue',
   'name',
@@ -64,10 +66,9 @@ export class PostgresJobsRepository extends JobsRepository {
     query: SelectQueryBuilder<Database, 'jobs', O>,
     filter: JobFilter,
   ): SelectQueryBuilder<Database, 'jobs', O> {
-    let q = query
+    let q = scoped(query, filter.scope)
       .where('called_at', '>=', filter.window.from)
       .where('called_at', '<', filter.window.to);
-    if (filter.serviceId) q = q.where('service_id', '=', filter.serviceId);
     if (filter.queue) q = q.where('queue', '=', filter.queue);
     if (filter.name) q = q.where('name', '=', filter.name);
     if (filter.status) q = q.where('status', '=', filter.status);
@@ -129,9 +130,8 @@ export class PostgresJobsRepository extends JobsRepository {
     );
   }
 
-  async findById(id: string): Promise<JobDetail | null> {
-    let query = this.db
-      .selectFrom('jobs')
+  async findById(scope: TelemetryScope, id: string): Promise<JobDetail | null> {
+    let query = scoped(this.db.selectFrom('jobs'), scope)
       .select(DETAIL_COLUMNS)
       .where('id', '=', id);
     const window = windowFromId(id);
@@ -144,9 +144,11 @@ export class PostgresJobsRepository extends JobsRepository {
     return row ? toDetail(row) : null;
   }
 
-  async findByTraceId(traceId: string): Promise<JobDetail[]> {
-    const rows = await this.db
-      .selectFrom('jobs')
+  async findByTraceId(
+    scope: TelemetryScope,
+    traceId: string,
+  ): Promise<JobDetail[]> {
+    const rows = await scoped(this.db.selectFrom('jobs'), scope)
       .select(DETAIL_COLUMNS)
       .where('trace_id', '=', traceId)
       .orderBy('called_at')
@@ -156,11 +158,20 @@ export class PostgresJobsRepository extends JobsRepository {
   }
 }
 
+function scoped<O>(
+  query: SelectQueryBuilder<Database, 'jobs', O>,
+  scope: TelemetryScope,
+): SelectQueryBuilder<Database, 'jobs', O> {
+  const q = query.where(inApplications('application_id', scope.applicationIds));
+  return scope.instance ? q.where('service_id', '=', scope.instance) : q;
+}
+
 function toListItem(row: ListRow): JobListItem {
   return {
     id: row.id,
     jobId: row.job_id,
     traceId: row.trace_id,
+    applicationId: row.application_id,
     serviceId: row.service_id,
     queue: row.queue,
     name: row.name,

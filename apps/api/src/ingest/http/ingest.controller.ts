@@ -3,7 +3,7 @@ import { ApiExcludeController } from '@nestjs/swagger';
 import type { WireIngestReply } from '@selfhosted-observe/contracts';
 import { IngestProfilesUseCase } from '../application/ingest-profiles.use-case.js';
 import { IngestTelemetryUseCase } from '../application/ingest-telemetry.use-case.js';
-import { IngestAuthGuard } from './ingest-auth.guard.js';
+import { IngestApplication, IngestAuthGuard } from './ingest-auth.guard.js';
 import {
   parseProfilesPayload,
   parseTelemetryBatch,
@@ -26,14 +26,26 @@ export class IngestController {
   /** gzip JSON batch; body-parser inflates it based on Content-Encoding. */
   @Post('telemetry')
   @HttpCode(200)
-  telemetry(@Body() body: unknown): Promise<WireIngestReply> {
-    return this.ingestTelemetry.execute(parseTelemetryBatch(body));
+  telemetry(
+    @IngestApplication() applicationId: string,
+    @Body() body: unknown,
+  ): Promise<WireIngestReply> {
+    return this.ingestTelemetry.execute(
+      applicationId,
+      parseTelemetryBatch(body),
+    );
   }
 
   @Post('profiles')
   @HttpCode(200)
-  async profiles(@Body() body: unknown): Promise<Record<string, never>> {
-    await this.ingestProfiles.execute(parseProfilesPayload(body));
+  async profiles(
+    @IngestApplication() applicationId: string,
+    @Body() body: unknown,
+  ): Promise<Record<string, never>> {
+    await this.ingestProfiles.execute(
+      applicationId,
+      parseProfilesPayload(body),
+    );
     return {};
   }
 }

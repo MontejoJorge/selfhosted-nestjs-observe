@@ -18,6 +18,7 @@ import type {
 } from '@selfhosted-observe/contracts';
 import { decodeCursor, NUMERIC_ID } from '../common/cursor.js';
 import { DEFAULT_PAGE_SIZE } from '../common/query.dto.js';
+import { ScopeResolver } from '../common/scope.js';
 import { resolveWindow } from '../common/time-window.js';
 import {
   ErrorDetailQueryDto,
@@ -30,7 +31,10 @@ import { ErrorsRepository } from './errors.repository.js';
 @ApiTags('errors')
 @Controller('errors')
 export class ErrorsController {
-  constructor(private readonly errors: ErrorsRepository) {}
+  constructor(
+    private readonly errors: ErrorsRepository,
+    private readonly scopes: ScopeResolver,
+  ) {}
 
   @Get()
   @ApiOperation({
@@ -38,11 +42,11 @@ export class ErrorsController {
     summary: 'Error groups seen in the range, most recently seen first',
   })
   @ApiOkResponse({ type: ErrorGroupPageDto })
-  list(@Query() query: ErrorsQueryDto): Promise<Page<ErrorGroup>> {
+  async list(@Query() query: ErrorsQueryDto): Promise<Page<ErrorGroup>> {
     return this.errors.list(
       {
+        scope: await this.scopes.resolve(query),
         window: resolveWindow(query),
-        serviceId: query.service,
         source: query.source,
       },
       {
@@ -64,8 +68,9 @@ export class ErrorsController {
     @Param('id') id: string,
     @Query() query: ErrorDetailQueryDto,
   ): Promise<ErrorGroupDetail> {
+    const scope = await this.scopes.resolve(query);
     const group = NUMERIC_ID.test(id)
-      ? await this.errors.findById(id, resolveWindow(query))
+      ? await this.errors.findById(scope, id, resolveWindow(query))
       : null;
     if (!group) throw new NotFoundException(`Error group ${id} not found`);
     return group;

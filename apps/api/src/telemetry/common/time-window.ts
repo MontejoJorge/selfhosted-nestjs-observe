@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import type { TimeBucket, TimeRange } from '@selfhosted-observe/contracts';
-import type { TimeRangeQueryDto } from './query.dto.js';
+import type { RangeQueryDto } from './query.dto.js';
 
 /** Half-open interval [from, to). Every query filters its partition key on it. */
 export interface TimeWindow {
@@ -10,17 +10,14 @@ export interface TimeWindow {
 
 const MINUTE = 60_000;
 const RANGE_MS: Record<TimeRange, number> = {
-  '15m': 15 * MINUTE,
   '1h': 60 * MINUTE,
-  '6h': 6 * 60 * MINUTE,
   '24h': 24 * 60 * MINUTE,
   '7d': 7 * 24 * 60 * MINUTE,
-  '14d': 14 * 24 * 60 * MINUTE,
 };
 const DEFAULT_RANGE: TimeRange = '1h';
 
 /** `from`/`to` win over `range`; `to` defaults to now and `from` to `to - range` (1h by default). */
-export function resolveWindow(query: TimeRangeQueryDto): TimeWindow {
+export function resolveWindow(query: RangeQueryDto): TimeWindow {
   const to = query.to ? new Date(query.to) : new Date();
   const from = query.from
     ? new Date(query.from)
@@ -30,10 +27,13 @@ export function resolveWindow(query: TimeRangeQueryDto): TimeWindow {
 }
 
 /** Bucket widths, in seconds, that timelines may use. */
-const STEPS = [15, 30, 60, 300, 900, 1800, 3600, 10800, 21600, 43200, 86400];
+const STEPS = [60, 300, 900, 1800, 3600, 10800, 21600, 43200, 86400];
 const MAX_BUCKETS = 100;
 
-/** Smallest bucket width giving at most ~100 buckets (1h -> 1m, 24h -> 15m, 7d -> 3h). */
+/**
+ * Smallest bucket width giving at most ~100 buckets. For the supported ranges:
+ * 1h -> 1 min (60 buckets), 24h -> 15 min (96), 7d -> 3 h (56).
+ */
 export function bucketSeconds(window: TimeWindow): number {
   const spanSeconds = (window.to.getTime() - window.from.getTime()) / 1000;
   return (

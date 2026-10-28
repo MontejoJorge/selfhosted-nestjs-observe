@@ -1,60 +1,122 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger';
 import type {
-  CustomMetricSummary,
+  RuntimeInstance,
+  RuntimeMetrics,
   RuntimeSeriesPoint,
+  RuntimeSnapshot,
 } from '@selfhosted-observe/contracts';
-import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { IsUUID } from 'class-validator';
 import { TimeRangeQueryDto } from '../common/query.dto.js';
 
-export const METRIC_TYPES = ['counter', 'gauge', 'summary'] as const;
-
 export class RuntimeMetricsQueryDto extends OmitType(TimeRangeQueryDto, [
-  'service',
+  'application',
 ] as const) {
-  /** Required: runtime metrics are per service. */
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(100)
-  service: string;
+  /** Required: runtime metrics are per application (aggregated across instances unless `instance` is set). */
+  @ApiProperty({ format: 'uuid' })
+  @IsUUID()
+  application: string;
 }
 
-export class CustomMetricsQueryDto extends TimeRangeQueryDto {}
+export class RuntimeInstancesQueryDto extends OmitType(RuntimeMetricsQueryDto, [
+  'instance',
+] as const) {}
 
-/** Runtime samples averaged per bucket (gcCount and gcDurationMs are summed). */
+const nullableNumber = { type: Number, nullable: true } as const;
+
+/**
+ * One bucket. Gauges are averaged; per-interval deltas (CPU ms, GC counts and durations)
+ * are summed, across instances too when no instance is selected. Memory is in megabytes.
+ */
 export class RuntimeSeriesPointDto implements RuntimeSeriesPoint {
   /** Bucket start (ISO). */
   t: string;
-  /** As reported by the agent (expected 0..100). */
-  @ApiProperty({ type: Number, nullable: true })
+  /** Percent of one core, as reported by the agent. */
+  @ApiProperty(nullableNumber)
   cpuPercent: number | null;
-  /** Megabytes (the agent sends MB, not bytes). */
-  @ApiProperty({ type: Number, nullable: true })
+  /** CPU time in user mode during the bucket (ms, summed). */
+  @ApiProperty(nullableNumber)
+  cpuUserMs: number | null;
+  /** CPU time in kernel mode during the bucket (ms, summed). */
+  @ApiProperty(nullableNumber)
+  cpuSystemMs: number | null;
+  /** RSS in megabytes. */
+  @ApiProperty(nullableNumber)
   memoryRss: number | null;
-  /** Megabytes (the agent sends MB, not bytes). */
-  @ApiProperty({ type: Number, nullable: true })
+  /** RSS as percent of OS memory. */
+  @ApiProperty(nullableNumber)
+  memoryPercent: number | null;
+  /** Megabytes. */
+  @ApiProperty(nullableNumber)
   heapUsed: number | null;
-  /** Megabytes (the agent sends MB, not bytes). */
-  @ApiProperty({ type: Number, nullable: true })
+  /** Megabytes. */
+  @ApiProperty(nullableNumber)
   heapTotal: number | null;
-  @ApiProperty({ type: Number, nullable: true })
+  @ApiProperty(nullableNumber)
   eventLoopLagMs: number | null;
   /** 0..1 */
-  @ApiProperty({ type: Number, nullable: true })
+  @ApiProperty(nullableNumber)
   eventLoopUtilization: number | null;
-  @ApiProperty({ type: Number, nullable: true })
+  /** Summed. */
+  @ApiProperty(nullableNumber)
   gcCount: number | null;
-  @ApiProperty({ type: Number, nullable: true })
+  /** Summed (ms). */
+  @ApiProperty(nullableNumber)
   gcDurationMs: number | null;
+  @ApiProperty(nullableNumber)
+  gcMinorCount: number | null;
+  @ApiProperty(nullableNumber)
+  gcMinorMs: number | null;
+  @ApiProperty(nullableNumber)
+  gcMajorCount: number | null;
+  @ApiProperty(nullableNumber)
+  gcMajorMs: number | null;
+  @ApiProperty(nullableNumber)
+  gcIncrementalCount: number | null;
+  @ApiProperty(nullableNumber)
+  gcIncrementalMs: number | null;
 }
 
-export class CustomMetricSummaryDto implements CustomMetricSummary {
-  name: string;
-  @ApiProperty({ enum: METRIC_TYPES, enumName: 'CustomMetricType' })
-  type: 'counter' | 'gauge' | 'summary';
+/** KPI values. Memory is in megabytes. */
+export class RuntimeSnapshotDto implements RuntimeSnapshot {
+  @ApiProperty(nullableNumber)
+  cpuPercent: number | null;
+  @ApiProperty(nullableNumber)
+  memoryPercent: number | null;
+  @ApiProperty(nullableNumber)
+  memoryRss: number | null;
+  @ApiProperty(nullableNumber)
+  heapUsed: number | null;
+  @ApiProperty(nullableNumber)
+  eventLoopLagMs: number | null;
+  /** 0..1 */
+  @ApiProperty(nullableNumber)
+  eventLoopUtilization: number | null;
+}
+
+export class LatestRuntimeSampleDto extends RuntimeSnapshotDto {
+  sampledAt: string;
+  /** Instance that sent it. */
+  serviceId: string;
+}
+
+export class RuntimeMetricsDto implements RuntimeMetrics {
+  /** Averages over the range. */
+  avg: RuntimeSnapshotDto;
+  /** Newest sample in the range, null when there is none. */
+  @ApiProperty({ type: LatestRuntimeSampleDto, nullable: true })
+  latest: LatestRuntimeSampleDto | null;
+  @ApiProperty({ type: [RuntimeSeriesPointDto] })
+  series: RuntimeSeriesPointDto[];
+}
+
+export class RuntimeInstanceDto
+  extends RuntimeSnapshotDto
+  implements RuntimeInstance
+{
+  /** The agent's serviceId. */
+  serviceId: string;
   @ApiProperty({ type: String, nullable: true })
-  description: string | null;
-  /** Scalar of the latest sample (sum over labels; mean for summaries and ratios; max for peaks). */
-  @ApiProperty({ type: Number, nullable: true })
-  lastValue: number | null;
+  serviceVersion: string | null;
+  /** Time of its newest runtime sample. */
   lastSeenAt: string;
 }

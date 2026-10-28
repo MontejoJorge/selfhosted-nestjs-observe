@@ -19,7 +19,8 @@ import type {
   Page,
 } from '@selfhosted-observe/contracts';
 import { decodeCursor, UUID_ID } from '../common/cursor.js';
-import { DEFAULT_PAGE_SIZE } from '../common/query.dto.js';
+import { DEFAULT_PAGE_SIZE, ScopeQueryDto } from '../common/query.dto.js';
+import { ScopeResolver } from '../common/scope.js';
 import { resolveWindow } from '../common/time-window.js';
 import {
   JobDetailDto,
@@ -33,7 +34,10 @@ import { JobsRepository } from './jobs.repository.js';
 @ApiTags('jobs')
 @Controller('jobs')
 export class JobsController {
-  constructor(private readonly jobs: JobsRepository) {}
+  constructor(
+    private readonly jobs: JobsRepository,
+    private readonly scopes: ScopeResolver,
+  ) {}
 
   @Get('queues')
   @ApiOperation({
@@ -41,10 +45,10 @@ export class JobsController {
     summary: 'Job stats aggregated per queue and name',
   })
   @ApiOkResponse({ type: [JobStatsDto] })
-  queues(@Query() query: QueuesQueryDto): Promise<JobStats[]> {
+  async queues(@Query() query: QueuesQueryDto): Promise<JobStats[]> {
     return this.jobs.queues({
+      scope: await this.scopes.resolve(query),
       window: resolveWindow(query),
-      serviceId: query.service,
     });
   }
 
@@ -54,11 +58,11 @@ export class JobsController {
     summary: 'Job executions, newest first',
   })
   @ApiOkResponse({ type: JobPageDto })
-  list(@Query() query: JobsQueryDto): Promise<Page<JobListItem>> {
+  async list(@Query() query: JobsQueryDto): Promise<Page<JobListItem>> {
     return this.jobs.list(
       {
+        scope: await this.scopes.resolve(query),
         window: resolveWindow(query),
-        serviceId: query.service,
         queue: query.queue,
         name: query.name,
         status: query.status,
@@ -80,8 +84,10 @@ export class JobsController {
   @ApiNotFoundResponse()
   async detail(
     @Param('id', new ParseUUIDPipe()) id: string,
+    @Query() query: ScopeQueryDto,
   ): Promise<JobDetail> {
-    const job = await this.jobs.findById(id);
+    const scope = await this.scopes.resolve(query);
+    const job = await this.jobs.findById(scope, id);
     if (!job) throw new NotFoundException(`Job ${id} not found`);
     return job;
   }

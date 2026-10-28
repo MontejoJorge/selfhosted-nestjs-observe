@@ -4,6 +4,7 @@ import {
   Get,
   NotFoundException,
   Param,
+  Query,
 } from '@nestjs/common';
 import {
   ApiNotFoundResponse,
@@ -12,6 +13,8 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { TraceDetail } from '@selfhosted-observe/contracts';
+import { ScopeQueryDto } from '../common/query.dto.js';
+import { ScopeResolver } from '../common/scope.js';
 import { JobsRepository } from '../jobs/jobs.repository.js';
 import { LogsRepository } from '../logs/logs.repository.js';
 import { RequestsRepository } from '../requests/requests.repository.js';
@@ -24,6 +27,7 @@ export class TracesController {
     private readonly requests: RequestsRepository,
     private readonly jobs: JobsRepository,
     private readonly logs: LogsRepository,
+    private readonly scopes: ScopeResolver,
   ) {}
 
   /**
@@ -37,14 +41,18 @@ export class TracesController {
   })
   @ApiOkResponse({ type: TraceDetailDto })
   @ApiNotFoundResponse()
-  async detail(@Param('traceId') traceId: string): Promise<TraceDetail> {
+  async detail(
+    @Param('traceId') traceId: string,
+    @Query() query: ScopeQueryDto,
+  ): Promise<TraceDetail> {
     if (traceId.length === 0 || traceId.length > 255) {
       throw new BadRequestException('Invalid trace id');
     }
+    const scope = await this.scopes.resolve(query);
     const [requests, jobs, logs] = await Promise.all([
-      this.requests.findByTraceId(traceId),
-      this.jobs.findByTraceId(traceId),
-      this.logs.findByTraceId(traceId),
+      this.requests.findByTraceId(scope, traceId),
+      this.jobs.findByTraceId(scope, traceId),
+      this.logs.findByTraceId(scope, traceId),
     ]);
     if (requests.length === 0 && jobs.length === 0 && logs.length === 0) {
       throw new NotFoundException(`Trace ${traceId} not found`);

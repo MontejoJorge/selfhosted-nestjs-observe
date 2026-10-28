@@ -61,3 +61,37 @@ export function toPage<Row, Item>(
       : null,
   };
 }
+
+/** Keyset position for lists sorted by a text column: the sort value and the row id. */
+export interface TextKeysetCursor {
+  key: string;
+  id: string;
+}
+
+export function encodeTextCursor(cursor: TextKeysetCursor): string {
+  return Buffer.from(JSON.stringify([cursor.key, cursor.id])).toString(
+    'base64url',
+  );
+}
+
+export function decodeTextCursor(
+  raw: string | undefined,
+): TextKeysetCursor | null {
+  if (!raw) return null;
+  try {
+    const value: unknown = JSON.parse(
+      Buffer.from(raw, 'base64url').toString('utf8'),
+    );
+    if (
+      Array.isArray(value) &&
+      typeof value[0] === 'string' &&
+      typeof value[1] === 'string' &&
+      UUID_ID.test(value[1])
+    ) {
+      return { key: value[0], id: value[1] };
+    }
+  } catch {
+    // fall through
+  }
+  throw new BadRequestException('Invalid cursor');
+}

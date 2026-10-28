@@ -5,11 +5,12 @@ import type {
   Page,
 } from '@selfhosted-observe/contracts';
 import type { KeysetCursor } from '../common/cursor.js';
+import type { TelemetryScope } from '../common/scope.js';
 import type { TimeWindow } from '../common/time-window.js';
 
 export interface JobFilter {
+  scope: TelemetryScope;
   window: TimeWindow;
-  serviceId?: string;
   queue?: string;
   name?: string;
   status?: 'completed' | 'failed';
@@ -23,6 +24,12 @@ export abstract class JobsRepository {
     filter: JobFilter,
     page: { limit: number; cursor: KeysetCursor | null },
   ): Promise<Page<JobListItem>>;
-  abstract findById(id: string): Promise<JobDetail | null>;
-  abstract findByTraceId(traceId: string): Promise<JobDetail[]>;
+  abstract findById(
+    scope: TelemetryScope,
+    id: string,
+  ): Promise<JobDetail | null>;
+  abstract findByTraceId(
+    scope: TelemetryScope,
+    traceId: string,
+  ): Promise<JobDetail[]>;
 }

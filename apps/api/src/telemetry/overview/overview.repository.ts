@@ -1,9 +1,10 @@
 import type { Overview } from '@selfhosted-observe/contracts';
+import type { TelemetryScope } from '../common/scope.js';
 import type { TimeWindow } from '../common/time-window.js';
 
 export interface OverviewFilter {
+  scope: TelemetryScope;
   window: TimeWindow;
-  serviceId?: string;
   /** scopes the requests block and the timeline */
   operationId?: string;
   /** with `name`, scopes the jobs block and the jobs timeline */

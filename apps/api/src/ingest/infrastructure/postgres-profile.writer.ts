@@ -15,6 +15,7 @@ export class PostgresProfileWriter extends ProfileWriter {
       .insertInto('profiles')
       .values({
         received_at: upload.receivedAt,
+        application_id: upload.applicationId,
         service_node: upload.serviceNode,
         sample_rate_hz: upload.sampleRateHz,
         windows: toJson(upload.windows) ?? '[]',

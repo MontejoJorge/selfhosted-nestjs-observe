@@ -12,9 +12,13 @@ export interface ProfilesPayload {
 export class IngestProfilesUseCase {
   constructor(private readonly writer: ProfileWriter) {}
 
-  async execute(payload: ProfilesPayload): Promise<void> {
+  async execute(
+    applicationId: string,
+    payload: ProfilesPayload,
+  ): Promise<void> {
     if (payload.windows.length === 0) return;
     await this.writer.write({
+      applicationId,
       receivedAt: new Date(),
       serviceNode:
         typeof payload.serviceNode === 'string' ? payload.serviceNode : null,

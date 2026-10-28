@@ -6,6 +6,7 @@ import { DatabaseModule } from './database/database.module.js';
 import { HealthController } from './health/health.controller.js';
 import { IngestModule } from './ingest/ingest.module.js';
 import { MaintenanceModule } from './maintenance/maintenance.module.js';
+import { ProjectsModule } from './projects/projects.module.js';
 import { TelemetryModule } from './telemetry/telemetry.module.js';
 
 @Module({
@@ -20,6 +21,7 @@ import { TelemetryModule } from './telemetry/telemetry.module.js';
     ScheduleModule.forRoot(),
     DatabaseModule,
     IngestModule,
+    ProjectsModule,
     TelemetryModule,
     MaintenanceModule,
   ],

@@ -1,18 +1,21 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { LogItem, LogLevel, Page } from '@selfhosted-observe/contracts';
-import type { Selectable } from 'kysely';
+import type { Selectable, SelectQueryBuilder } from 'kysely';
 import {
   KYSELY,
+  type Database,
   type Db,
   type LogsTable,
 } from '../../database/database.types.js';
 import { toPage, type KeysetCursor } from '../common/cursor.js';
+import { inApplications, type TelemetryScope } from '../common/scope.js';
 import { likeContains } from '../common/sql.js';
 import { LogsRepository, type LogFilter } from './logs.repository.js';
 
 const COLUMNS = [
   'id',
   'timestamp',
+  'application_id',
   'service_id',
   'level',
   'context',
@@ -37,13 +40,10 @@ export class PostgresLogsRepository extends LogsRepository {
     filter: LogFilter,
     page: { limit: number; cursor: KeysetCursor | null },
   ): Promise<Page<LogItem>> {
-    let query = this.db
-      .selectFrom('logs')
+    let query = scoped(this.db.selectFrom('logs'), filter.scope)
       .select(COLUMNS)
       .where('timestamp', '>=', filter.window.from)
       .where('timestamp', '<', filter.window.to);
-    if (filter.serviceId)
-      query = query.where('service_id', '=', filter.serviceId);
     if (filter.level) query = query.where('level', '=', filter.level);
     if (filter.traceId) query = query.where('trace_id', '=', filter.traceId);
     if (filter.context) query = query.where('context', '=', filter.context);
@@ -67,9 +67,11 @@ export class PostgresLogsRepository extends LogsRepository {
     );
   }
 
-  async findByTraceId(traceId: string): Promise<LogItem[]> {
-    const rows = await this.db
-      .selectFrom('logs')
+  async findByTraceId(
+    scope: TelemetryScope,
+    traceId: string,
+  ): Promise<LogItem[]> {
+    const rows = await scoped(this.db.selectFrom('logs'), scope)
       .select(COLUMNS)
       .where('trace_id', '=', traceId)
       .orderBy('timestamp')
@@ -80,9 +82,18 @@ export class PostgresLogsRepository extends LogsRepository {
   }
 }
 
+function scoped<O>(
+  query: SelectQueryBuilder<Database, 'logs', O>,
+  scope: TelemetryScope,
+): SelectQueryBuilder<Database, 'logs', O> {
+  const q = query.where(inApplications('application_id', scope.applicationIds));
+  return scope.instance ? q.where('service_id', '=', scope.instance) : q;
+}
+
 function toLogItem(row: Row): LogItem {
   return {
     id: row.id,
+    applicationId: row.application_id,
     serviceId: row.service_id,
     timestamp: row.timestamp.toISOString(),
     level: row.level as LogLevel | null,

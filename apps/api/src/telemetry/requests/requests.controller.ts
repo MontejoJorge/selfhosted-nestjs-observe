@@ -19,7 +19,8 @@ import type {
   RequestListItem,
 } from '@selfhosted-observe/contracts';
 import { decodeCursor, UUID_ID } from '../common/cursor.js';
-import { DEFAULT_PAGE_SIZE } from '../common/query.dto.js';
+import { DEFAULT_PAGE_SIZE, ScopeQueryDto } from '../common/query.dto.js';
+import { ScopeResolver } from '../common/scope.js';
 import { resolveWindow } from '../common/time-window.js';
 import {
   OperationsQueryDto,
@@ -33,7 +34,10 @@ import { RequestsRepository } from './requests.repository.js';
 @ApiTags('requests')
 @Controller('requests')
 export class RequestsController {
-  constructor(private readonly requests: RequestsRepository) {}
+  constructor(
+    private readonly requests: RequestsRepository,
+    private readonly scopes: ScopeResolver,
+  ) {}
 
   @Get('operations')
   @ApiOperation({
@@ -41,10 +45,12 @@ export class RequestsController {
     summary: 'Request stats aggregated per operation',
   })
   @ApiOkResponse({ type: [OperationStatsDto] })
-  operations(@Query() query: OperationsQueryDto): Promise<OperationStats[]> {
+  async operations(
+    @Query() query: OperationsQueryDto,
+  ): Promise<OperationStats[]> {
     return this.requests.operations({
+      scope: await this.scopes.resolve(query),
       window: resolveWindow(query),
-      serviceId: query.service,
     });
   }
 
@@ -54,11 +60,11 @@ export class RequestsController {
     summary: 'Request executions, newest first',
   })
   @ApiOkResponse({ type: RequestPageDto })
-  list(@Query() query: RequestsQueryDto): Promise<Page<RequestListItem>> {
+  async list(@Query() query: RequestsQueryDto): Promise<Page<RequestListItem>> {
     return this.requests.list(
       {
+        scope: await this.scopes.resolve(query),
         window: resolveWindow(query),
-        serviceId: query.service,
         operationId: query.operationId,
         status: query.status,
         minDurationMs: query.minDuration,
@@ -80,8 +86,10 @@ export class RequestsController {
   @ApiNotFoundResponse()
   async detail(
     @Param('id', new ParseUUIDPipe()) id: string,
+    @Query() query: ScopeQueryDto,
   ): Promise<RequestDetail> {
-    const request = await this.requests.findById(id);
+    const scope = await this.scopes.resolve(query);
+    const request = await this.requests.findById(scope, id);
     if (!request) throw new NotFoundException(`Request ${id} not found`);
     return request;
   }

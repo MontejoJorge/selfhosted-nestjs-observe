@@ -75,6 +75,20 @@ export class PartitionManager {
     await this.ensureDays(days);
   }
 
+  /** Names of the existing partitions of one table, oldest first. */
+  async partitionsOf(table: PartitionedTable): Promise<string[]> {
+    const { rows } = await sql<{ child: string }>`
+      select child.relname as child
+      from pg_inherits
+      join pg_class parent on parent.oid = pg_inherits.inhparent
+      join pg_class child on child.oid = pg_inherits.inhrelid
+      join pg_namespace ns on ns.oid = child.relnamespace
+      where ns.nspname = current_schema() and parent.relname = ${table}
+      order by child.relname
+    `.execute(this.db);
+    return rows.map((row) => row.child);
+  }
+
   /** Drops every partition whose day is before `cutoffDay` (`YYYY-MM-DD`). Returns the dropped names. */
   async dropBefore(cutoffDay: string): Promise<string[]> {
     const parents = Object.keys(PARTITIONED_TABLES);

@@ -40,6 +40,8 @@ export class LogsQueryDto extends PageQueryDto {
 export class LogItemDto implements LogItem {
   /** UUIDv7 */
   id: string;
+  applicationId: string;
+  /** Instance (the agent's serviceId). */
   serviceId: string;
   timestamp: string;
   @ApiProperty({ enum: LOG_LEVELS, enumName: 'LogLevel', nullable: true })

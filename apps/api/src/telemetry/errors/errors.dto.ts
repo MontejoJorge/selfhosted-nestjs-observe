@@ -23,7 +23,9 @@ export class ErrorDetailQueryDto extends TimeRangeQueryDto {}
 export class ErrorGroupDto implements ErrorGroup {
   id: string;
   fingerprint: string;
-  /** Error groups are per service. */
+  /** Error groups are per application. */
+  applicationId: string;
+  /** Instance (serviceId) of the most recent occurrence. */
   serviceId: string;
   @ApiProperty({ type: String, nullable: true })
   errorClass: string | null;
@@ -45,6 +47,8 @@ export class ErrorOccurrenceDto {
   @ApiProperty({ enum: ERROR_SOURCES, enumName: 'ErrorSource' })
   source: 'request' | 'job';
   traceId: string;
+  applicationId: string;
+  /** Instance (the agent's serviceId). */
   serviceId: string;
   occurredAt: string;
 }

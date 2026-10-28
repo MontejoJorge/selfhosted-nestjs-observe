@@ -23,9 +23,12 @@ export class IngestTelemetryUseCase {
     this.retentionMs = config.get('RETENTION_DAYS', { infer: true }) * DAY_MS;
   }
 
-  async execute(batch: WireTelemetryBatch): Promise<WireIngestReply> {
+  async execute(
+    applicationId: string,
+    batch: WireTelemetryBatch,
+  ): Promise<WireIngestReply> {
     const receivedAt = new Date();
-    const record = mapTelemetryBatch(batch, receivedAt, {
+    const record = mapTelemetryBatch(applicationId, batch, receivedAt, {
       notBefore: new Date(receivedAt.getTime() - this.retentionMs),
       notAfter: new Date(receivedAt.getTime() + MAX_CLOCK_SKEW_MS),
     });

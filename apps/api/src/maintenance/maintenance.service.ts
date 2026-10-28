@@ -9,6 +9,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import type { Env } from '../config/env.js';
 import { KYSELY, type Db } from '../database/database.types.js';
 import { PartitionManager, utcDay } from '../database/partition-manager.js';
+import { ApplicationPurger } from './application-purger.js';
 
 const DAY_MS = 86_400_000;
 /** Daily partitions created ahead of time, so ingest never waits on DDL. */
@@ -16,7 +17,8 @@ const DAYS_AHEAD = 3;
 
 /**
  * Keeps the partition window rolling: creates upcoming daily partitions and drops
- * those older than RETENTION_DAYS, then prunes the non-partitioned tables.
+ * those older than RETENTION_DAYS, prunes the non-partitioned tables, and finishes any
+ * pending purge of deleted applications.
  */
 @Injectable()
 export class MaintenanceService implements OnApplicationBootstrap {
@@ -27,6 +29,7 @@ export class MaintenanceService implements OnApplicationBootstrap {
   constructor(
     @Inject(KYSELY) private readonly db: Db,
     private readonly partitions: PartitionManager,
+    private readonly purger: ApplicationPurger,
     config: ConfigService<Env, true>,
   ) {
     this.retentionDays = config.get('RETENTION_DAYS', { infer: true });
@@ -68,6 +71,9 @@ export class MaintenanceService implements OnApplicationBootstrap {
         .deleteFrom('profiles')
         .where('received_at', '<', cutoff)
         .execute();
+
+      // Telemetry of deleted applications (normally purged right after the delete).
+      await this.purger.run();
     } finally {
       this.running = false;
     }

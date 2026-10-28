@@ -5,11 +5,12 @@ import type {
   RequestListItem,
 } from '@selfhosted-observe/contracts';
 import type { KeysetCursor } from '../common/cursor.js';
+import type { TelemetryScope } from '../common/scope.js';
 import type { TimeWindow } from '../common/time-window.js';
 
 export interface RequestFilter {
+  scope: TelemetryScope;
   window: TimeWindow;
-  serviceId?: string;
   operationId?: string;
   status?: 'ok' | 'error';
   minDurationMs?: number;
@@ -23,6 +24,12 @@ export abstract class RequestsRepository {
     filter: RequestFilter,
     page: { limit: number; cursor: KeysetCursor | null },
   ): Promise<Page<RequestListItem>>;
-  abstract findById(id: string): Promise<RequestDetail | null>;
-  abstract findByTraceId(traceId: string): Promise<RequestDetail[]>;
+  abstract findById(
+    scope: TelemetryScope,
+    id: string,
+  ): Promise<RequestDetail | null>;
+  abstract findByTraceId(
+    scope: TelemetryScope,
+    traceId: string,
+  ): Promise<RequestDetail[]>;
 }
