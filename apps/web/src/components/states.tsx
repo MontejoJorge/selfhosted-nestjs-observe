@@ -117,13 +117,13 @@ export function NoTelemetryHint() {
   return (
     <>
       <p>
-        Point your app's{' '}
-        <code className="text-foreground">OBSERVE_ENDPOINT</code> (or the{' '}
-        <code className="text-foreground">endpoint</code> option of{' '}
-        <code className="text-foreground">ObserveModule.forRoot</code>) here:
+        Create an application and an API key for it (API keys page), then start
+        the agent with:
       </p>
       <pre className="mt-2 rounded-md bg-muted px-3 py-2 text-left text-xs text-foreground">
-        OBSERVE_ENDPOINT={API_URL}
+        {`OBSERVE_APP_KEY=<key id>
+OBSERVE_APP_SECRET=<secret>
+OBSERVE_ENDPOINT=${API_URL}`}
       </pre>
     </>
   );

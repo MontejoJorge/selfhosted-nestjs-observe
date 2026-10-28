@@ -48,10 +48,11 @@ export function SettingsPage() {
   const remove = useMutation({
     ...deleteProjectMutation(ref),
     onSuccess: async () => {
-      // Leave first so nothing refetches the deleted project.
+      // Drop the cached list so the projects page loads it fresh, leave,
+      // then forget the deleted project (nothing renders it any more).
+      queryClient.removeQueries({ queryKey: ['projects', 'list'] });
       await navigate(paths.projects);
       queryClient.removeQueries({ queryKey: ['projects', 'detail', ref] });
-      await queryClient.invalidateQueries({ queryKey: ['projects'] });
       toast.success(`Project “${project.name}” deleted`);
     },
   });
