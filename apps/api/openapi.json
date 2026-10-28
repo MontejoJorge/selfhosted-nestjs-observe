@@ -2104,17 +2104,17 @@
           "memoryRss": {
             "type": "number",
             "nullable": true,
-            "description": "Bytes."
+            "description": "Megabytes (the agent sends MB, not bytes)."
           },
           "heapUsed": {
             "type": "number",
             "nullable": true,
-            "description": "Bytes."
+            "description": "Megabytes (the agent sends MB, not bytes)."
           },
           "heapTotal": {
             "type": "number",
             "nullable": true,
-            "description": "Bytes."
+            "description": "Megabytes (the agent sends MB, not bytes)."
           },
           "eventLoopLagMs": {
             "type": "number",

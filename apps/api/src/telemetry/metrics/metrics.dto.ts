@@ -27,13 +27,13 @@ export class RuntimeSeriesPointDto implements RuntimeSeriesPoint {
   /** As reported by the agent (expected 0..100). */
   @ApiProperty({ type: Number, nullable: true })
   cpuPercent: number | null;
-  /** Bytes. */
+  /** Megabytes (the agent sends MB, not bytes). */
   @ApiProperty({ type: Number, nullable: true })
   memoryRss: number | null;
-  /** Bytes. */
+  /** Megabytes (the agent sends MB, not bytes). */
   @ApiProperty({ type: Number, nullable: true })
   heapUsed: number | null;
-  /** Bytes. */
+  /** Megabytes (the agent sends MB, not bytes). */
   @ApiProperty({ type: Number, nullable: true })
   heapTotal: number | null;
   @ApiProperty({ type: Number, nullable: true })
