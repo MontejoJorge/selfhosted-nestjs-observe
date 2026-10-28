@@ -17,16 +17,36 @@ pnpm db:up                  # PostgreSQL in docker
 pnpm --filter api start:dev # migrates on start, listens on :3000
 ```
 
-Point an instrumented app at it:
+Create a project, an application and an API key (in the dashboard, or with the API):
+
+```sh
+curl -X POST localhost:3000/api/projects -H 'content-type: application/json' -d '{"name":"Shop prod"}'
+curl -X POST localhost:3000/api/projects/shop-prod/applications -H 'content-type: application/json' \
+  -d '{"name":"orders-api","tags":["http"]}'
+curl -X POST localhost:3000/api/projects/shop-prod/keys -H 'content-type: application/json' \
+  -d '{"name":"production","applicationId":"<application id>"}'   # the secret is shown only once
+```
+
+Then point the instrumented app at the collector with that key:
 
 ```ts
 ObserveModule.forRoot({
   serviceId: 'orders-api',
   endpoint: 'http://localhost:3000',
+  appKey: process.env.OBSERVE_APP_KEY, // the key's keyId (obs_...)
+  appSecret: process.env.OBSERVE_APP_SECRET, // the key's secret (obss_...)
 });
 ```
 
-Set `INGEST_API_KEY` / `INGEST_API_SECRET` (and the agent's `appKey` / `appSecret`) to require credentials.
+Ingest without valid, active credentials is rejected with `401`.
+
+## Deployment note: no dashboard authentication yet
+
+The query and management API (`/api/*`, including creating API keys) has no user authentication. Do not
+expose it publicly: run it on a private network or VPN, or behind a reverse proxy that authenticates users
+(for example oauth2-proxy, Authelia or basic auth on your ingress). Only the ingest routes
+(`POST /applications/telemetry`, `POST /applications/profiles`) need to be reachable by your services, and
+they are protected by API keys.
 
 ## Scripts
 

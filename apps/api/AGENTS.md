@@ -21,15 +21,14 @@ pnpm api:generate                   # regenerate apps/api/openapi.json and the w
 Validated at boot by `src/config/env.ts` (class-validator). Loaded from `apps/api/.env`, then the root `.env`;
 real environment variables win.
 
-| Variable                     | Default                                             | Notes                                                |
-| ---------------------------- | --------------------------------------------------- | ---------------------------------------------------- |
-| `API_PORT`                   | `3000`                                              |                                                      |
-| `DATABASE_URL`               | `postgres://observe:observe@localhost:5432/observe` |                                                      |
-| `DATABASE_POOL_MAX`          | `10`                                                | pg pool size                                         |
-| `DATABASE_MIGRATE_ON_START`  | `true`                                              | run pending migrations when the app boots            |
-| `INGEST_API_KEY` / `_SECRET` | unset                                               | when set, ingest requires `x-api-key`/`x-api-secret` |
-| `RETENTION_DAYS`             | `14`                                                | daily partitions older than this are dropped         |
-| `CORS_ORIGIN`                | `http://localhost:5173`                             | comma-separated allowlist for the query API          |
+| Variable                    | Default                                             | Notes                                        |
+| --------------------------- | --------------------------------------------------- | -------------------------------------------- |
+| `API_PORT`                  | `3000`                                              |                                              |
+| `DATABASE_URL`              | `postgres://observe:observe@localhost:5432/observe` |                                              |
+| `DATABASE_POOL_MAX`         | `10`                                                | pg pool size                                 |
+| `DATABASE_MIGRATE_ON_START` | `true`                                              | run pending migrations when the app boots    |
+| `RETENTION_DAYS`            | `14`                                                | daily partitions older than this are dropped |
+| `CORS_ORIGIN`               | `http://localhost:5173`                             | comma-separated allowlist for the query API  |
 
 ## Layout
 
@@ -42,6 +41,11 @@ src/
     migrations/                          one file per migration + index.ts (explicit provider)
     partition-manager.ts                 create/drop daily partitions
     batch-insert.ts                      chunked multi-row INSERT, jsonb/text sanitizing
+  projects/                              management API: projects -> applications -> API keys
+    domain/                              slugs, key generation, secret hashing, key status
+    projects|applications|api-keys/      controller, DTOs, service, port + Postgres adapter
+    api-keys/api-key-authenticator.ts    ingest credentials -> application id (60 s cache)
+    activity.ts                          request buckets for the project and application cards
   ingest/                                write side (hexagonal)
     domain/                              pure TS: wire -> domain mapping, span flattening, fingerprints, UUIDv7
     application/                         use cases + output ports (TelemetryWriter, ProfileWriter)
@@ -52,8 +56,8 @@ src/
     <feature>/postgres-<feature>.repository.ts   Kysely adapter
     <feature>/<feature>.dto.ts           query + response DTO classes (OpenAPI)
     <feature>/<feature>.controller.ts
-    common/                              time windows, buckets, keyset cursors, SQL fragments, shared DTOs
-  maintenance/                           hourly cron: partitions ahead, retention
+    common/                              time windows, buckets, keyset cursors, scope, SQL fragments, shared DTOs
+  maintenance/                           hourly cron: partitions ahead, retention, purge of deleted applications
   health/                                GET /api/health
   openapi/                               document builder + generate.ts (writes apps/api/openapi.json)
 ```
@@ -66,13 +70,26 @@ The read side deliberately has no use-case layer: controllers call the read port
 
 Day-partitioned (range on the time column, UTC days, partitions named `<table>_pYYYYMMDD`):
 `requests`, `jobs`, `spans`, `error_occurrences`, `logs`, `runtime_metrics`, `custom_metrics`.
-Plain tables: `services`, `error_groups`, `error_group_culprits`, `objectives`, `profiles`.
+Plain tables: `services`, `error_groups`, `error_group_culprits`, `objectives`, `profiles`, and the
+management tables `projects`, `applications`, `api_keys`, `application_purges`.
+
+- **Projects -> applications -> API keys.** A project has a unique, immutable `slug`; an application has a
+  name unique in its project and up to 3 tags; an API key belongs to one application. Secrets are 32
+  random bytes, stored as SHA-256 only and returned once at creation. Key status (active, expired,
+  revoked) is derived from `expires_at` / `revoked_at`.
+- Every telemetry row carries `application_id` (from the API key that sent it). `service_id` stays as an
+  attribute: the agent's serviceId, exposed as the optional `instance` filter.
+- Telemetry has no foreign key to `applications` (cascades into partitions would be row by row). Deleting
+  a project or application inserts its ids into `application_purges` in the same transaction;
+  `ApplicationPurger` then deletes the rows table by table and partition by partition (right away in the
+  background, and on every maintenance run until done). Queries only see applications of live projects.
 
 - Execution and log ids are **UUIDv7 stamped with the event time**, so a lookup by id also filters on the
   partition key (`windowFromId`) and touches one partition.
 - Each execution keeps its original span tree as `jsonb` (`trace`), so detail views need one read. `spans` holds
   the flattened tree (depth-first `position`, `parent_position`, `parent_span_id`, `depth`) for future analytics.
-- Error fingerprint = sha1(source, class, normalized message, top stack frame without line/column), per service.
+- Error fingerprint = sha1(source, class, normalized message, top stack frame without line/column), per
+  application. `error_groups.service_id` is the instance of the most recent occurrence.
   `error_groups.count` is all-time; `error_group_culprits` counts per operationId or `queue/name`.
 - Events older than `RETENTION_DAYS` or more than 1 day in the future are dropped at ingest.
 
@@ -91,11 +108,21 @@ hourly, and on demand for any day an ingest batch touches (advisory-locked). Ret
 
 ## Query conventions (performance rules)
 
+- Every telemetry query is scoped: `ScopeResolver` turns `project` (id or slug) and the optional
+  `application` into application ids (404 when the application is not in the project), and queries filter
+  with `inApplications()` (`=` for one id, `in (...)` for several).
 - Every query on a partitioned table filters its partition key with a half-open `[from, to)` window.
+  Ranges are `1h`, `24h` and `7d` (buckets of 1 min, 15 min and 3 h).
 - Lists use keyset pagination on `(time desc, id desc)` with `limit + 1` rows. Never OFFSET. Cursors are
   opaque base64url `[iso, id]`, validated before use.
-- Indexes match the list sorts: `(called_at desc, id desc)`, `(service_id, called_at desc, id desc)`,
-  `(operation_id, ...)`, `(queue, name, ...)`, plus `trace_id`. Aggregate-only tables use BRIN.
+- Indexes lead with `application_id` (equality) then the time column (range):
+  `(application_id, called_at desc, id desc)`, `(application_id, operation_id, ...)`,
+  `(application_id, queue, name, ...)`, `(application_id, sampled_at desc)`, ... The plain
+  `(time desc, id desc)` indexes serve keyset lists across several applications of a project, and
+  `trace_id` the trace lookups. `spans` is only BRIN-indexed (nothing reads it yet).
+- Management lists use keyset pagination too: projects by `(name, id)`, applications by `name` (unique
+  per project), API keys by `(created_at desc, id desc)`. Card stats are computed for the whole page in
+  one aggregate (`activity.ts`) plus one lateral per row for the latest runtime sample.
 - Percentiles use one `percentile_cont(array[...])` per group, only over a pruned window.
 - Timeline buckets use `date_bin` with a literal width from `bucketSeconds` (~100 buckets max). TimeBucket
   series are gap-filled in TS.

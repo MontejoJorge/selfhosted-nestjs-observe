@@ -21,8 +21,10 @@ ObserveModule.forRoot({
 ```
 
 `endpoint` is a base URL without a trailing path. The agent appends the paths
-below. When `appKey`/`appSecret` are unset, the headers are omitted, and a
-self-hosted collector still receives the batches.
+below. When `appKey`/`appSecret` are unset, the headers are omitted. This
+collector requires them: create an API key for the application in the dashboard
+(or `POST /api/projects/:project/keys`) and use its key id as `appKey` and its
+secret as `appSecret`.
 
 ## Endpoints
 
@@ -62,7 +64,14 @@ A self-hosted collector normally answers `200 {}` or `200 { "degraded": false }`
   a non-empty string of at most 100 characters, and `snapshots`, `jobs`, `custom`, `logs` and `objectives` must be
   arrays and `runtime` an object when present. Anything else is a `400`. Malformed items inside a section
   (for example a snapshot without `ti`/`op`) are skipped, not rejected.
-- With `INGEST_API_KEY` / `INGEST_API_SECRET` set, missing or wrong `x-api-key` / `x-api-secret` give `401`.
+- Both ingest endpoints require the `x-api-key` / `x-api-secret` of an API key. The key belongs to one
+  **application** of a project, and every row of the batch is stored under that application. Missing,
+  unknown, wrong, expired or revoked credentials give `401` (there is no default application), and the
+  agent backs off. Key lookups are cached in memory for 60 s, so revoking a key takes effect at once on
+  the API instance that revoked it and within 60 s on other instances.
+- `serviceId` is kept as an attribute of the rows (an _instance_ of the application). The same serviceId
+  can appear in several applications, for example with one project per environment.
+- Runtime samples, the service sighting and profiles are stamped with the time the batch is received.
 - Success is always `200 {"degraded": false}`. The collector never asks the agent to degrade.
 - Events older than `RETENTION_DAYS`, or more than one day in the future, are dropped silently.
 - `POST /applications/profiles` stores the raw windows and answers `200 {}`. It never sends the `403`
