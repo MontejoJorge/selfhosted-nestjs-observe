@@ -3,6 +3,9 @@
  * Timestamps are ISO strings, durations are milliseconds.
  *
  * Every list endpoint accepts `TimeRangeQuery` plus `service` (serviceId, optional).
+ * Defaults: `range=1h` when neither `range` nor `from`/`to` is given; `limit=50` (max 500).
+ * Lists are newest first (time desc, id desc). `cursor` is opaque: pass `nextCursor` back
+ * with the same filters. `count` on error groups is all-time (within retention).
  */
 
 import type { LogLevel, Primitive, Protocol, WireError } from './wire.js';
@@ -49,7 +52,7 @@ export interface ServiceSummary {
   lastSeenAt: string;
 }
 
-// GET /api/overview
+// GET /api/overview  (filters: operationId, scopes the requests part and the timeline)
 export interface Overview {
   requests: { count: number; errorRate: number; latency: Percentiles };
   jobs: { count: number; failureRate: number; latency: Percentiles };
@@ -106,7 +109,7 @@ export interface JobStats {
   lastSeenAt: string;
 }
 
-// GET /api/jobs  (filters: queue, name, status) -> Page<JobListItem>
+// GET /api/jobs  (filters: queue, name, status ('completed' | 'failed'), traceId) -> Page<JobListItem>
 export interface JobListItem {
   id: string;
   jobId: string;
@@ -134,6 +137,8 @@ export interface JobDetail extends JobListItem {
 export interface ErrorGroup {
   id: string;
   fingerprint: string;
+  /** Error groups are per service. */
+  serviceId: string;
   errorClass: string | null;
   message: string;
   source: 'request' | 'job';
@@ -206,7 +211,7 @@ export interface RuntimeSeriesPoint {
   gcDurationMs: number | null;
 }
 
-// GET /api/metrics/custom -> CustomMetricSummary[]
+// GET /api/metrics/custom  (latest value per metric in the range) -> CustomMetricSummary[]
 export interface CustomMetricSummary {
   name: string;
   type: 'counter' | 'gauge' | 'summary';
