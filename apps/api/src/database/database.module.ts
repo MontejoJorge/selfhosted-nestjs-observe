@@ -8,7 +8,7 @@ import {
   type OnModuleInit,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import type { Env } from '../config/env.js';
+import { databaseOptions, type Env } from '../config/env.js';
 import { createDatabase } from './create-database.js';
 import { KYSELY, type Db } from './database.types.js';
 import { migrateToLatest } from './migrator.js';
@@ -42,10 +42,9 @@ class DatabaseLifecycle implements OnModuleInit, OnApplicationShutdown {
       provide: KYSELY,
       inject: [ConfigService],
       useFactory: (config: ConfigService<Env, true>): Db =>
-        createDatabase({
-          connectionString: config.get('DATABASE_URL', { infer: true }),
-          poolMax: config.get('DATABASE_POOL_MAX', { infer: true }),
-        }),
+        createDatabase(
+          databaseOptions((key) => config.get(key, { infer: true })),
+        ),
     },
     DatabaseLifecycle,
     PartitionManager,

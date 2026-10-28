@@ -20,13 +20,9 @@ async function bootstrap() {
 
   // Ingest routes keep the paths the agent expects; the query API lives under /api.
   applyGlobalPrefix(app);
-  app.enableCors({
-    origin: config
-      .get('CORS_ORIGIN', { infer: true })
-      .split(',')
-      .map((origin) => origin.trim())
-      .filter(Boolean),
-  });
+  // Any origin may call the API: the dashboard can be served from anywhere, and the
+  // ingest routes are authenticated by API key, not by cookies.
+  app.enableCors({ origin: true });
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,

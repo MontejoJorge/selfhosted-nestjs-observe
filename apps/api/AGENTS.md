@@ -9,7 +9,7 @@ PostgreSQL and serves the dashboard's query API. Read the root [AGENTS.md](../..
 Run from the repo root.
 
 ```sh
-pnpm db:up                          # PostgreSQL via docker compose (or point DATABASE_URL elsewhere)
+pnpm db:up                          # PostgreSQL via docker compose (or point DATABASE_HOST etc. elsewhere)
 pnpm --filter api db:migrate        # build, then apply pending migrations
 pnpm --filter api start:dev         # watch mode (also migrates on start, see DATABASE_MIGRATE_ON_START)
 pnpm --filter api build | typecheck | lint
@@ -19,16 +19,20 @@ pnpm api:generate                   # regenerate apps/api/openapi.json and the w
 ## Configuration
 
 Validated at boot by `src/config/env.ts` (class-validator). Loaded from `apps/api/.env`, then the root `.env`;
-real environment variables win.
+real environment variables win. The migrate CLI (`src/database/migrate.ts`) uses the same schema.
+CORS allows every origin.
 
-| Variable                    | Default                                             | Notes                                        |
-| --------------------------- | --------------------------------------------------- | -------------------------------------------- |
-| `API_PORT`                  | `3000`                                              |                                              |
-| `DATABASE_URL`              | `postgres://observe:observe@localhost:5432/observe` |                                              |
-| `DATABASE_POOL_MAX`         | `10`                                                | pg pool size                                 |
-| `DATABASE_MIGRATE_ON_START` | `true`                                              | run pending migrations when the app boots    |
-| `RETENTION_DAYS`            | `14`                                                | daily partitions older than this are dropped |
-| `CORS_ORIGIN`               | `http://localhost:5173`                             | comma-separated allowlist for the query API  |
+| Variable                    | Default     | Notes                                        |
+| --------------------------- | ----------- | -------------------------------------------- |
+| `API_PORT`                  | `3000`      |                                              |
+| `DATABASE_HOST`             | `localhost` |                                              |
+| `DATABASE_PORT`             | `5432`      |                                              |
+| `DATABASE_USER`             | `observe`   |                                              |
+| `DATABASE_PASSWORD`         | `observe`   |                                              |
+| `DATABASE_NAME`             | `observe`   |                                              |
+| `DATABASE_POOL_MAX`         | `10`        | pg pool size                                 |
+| `DATABASE_MIGRATE_ON_START` | `true`      | run pending migrations when the app boots    |
+| `RETENTION_DAYS`            | `14`        | daily partitions older than this are dropped |
 
 ## Layout
 

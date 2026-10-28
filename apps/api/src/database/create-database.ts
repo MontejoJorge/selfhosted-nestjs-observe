@@ -8,16 +8,20 @@ pg.types.setTypeParser(pg.types.builtins.INT8, (value) => Number(value));
 pg.types.setTypeParser(pg.types.builtins.NUMERIC, (value) => Number(value));
 
 export interface DatabaseOptions {
-  connectionString: string;
+  host: string;
+  port: number;
+  user: string;
+  password: string;
+  database: string;
   poolMax: number;
 }
 
 export function createDatabase({
-  connectionString,
   poolMax,
+  ...connection
 }: DatabaseOptions): Kysely<Database> {
   const pool = new pg.Pool({
-    connectionString,
+    ...connection,
     max: poolMax,
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 10_000,

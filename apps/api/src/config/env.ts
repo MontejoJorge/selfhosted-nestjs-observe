@@ -26,17 +26,33 @@ const toBoolean = ({ obj, key }: RawTransform) => {
   );
 };
 
-/** Environment variables read by the API. See the root `.env.example`. */
+/** Environment variables read by the API (and the migrate CLI). See the root `.env.example`. */
 export class Env {
   @IsInt()
   @Min(1)
   @Max(65535)
   API_PORT: number = 3000;
 
-  /** Defaults to the docker-compose database, so the app can boot (e.g. preview mode) without env. */
+  // The DATABASE_* defaults match docker-compose, so the app can boot (e.g. preview mode) without env.
   @IsString()
   @MinLength(1)
-  DATABASE_URL: string = 'postgres://observe:observe@localhost:5432/observe';
+  DATABASE_HOST: string = 'localhost';
+
+  @IsInt()
+  @Min(1)
+  @Max(65535)
+  DATABASE_PORT: number = 5432;
+
+  @IsString()
+  @MinLength(1)
+  DATABASE_USER: string = 'observe';
+
+  @IsString()
+  DATABASE_PASSWORD: string = 'observe';
+
+  @IsString()
+  @MinLength(1)
+  DATABASE_NAME: string = 'observe';
 
   /** Max connections in the pg pool. */
   @IsInt()
@@ -53,10 +69,6 @@ export class Env {
   @Min(1)
   @Max(3650)
   RETENTION_DAYS: number = 14;
-
-  /** Comma-separated list of origins allowed to call the query API. */
-  @IsString()
-  CORS_ORIGIN: string = 'http://localhost:5173';
 }
 
 export function validateEnv(config: Record<string, unknown>): Env {
@@ -72,4 +84,16 @@ export function validateEnv(config: Record<string, unknown>): Env {
     throw new Error(`Invalid environment: ${details}`);
   }
   return env;
+}
+
+/** Connection settings for `createDatabase`, from a reader of the validated env. */
+export function databaseOptions(get: <K extends keyof Env>(key: K) => Env[K]) {
+  return {
+    host: get('DATABASE_HOST'),
+    port: get('DATABASE_PORT'),
+    user: get('DATABASE_USER'),
+    password: get('DATABASE_PASSWORD'),
+    database: get('DATABASE_NAME'),
+    poolMax: get('DATABASE_POOL_MAX'),
+  };
 }
