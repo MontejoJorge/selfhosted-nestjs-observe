@@ -4,7 +4,25 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>web</title>
+    <meta
+      name="description"
+      content="Self-hosted dashboard for @nestjs/observe telemetry"
+    />
+    <title>Observe</title>
+    <script>
+      // Apply the stored theme before first paint to avoid a light flash.
+      (function () {
+        var theme = 'system';
+        try {
+          theme = localStorage.getItem('observe-theme') || 'system';
+        } catch (e) {}
+        var dark =
+          theme === 'dark' ||
+          (theme === 'system' &&
+            window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (dark) document.documentElement.classList.add('dark');
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
