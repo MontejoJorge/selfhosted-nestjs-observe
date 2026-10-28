@@ -37,9 +37,10 @@ export class Env {
   @Max(65535)
   API_PORT: number = 3000;
 
+  /** Defaults to the docker-compose database, so the app can boot (e.g. preview mode) without env. */
   @IsString()
   @MinLength(1)
-  DATABASE_URL: string;
+  DATABASE_URL: string = 'postgres://observe:observe@localhost:5432/observe';
 
   /** Max connections in the pg pool. */
   @IsInt()

@@ -1,4 +1,5 @@
 import { Body, Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
+import { ApiExcludeController } from '@nestjs/swagger';
 import type { WireIngestReply } from '@selfhosted-observe/contracts';
 import { IngestProfilesUseCase } from '../application/ingest-profiles.use-case.js';
 import { IngestTelemetryUseCase } from '../application/ingest-telemetry.use-case.js';
@@ -13,6 +14,7 @@ import {
  * contract with a third party: paths and response semantics must not change.
  * Served outside the `/api` prefix.
  */
+@ApiExcludeController()
 @Controller('applications')
 @UseGuards(IngestAuthGuard)
 export class IngestController {

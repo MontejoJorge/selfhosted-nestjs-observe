@@ -1,9 +1,12 @@
-import { Logger, RequestMethod, ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
+import { SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module.js';
+import { API_PREFIX, applyGlobalPrefix } from './app.setup.js';
 import type { Env } from './config/env.js';
+import { createOpenApiDocument } from './openapi/openapi.js';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -16,12 +19,7 @@ async function bootstrap() {
   app.useBodyParser('json', { limit: '20mb', inflate: true });
 
   // Ingest routes keep the paths the agent expects; the query API lives under /api.
-  app.setGlobalPrefix('api', {
-    exclude: [
-      { path: 'applications/telemetry', method: RequestMethod.POST },
-      { path: 'applications/profiles', method: RequestMethod.POST },
-    ],
-  });
+  applyGlobalPrefix(app);
   app.enableCors({
     origin: config
       .get('CORS_ORIGIN', { infer: true })
@@ -37,6 +35,11 @@ async function bootstrap() {
     }),
   );
   app.enableShutdownHooks();
+
+  // Swagger UI at /api/docs, JSON at /api/docs-json.
+  SwaggerModule.setup(`${API_PREFIX}/docs`, app, () =>
+    createOpenApiDocument(app),
+  );
 
   const port = config.get('API_PORT', { infer: true });
   await app.listen(port);
