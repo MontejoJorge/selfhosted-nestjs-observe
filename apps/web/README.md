@@ -1,32 +1,36 @@
-# React + TypeScript + Vite
+# web
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+The dashboard for the self-hosted `@nestjs/observe` collector: overview KPIs, requests and jobs with
+trace waterfalls, grouped errors, logs, traces and runtime/custom metrics. It reads the query API
+served by [`apps/api`](../api).
 
-Currently, two official plugins are available:
+## Run
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```sh
+pnpm install
+pnpm --filter @selfhosted-observe/contracts build
+pnpm --filter web dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Open http://localhost:5173. The API base URL comes from `VITE_API_URL` (default
+`http://localhost:3000`); set it in `apps/web/.env.local` if the collector runs elsewhere. The API
+must allow the dashboard's origin in its CORS settings.
+
+To get data, point an instrumented NestJS app at the collector:
+
+```sh
+OBSERVE_ENDPOINT=http://localhost:3000
+```
+
+## Scripts
+
+| Script      | What                    |
+| ----------- | ----------------------- |
+| `dev`       | Vite dev server         |
+| `build`     | type-check + production |
+| `typecheck` | `tsc -b --noEmit`       |
+| `lint`      | oxlint                  |
+| `preview`   | serve the built `dist`  |
+
+Built with Vite, React 19, TanStack Router and Query, Tailwind CSS v4, shadcn/ui and Recharts.
+See [AGENTS.md](AGENTS.md) for structure and conventions.
