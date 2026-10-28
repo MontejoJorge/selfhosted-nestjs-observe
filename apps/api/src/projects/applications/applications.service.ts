@@ -5,9 +5,11 @@ import {
 } from '@nestjs/common';
 import { ApplicationPurger } from '../../maintenance/application-purger.js';
 import { ApiKeyAuthenticator } from '../api-keys/api-key-authenticator.js';
+import { generateApiKey } from '../domain/api-key.js';
 import type {
   ApplicationDto,
   CreateApplicationDto,
+  CreatedApplicationDto,
   UpdateApplicationDto,
 } from './applications.dto.js';
 import {
@@ -30,16 +32,30 @@ export class ApplicationsService {
     return application;
   }
 
-  create(
+  /**
+   * Creates the application with a first API key (active, no expiry), so the agent can be
+   * configured right away. The key's plaintext secret is returned here once.
+   */
+  async create(
     projectId: string,
     input: CreateApplicationDto,
-  ): Promise<ApplicationDto> {
-    return this.nameChecked(() =>
-      this.applications.insert(projectId, {
-        name: input.name,
-        tags: input.tags ?? [],
-      }),
+  ): Promise<CreatedApplicationDto> {
+    const generated = generateApiKey();
+    const { application, apiKey } = await this.nameChecked(() =>
+      this.applications.insert(
+        projectId,
+        { name: input.name, tags: input.tags ?? [] },
+        {
+          name: initialKeyName(input.name),
+          keyId: generated.keyId,
+          secretHash: generated.secretHash,
+          expiresAt: null,
+        },
+      ),
     );
+    return Object.assign(application, {
+      apiKey: Object.assign(apiKey, { secret: generated.secret }),
+    });
   }
 
   async update(
@@ -78,4 +94,16 @@ export class ApplicationsService {
       throw error;
     }
   }
+}
+
+const KEY_NAME_SUFFIX = ' agent';
+const MAX_KEY_NAME_LENGTH = 100;
+
+/** "<application name> agent", shortening the name to fit the key name limit (in code points). */
+function initialKeyName(applicationName: string): string {
+  const chars = Array.from(applicationName);
+  return (
+    chars.slice(0, MAX_KEY_NAME_LENGTH - KEY_NAME_SUFFIX.length).join('') +
+    KEY_NAME_SUFFIX
+  );
 }

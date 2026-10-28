@@ -8,6 +8,9 @@ import {
 import { ratio } from '../../telemetry/common/sql.js';
 import type { TimeWindow } from '../../telemetry/common/time-window.js';
 import { emptyActivity, requestActivity } from '../activity.js';
+import type { ApiKeyDto } from '../api-keys/api-keys.dto.js';
+import type { NewApiKey } from '../api-keys/api-keys.repository.js';
+import { toApiKey } from '../api-keys/postgres-api-keys.repository.js';
 import { isUniqueViolation } from '../pg-errors.js';
 import type {
   ApplicationDto,
@@ -134,14 +137,41 @@ export class PostgresApplicationsRepository extends ApplicationsRepository {
   async insert(
     projectId: string,
     application: { name: string; tags: string[] },
-  ): Promise<ApplicationDto> {
+    initialKey: Omit<NewApiKey, 'projectId' | 'applicationId'>,
+  ): Promise<{ application: ApplicationDto; apiKey: ApiKeyDto }> {
     try {
-      const row = await this.db
-        .insertInto('applications')
-        .values({ project_id: projectId, ...application })
-        .returning(COLUMNS)
-        .executeTakeFirstOrThrow();
-      return toApplication(row);
+      return await this.db.transaction().execute(async (trx) => {
+        const row = await trx
+          .insertInto('applications')
+          .values({ project_id: projectId, ...application })
+          .returning(COLUMNS)
+          .executeTakeFirstOrThrow();
+        const key = await trx
+          .insertInto('api_keys')
+          .values({
+            project_id: projectId,
+            application_id: row.id,
+            name: initialKey.name,
+            key_id: initialKey.keyId,
+            secret_hash: initialKey.secretHash,
+            expires_at: initialKey.expiresAt,
+          })
+          .returning([
+            'id',
+            'name',
+            'key_id',
+            'application_id',
+            'expires_at',
+            'revoked_at',
+            'last_used_at',
+            'created_at',
+          ])
+          .executeTakeFirstOrThrow();
+        return {
+          application: toApplication(row),
+          apiKey: toApiKey({ ...key, application_name: row.name }, new Date()),
+        };
+      });
     } catch (error) {
       throw mapNameTaken(error, application.name);
     }

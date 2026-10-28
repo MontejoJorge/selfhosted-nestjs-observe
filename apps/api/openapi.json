@@ -313,6 +313,7 @@
         ]
       },
       "post": {
+        "description": "Also creates an active API key without expiry named \"<name> agent\". Its secret is returned only in this response.",
         "operationId": "createApplication",
         "parameters": [
           {
@@ -340,7 +341,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApplicationDto"
+                  "$ref": "#/components/schemas/CreatedApplicationDto"
                 }
               }
             }
@@ -352,7 +353,7 @@
             "description": ""
           }
         },
-        "summary": "Create an application (name unique in the project, up to 3 tags)",
+        "summary": "Create an application (name unique in the project, up to 3 tags) with its first API key",
         "tags": [
           "applications"
         ]
@@ -2327,6 +2328,126 @@
           "name"
         ]
       },
+      "ApiKeyStatus": {
+        "type": "string",
+        "enum": [
+          "active",
+          "expired",
+          "revoked"
+        ]
+      },
+      "CreatedApiKeyDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "applicationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ApiKeyStatus"
+              }
+            ]
+          },
+          "lastUsedAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "Last authenticated ingest (updated at most once a minute)."
+          },
+          "expiresAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "null means no expiry."
+          },
+          "revokedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "secret": {
+            "type": "string",
+            "description": "The agent's `appSecret`, sent as `x-api-secret`. Returned only once, at creation."
+          },
+          "name": {
+            "type": "string"
+          },
+          "keyId": {
+            "type": "string",
+            "description": "Public key id: the agent's `appKey`, sent as `x-api-key`."
+          },
+          "applicationName": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "applicationId",
+          "status",
+          "lastUsedAt",
+          "expiresAt",
+          "revokedAt",
+          "secret",
+          "name",
+          "keyId",
+          "applicationName",
+          "createdAt"
+        ]
+      },
+      "CreatedApplicationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "lastSeenAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "Last telemetry batch received (updated at most every 30 s)."
+          },
+          "apiKey": {
+            "description": "The application's first API key (active, no expiry). Its `secret` is returned only\nhere, once.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CreatedApiKeyDto"
+              }
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "tags": {
+            "description": "At most 3.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "projectId",
+          "lastSeenAt",
+          "apiKey",
+          "name",
+          "tags",
+          "createdAt"
+        ]
+      },
       "UpdateApplicationDto": {
         "type": "object",
         "properties": {
@@ -2345,14 +2466,6 @@
             "maxLength": 100
           }
         }
-      },
-      "ApiKeyStatus": {
-        "type": "string",
-        "enum": [
-          "active",
-          "expired",
-          "revoked"
-        ]
       },
       "ApiKeyDto": {
         "type": "object",
@@ -2454,70 +2567,6 @@
         "required": [
           "applicationId",
           "name"
-        ]
-      },
-      "CreatedApiKeyDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "applicationId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "status": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ApiKeyStatus"
-              }
-            ]
-          },
-          "lastUsedAt": {
-            "type": "string",
-            "nullable": true,
-            "description": "Last authenticated ingest (updated at most once a minute)."
-          },
-          "expiresAt": {
-            "type": "string",
-            "nullable": true,
-            "description": "null means no expiry."
-          },
-          "revokedAt": {
-            "type": "string",
-            "nullable": true
-          },
-          "name": {
-            "type": "string"
-          },
-          "keyId": {
-            "type": "string",
-            "description": "Public key id: the agent's `appKey`, sent as `x-api-key`."
-          },
-          "applicationName": {
-            "type": "string"
-          },
-          "createdAt": {
-            "type": "string"
-          },
-          "secret": {
-            "type": "string",
-            "description": "The agent's `appSecret`, sent as `x-api-secret`. Returned only once, at creation."
-          }
-        },
-        "required": [
-          "id",
-          "applicationId",
-          "status",
-          "lastUsedAt",
-          "expiresAt",
-          "revokedAt",
-          "name",
-          "keyId",
-          "applicationName",
-          "createdAt",
-          "secret"
         ]
       },
       "InstanceSummaryDto": {

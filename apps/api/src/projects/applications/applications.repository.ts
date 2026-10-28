@@ -1,5 +1,7 @@
 import type { Page, TextKeysetCursor } from '../../telemetry/common/cursor.js';
 import type { TimeWindow } from '../../telemetry/common/time-window.js';
+import type { ApiKeyDto } from '../api-keys/api-keys.dto.js';
+import type { NewApiKey } from '../api-keys/api-keys.repository.js';
 import type {
   ApplicationDto,
   ApplicationSummaryDto,
@@ -25,10 +27,12 @@ export abstract class ApplicationsRepository {
     projectId: string,
     id: string,
   ): Promise<ApplicationDto | null>;
+  /** Inserts the application and its first API key in one transaction. */
   abstract insert(
     projectId: string,
     application: { name: string; tags: string[] },
-  ): Promise<ApplicationDto>;
+    initialKey: Omit<NewApiKey, 'projectId' | 'applicationId'>,
+  ): Promise<{ application: ApplicationDto; apiKey: ApiKeyDto }>;
   abstract update(
     projectId: string,
     id: string,

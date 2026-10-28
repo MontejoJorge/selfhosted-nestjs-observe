@@ -10,7 +10,7 @@ import { apiKeyStatus } from '../domain/api-key.js';
 import type { ApiKeyDto } from './api-keys.dto.js';
 import { ApiKeysRepository, type NewApiKey } from './api-keys.repository.js';
 
-interface ApiKeyRow {
+export interface ApiKeyRow {
   id: string;
   name: string;
   key_id: string;
@@ -119,7 +119,7 @@ export class PostgresApiKeysRepository extends ApiKeysRepository {
   }
 }
 
-function toApiKey(row: ApiKeyRow, now: Date): ApiKeyDto {
+export function toApiKey(row: ApiKeyRow, now: Date): ApiKeyDto {
   return {
     id: row.id,
     name: row.name,

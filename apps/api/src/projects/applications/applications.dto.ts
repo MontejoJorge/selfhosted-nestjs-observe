@@ -9,6 +9,7 @@ import {
   IsString,
   MaxLength,
 } from 'class-validator';
+import { CreatedApiKeyDto } from '../api-keys/api-keys.dto.js';
 import { ActivityBucketDto } from '../projects/projects.dto.js';
 
 export const MAX_TAGS = 3;
@@ -33,6 +34,15 @@ export class ApplicationDto {
   /** Last telemetry batch received (updated at most every 30 s). */
   @ApiProperty({ type: String, nullable: true })
   lastSeenAt: string | null;
+}
+
+export class CreatedApplicationDto extends ApplicationDto {
+  /**
+   * The application's first API key (active, no expiry). Its `secret` is returned only
+   * here, once.
+   */
+  @ApiProperty({ type: CreatedApiKeyDto })
+  apiKey: CreatedApiKeyDto;
 }
 
 export class ApplicationSummaryDto extends ApplicationDto {

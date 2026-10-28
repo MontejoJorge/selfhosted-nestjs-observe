@@ -28,6 +28,7 @@ import {
   ApplicationDto,
   ApplicationSummaryPageDto,
   CreateApplicationDto,
+  CreatedApplicationDto,
   UpdateApplicationDto,
   type ApplicationSummaryDto,
 } from './applications.dto.js';
@@ -78,15 +79,18 @@ export class ApplicationsController {
   @Post()
   @ApiOperation({
     operationId: 'createApplication',
-    summary: 'Create an application (name unique in the project, up to 3 tags)',
+    summary:
+      'Create an application (name unique in the project, up to 3 tags) with its first API key',
+    description:
+      'Also creates an active API key without expiry named "<name> agent". Its secret is returned only in this response.',
   })
-  @ApiCreatedResponse({ type: ApplicationDto })
+  @ApiCreatedResponse({ type: CreatedApplicationDto })
   @ApiNotFoundResponse()
   @ApiConflictResponse()
   async create(
     @Param('project') project: string,
     @Body() body: CreateApplicationDto,
-  ): Promise<ApplicationDto> {
+  ): Promise<CreatedApplicationDto> {
     const { id } = await this.projects.get(project);
     return this.applications.create(id, body);
   }

@@ -80,7 +80,8 @@ management tables `projects`, `applications`, `api_keys`, `application_purges`.
 
 - **Projects -> applications -> API keys.** A project has a unique, immutable `slug`; an application has a
   name unique in its project and up to 3 tags; an API key belongs to one application. Secrets are 32
-  random bytes, stored as SHA-256 only and returned once at creation. Key status (active, expired,
+  random bytes, stored as SHA-256 only and returned once at creation. Creating an application also creates
+  its first key (active, no expiry, named `<name> agent`) in the same transaction and returns it with the secret. Key status (active, expired,
   revoked) is derived from `expires_at` / `revoked_at`.
 - Every telemetry row carries `application_id` (from the API key that sent it). `service_id` stays as an
   attribute: the agent's serviceId, exposed as the optional `instance` filter.
