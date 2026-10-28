@@ -64,7 +64,7 @@ export function JobGroupPage() {
   const previous = usePreviousOverview(scope, filters);
   const { data: groups } = useSuspenseQuery(jobStatsQueryOptions(scope));
   const stats = groups.find((g) => g.queue === queue && g.name === name);
-  const failed = Math.round(overview.jobs.count * overview.jobs.failureRate);
+  const failed = overview.jobs.failed;
 
   return (
     <Page>

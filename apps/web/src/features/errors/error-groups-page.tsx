@@ -1,12 +1,15 @@
 import { SourceBadge } from '@/components/data/badges';
 import {
   LinkRow,
-  MessageRow,
   NumCell,
   stretchedLink,
   TableFrame,
 } from '@/components/data/data-table';
-import { FilterBar, OptionFilter, SearchBox } from '@/components/data/filters';
+import {
+  DebouncedInput,
+  FilterBar,
+  OptionFilter,
+} from '@/components/data/filters';
 import { LoadMore } from '@/components/data/load-more';
 import { ScopeControls } from '@/components/layout/scope-controls';
 import { Page, PageHeader } from '@/components/page';
@@ -33,7 +36,6 @@ import {
   useSuspenseInfiniteQuery,
   useSuspenseQuery,
 } from '@tanstack/react-query';
-import { useDeferredValue, useState } from 'react';
 import { errorGroupsQueryOptions } from './queries';
 import { errorListSearch } from './search';
 
@@ -51,22 +53,8 @@ export function ErrorGroupsPage() {
     errorGroupsQueryOptions(scope, filters),
   );
   const names = useApplicationNames();
-  // The API has no text search for groups: filter the loaded pages.
-  const [q, setQ] = useState('');
-  const needle = useDeferredValue(q).trim().toLowerCase();
-  const groups = query.data.pages
-    .flatMap((page) => page.items)
-    .filter(
-      (group) =>
-        !needle ||
-        `${group.errorClass ?? ''} ${group.message}`
-          .toLowerCase()
-          .includes(needle),
-    );
-  const loaded = query.data.pages.reduce(
-    (sum, page) => sum + page.items.length,
-    0,
-  );
+  const groups = query.data.pages.flatMap((page) => page.items);
+  const hasFilters = filters.source !== undefined || filters.q !== undefined;
 
   return (
     <Page>
@@ -82,7 +70,12 @@ export function ErrorGroupsPage() {
       <div className="mt-4 flex flex-col gap-3">
         <FilterBar
           aside={
-            <SearchBox value={q} onChange={setQ} aria-label="Search errors" />
+            <DebouncedInput
+              key={`q:${filters.q ?? ''}`}
+              value={filters.q ?? ''}
+              onCommit={(q) => setSearch({ q: q.trim() || undefined })}
+              aria-label="Search errors"
+            />
           }
         >
           <OptionFilter
@@ -93,21 +86,21 @@ export function ErrorGroupsPage() {
           />
         </FilterBar>
 
-        {loaded === 0 ? (
+        {groups.length === 0 ? (
           <EmptyState
             title={
-              filters.source
+              hasFilters
                 ? 'No errors match these filters'
                 : 'No errors in this time range'
             }
           >
-            {filters.source ? null : <NoTelemetryHint />}
+            {hasFilters ? null : <NoTelemetryHint />}
           </EmptyState>
         ) : (
           <TableFrame
             footer={
               <LoadMore
-                shown={loaded}
+                shown={groups.length}
                 hasNextPage={query.hasNextPage}
                 isFetchingNextPage={query.isFetchingNextPage}
                 fetchNextPage={query.fetchNextPage}
@@ -165,11 +158,6 @@ export function ErrorGroupsPage() {
                     </TableCell>
                   </LinkRow>
                 ))}
-                {groups.length === 0 ? (
-                  <MessageRow colSpan={6}>
-                    No loaded error matches “{q}”.
-                  </MessageRow>
-                ) : null}
               </TableBody>
             </Table>
           </TableFrame>

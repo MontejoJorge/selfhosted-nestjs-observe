@@ -295,7 +295,7 @@ export function JobsPanel({
   layout: PanelLayout;
 }) {
   const { jobs, jobsTimeline } = overview;
-  const failed = Math.round(jobs.count * jobs.failureRate);
+  const failed = jobs.failed;
   const trend = (
     <Trend
       change={previous ? relativeChange(jobs.count, previous.jobs.count) : null}
@@ -370,7 +370,7 @@ export function ErrorsPanel({
   const requestErrors = Math.round(
     overview.requests.count * overview.requests.errorRate,
   );
-  const jobErrors = Math.round(overview.jobs.count * overview.jobs.failureRate);
+  const jobErrors = overview.jobs.failed;
   const executions = overview.requests.count + overview.jobs.count;
   const rate = executions > 0 ? (requestErrors + jobErrors) / executions : 0;
   const previousRate = previous

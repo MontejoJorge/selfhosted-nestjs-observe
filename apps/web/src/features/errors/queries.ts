@@ -6,6 +6,7 @@ import { queryOptions } from '@tanstack/react-query';
 
 export interface ErrorFilters {
   source?: ErrorSource;
+  q?: string;
 }
 
 export const errorGroupsQueryOptions = (scope: Scope, filters: ErrorFilters) =>
