@@ -69,7 +69,7 @@ function TimeSeriesChartImpl<T extends { t: string }>({
         <YAxis
           tickLine={false}
           axisLine={false}
-          width={56}
+          width={68}
           tickFormatter={(value: number) => formatValue(value)}
         />
         <ChartTooltip
@@ -116,6 +116,7 @@ function TimeSeriesChartImpl<T extends { t: string }>({
                 fill={color}
                 stackId={s.stackId}
                 radius={isTop ? [2, 2, 0, 0] : 0}
+                maxBarSize={32}
                 isAnimationActive={false}
               />
             );

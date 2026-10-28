@@ -6,9 +6,9 @@ import {
 import { EmptyState } from '@/components/states';
 import type { RuntimeSeriesPointDto, TimeRange } from '@/lib/api/generated/api';
 import {
-  formatBytes,
   formatCount,
   formatDuration,
+  formatMegabytes,
   formatPercent,
 } from '@/lib/format';
 import { useSuspenseQuery } from '@tanstack/react-query';
@@ -95,7 +95,7 @@ export function RuntimeCharts({
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      <ChartCard title="CPU" description="Process CPU usage">
+      <ChartCard title="CPU" description="Percent of one core">
         <TimeSeriesChart
           data={points}
           series={cpuSeries}
@@ -106,7 +106,7 @@ export function RuntimeCharts({
         <TimeSeriesChart
           data={points}
           series={memorySeries}
-          formatValue={formatBytes}
+          formatValue={formatMegabytes}
         />
       </ChartCard>
       <ChartCard title="Event loop lag" description="Average per bucket">

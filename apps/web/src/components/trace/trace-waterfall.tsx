@@ -138,12 +138,12 @@ export const TraceWaterfall = memo(function TraceWaterfall({
             )}
           >
             <span>Span</span>
-            <div className="relative h-4">
+            <div className="relative mr-14 h-4">
               {TICKS.map((tick) => (
                 <span
                   key={tick}
                   className={cn(
-                    'absolute top-0 font-mono tabular-nums',
+                    'absolute top-0 font-mono whitespace-nowrap tabular-nums',
                     tick === 1
                       ? '-translate-x-full'
                       : tick > 0 && '-translate-x-1/2',
@@ -223,7 +223,7 @@ function Bar({
 }) {
   const clampedLeft = Math.min(Math.max(left, 0), 1);
   return (
-    <div className="relative h-4">
+    <div className="relative mr-14 h-4">
       <div
         className={cn('absolute top-1 h-2 rounded-[2px]', className)}
         style={{
@@ -313,11 +313,16 @@ const SpanRow = memo(function SpanRow({
               )}
               aria-label={kindLabel[kind]}
             />
-            <span className={cn('truncate', failed && 'text-status-error')}>
+            <span
+              className={cn(
+                'max-w-[70%] shrink-0 truncate',
+                failed && 'text-status-error',
+              )}
+            >
               {spanLabel(span)}
             </span>
             {summary ? (
-              <span className="truncate font-mono text-muted-foreground">
+              <span className="min-w-0 truncate font-mono text-muted-foreground">
                 {summary}
               </span>
             ) : null}

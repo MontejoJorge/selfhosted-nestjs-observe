@@ -48,6 +48,7 @@ export function formatPercent(value: number | null | undefined): string {
 
 export function formatDuration(ms: number | null | undefined): string {
   if (ms === null || ms === undefined || Number.isNaN(ms)) return '–';
+  if (ms === 0) return '0 ms';
   if (ms < 1) return `${ms.toFixed(2)} ms`;
   if (ms < 100) return `${ms.toFixed(1)} ms`;
   if (ms < 1000) return `${Math.round(ms)} ms`;
@@ -55,16 +56,11 @@ export function formatDuration(ms: number | null | undefined): string {
   return `${(ms / 60_000).toFixed(1)} min`;
 }
 
-export function formatBytes(bytes: number | null | undefined): string {
-  if (bytes === null || bytes === undefined) return '–';
-  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-  let value = bytes;
-  let unit = 0;
-  while (value >= 1024 && unit < units.length - 1) {
-    value /= 1024;
-    unit += 1;
-  }
-  return `${value.toFixed(value < 10 && unit > 0 ? 1 : 0)} ${units[unit]}`;
+/** Formats a value already expressed in megabytes (the agent reports memory in MB). */
+export function formatMegabytes(mb: number | null | undefined): string {
+  if (mb === null || mb === undefined) return '–';
+  if (mb >= 1024) return `${(mb / 1024).toFixed(2)} GB`;
+  return `${mb.toFixed(mb < 10 ? 1 : 0)} MB`;
 }
 
 export function formatDateTime(iso: string): string {
