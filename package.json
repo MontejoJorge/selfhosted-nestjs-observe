@@ -18,11 +18,13 @@
     "db:up": "docker compose up -d postgres",
     "db:down": "docker compose down",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "api:generate": "node scripts/generate-api.mjs"
   },
   "devDependencies": {
     "prettier": "^3.9.10",
     "prettier-plugin-organize-imports": "^4.3.0",
+    "swagger-typescript-api": "^13.13.0",
     "typescript": "^6.0.3"
   }
 }

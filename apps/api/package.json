@@ -15,7 +15,8 @@
     "start:prod": "node dist/main",
     "lint": "oxlint --type-aware src/",
     "typecheck": "tsc --noEmit",
-    "db:migrate": "nest build && node dist/database/migrate.js"
+    "db:migrate": "nest build && node dist/database/migrate.js",
+    "openapi:generate": "nest build && node dist/openapi/generate.js"
   },
   "dependencies": {
     "@nestjs/common": "^12.0.1",

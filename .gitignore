@@ -12,3 +12,6 @@ coverage/
 .vscode/*
 !.vscode/extensions.json
 .claude/settings.local.json
+
+# Generated API client (regenerate with: pnpm api:generate)
+apps/web/src/lib/api/generated/

@@ -1,0 +1,2197 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/health": {
+      "get": {
+        "operationId": "getHealth",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Liveness and database check",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/api/services": {
+      "get": {
+        "operationId": "listServices",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ServiceSummaryDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Services that have sent telemetry",
+        "tags": [
+          "services"
+        ]
+      }
+    },
+    "/api/overview": {
+      "get": {
+        "operationId": "getOverview",
+        "parameters": [
+          {
+            "name": "range",
+            "required": false,
+            "in": "query",
+            "description": "Relative window ending now (default `1h`). Ignored when `from` is given.",
+            "schema": {
+              "$ref": "#/components/schemas/TimeRange"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Window start (ISO 8601).",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Window end (ISO 8601), defaults to now.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "operationId",
+            "required": false,
+            "in": "query",
+            "description": "Scopes the requests block and the timeline to one operation.",
+            "schema": {
+              "maxLength": 1000,
+              "type": "string"
+            }
+          },
+          {
+            "name": "service",
+            "required": false,
+            "in": "query",
+            "description": "Filter by serviceId.",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OverviewDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Request, job and error totals with a request timeline",
+        "tags": [
+          "overview"
+        ]
+      }
+    },
+    "/api/requests/operations": {
+      "get": {
+        "operationId": "listOperations",
+        "parameters": [
+          {
+            "name": "range",
+            "required": false,
+            "in": "query",
+            "description": "Relative window ending now (default `1h`). Ignored when `from` is given.",
+            "schema": {
+              "$ref": "#/components/schemas/TimeRange"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Window start (ISO 8601).",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Window end (ISO 8601), defaults to now.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "service",
+            "required": false,
+            "in": "query",
+            "description": "Filter by serviceId.",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OperationStatsDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Request stats aggregated per operation",
+        "tags": [
+          "requests"
+        ]
+      }
+    },
+    "/api/requests": {
+      "get": {
+        "operationId": "listRequests",
+        "parameters": [
+          {
+            "name": "range",
+            "required": false,
+            "in": "query",
+            "description": "Relative window ending now (default `1h`). Ignored when `from` is given.",
+            "schema": {
+              "$ref": "#/components/schemas/TimeRange"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Window start (ISO 8601).",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Window end (ISO 8601), defaults to now.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Page size (default 50, max 500).",
+            "schema": {
+              "minimum": 1,
+              "maximum": 500,
+              "default": 50,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "`error` = failed requests (error captured or status >= 500).",
+            "schema": {
+              "$ref": "#/components/schemas/RequestStatus"
+            }
+          },
+          {
+            "name": "operationId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 1000,
+              "type": "string"
+            }
+          },
+          {
+            "name": "minDuration",
+            "required": false,
+            "in": "query",
+            "description": "Minimum duration in ms.",
+            "schema": {
+              "minimum": 0,
+              "type": "number"
+            }
+          },
+          {
+            "name": "traceId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 255,
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Opaque cursor: pass `nextCursor` from the previous page, with the same filters.",
+            "schema": {
+              "maxLength": 512,
+              "type": "string"
+            }
+          },
+          {
+            "name": "service",
+            "required": false,
+            "in": "query",
+            "description": "Filter by serviceId.",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestPageDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Request executions, newest first",
+        "tags": [
+          "requests"
+        ]
+      }
+    },
+    "/api/requests/{id}": {
+      "get": {
+        "operationId": "getRequest",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestDetailDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "One request with its span tree",
+        "tags": [
+          "requests"
+        ]
+      }
+    },
+    "/api/jobs/queues": {
+      "get": {
+        "operationId": "listQueues",
+        "parameters": [
+          {
+            "name": "range",
+            "required": false,
+            "in": "query",
+            "description": "Relative window ending now (default `1h`). Ignored when `from` is given.",
+            "schema": {
+              "$ref": "#/components/schemas/TimeRange"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Window start (ISO 8601).",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Window end (ISO 8601), defaults to now.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "service",
+            "required": false,
+            "in": "query",
+            "description": "Filter by serviceId.",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/JobStatsDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Job stats aggregated per queue and name",
+        "tags": [
+          "jobs"
+        ]
+      }
+    },
+    "/api/jobs": {
+      "get": {
+        "operationId": "listJobs",
+        "parameters": [
+          {
+            "name": "range",
+            "required": false,
+            "in": "query",
+            "description": "Relative window ending now (default `1h`). Ignored when `from` is given.",
+            "schema": {
+              "$ref": "#/components/schemas/TimeRange"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Window start (ISO 8601).",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Window end (ISO 8601), defaults to now.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Page size (default 50, max 500).",
+            "schema": {
+              "minimum": 1,
+              "maximum": 500,
+              "default": 50,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/JobStatus"
+            }
+          },
+          {
+            "name": "queue",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 255,
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 255,
+              "type": "string"
+            }
+          },
+          {
+            "name": "traceId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 255,
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Opaque cursor: pass `nextCursor` from the previous page, with the same filters.",
+            "schema": {
+              "maxLength": 512,
+              "type": "string"
+            }
+          },
+          {
+            "name": "service",
+            "required": false,
+            "in": "query",
+            "description": "Filter by serviceId.",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobPageDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Job executions, newest first",
+        "tags": [
+          "jobs"
+        ]
+      }
+    },
+    "/api/jobs/{id}": {
+      "get": {
+        "operationId": "getJob",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobDetailDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "One job execution with its span tree",
+        "tags": [
+          "jobs"
+        ]
+      }
+    },
+    "/api/errors": {
+      "get": {
+        "operationId": "listErrorGroups",
+        "parameters": [
+          {
+            "name": "range",
+            "required": false,
+            "in": "query",
+            "description": "Relative window ending now (default `1h`). Ignored when `from` is given.",
+            "schema": {
+              "$ref": "#/components/schemas/TimeRange"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Window start (ISO 8601).",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Window end (ISO 8601), defaults to now.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Page size (default 50, max 500).",
+            "schema": {
+              "minimum": 1,
+              "maximum": 500,
+              "default": 50,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "source",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/ErrorSource"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Opaque cursor: pass `nextCursor` from the previous page, with the same filters.",
+            "schema": {
+              "maxLength": 512,
+              "type": "string"
+            }
+          },
+          {
+            "name": "service",
+            "required": false,
+            "in": "query",
+            "description": "Filter by serviceId.",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGroupPageDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Error groups seen in the range, most recently seen first",
+        "tags": [
+          "errors"
+        ]
+      }
+    },
+    "/api/errors/{id}": {
+      "get": {
+        "operationId": "getErrorGroup",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "range",
+            "required": false,
+            "in": "query",
+            "description": "Relative window ending now (default `1h`). Ignored when `from` is given.",
+            "schema": {
+              "$ref": "#/components/schemas/TimeRange"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Window start (ISO 8601).",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Window end (ISO 8601), defaults to now.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "service",
+            "required": false,
+            "in": "query",
+            "description": "Filter by serviceId.",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGroupDetailDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "One error group with timeline and recent occurrences in the range",
+        "tags": [
+          "errors"
+        ]
+      }
+    },
+    "/api/logs": {
+      "get": {
+        "operationId": "listLogs",
+        "parameters": [
+          {
+            "name": "range",
+            "required": false,
+            "in": "query",
+            "description": "Relative window ending now (default `1h`). Ignored when `from` is given.",
+            "schema": {
+              "$ref": "#/components/schemas/TimeRange"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Window start (ISO 8601).",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Window end (ISO 8601), defaults to now.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Page size (default 50, max 500).",
+            "schema": {
+              "minimum": 1,
+              "maximum": 500,
+              "default": 50,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "level",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/LogLevel"
+            }
+          },
+          {
+            "name": "traceId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 255,
+              "type": "string"
+            }
+          },
+          {
+            "name": "context",
+            "required": false,
+            "in": "query",
+            "description": "Exact logger context.",
+            "schema": {
+              "maxLength": 255,
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Case-insensitive substring of the log text.",
+            "schema": {
+              "maxLength": 500,
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Opaque cursor: pass `nextCursor` from the previous page, with the same filters.",
+            "schema": {
+              "maxLength": 512,
+              "type": "string"
+            }
+          },
+          {
+            "name": "service",
+            "required": false,
+            "in": "query",
+            "description": "Filter by serviceId.",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LogPageDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Log entries, newest first",
+        "tags": [
+          "logs"
+        ]
+      }
+    },
+    "/api/traces/{traceId}": {
+      "get": {
+        "operationId": "getTrace",
+        "parameters": [
+          {
+            "name": "traceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TraceDetailDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Executions and logs sharing a trace id",
+        "tags": [
+          "traces"
+        ]
+      }
+    },
+    "/api/metrics/runtime": {
+      "get": {
+        "operationId": "getRuntimeMetrics",
+        "parameters": [
+          {
+            "name": "range",
+            "required": false,
+            "in": "query",
+            "description": "Relative window ending now (default `1h`). Ignored when `from` is given.",
+            "schema": {
+              "$ref": "#/components/schemas/TimeRange"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Window start (ISO 8601).",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Window end (ISO 8601), defaults to now.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "service",
+            "required": true,
+            "in": "query",
+            "description": "Required: runtime metrics are per service.",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RuntimeSeriesPointDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "CPU, memory, event loop and GC series for one service",
+        "tags": [
+          "metrics"
+        ]
+      }
+    },
+    "/api/metrics/custom": {
+      "get": {
+        "operationId": "listCustomMetrics",
+        "parameters": [
+          {
+            "name": "range",
+            "required": false,
+            "in": "query",
+            "description": "Relative window ending now (default `1h`). Ignored when `from` is given.",
+            "schema": {
+              "$ref": "#/components/schemas/TimeRange"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Window start (ISO 8601).",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Window end (ISO 8601), defaults to now.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "service",
+            "required": false,
+            "in": "query",
+            "description": "Filter by serviceId.",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CustomMetricSummaryDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Latest value of each custom metric in the range",
+        "tags": [
+          "metrics"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Selfhosted Observe API",
+    "description": "Query API of the self-hosted @nestjs/observe collector. Timestamps are ISO strings, durations are milliseconds.",
+    "version": "0.0.1",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "schemas": {
+      "HealthDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "ServiceSummaryDto": {
+        "type": "object",
+        "properties": {
+          "serviceVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "serviceId": {
+            "type": "string"
+          },
+          "firstSeenAt": {
+            "type": "string"
+          },
+          "lastSeenAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "serviceVersion",
+          "serviceId",
+          "firstSeenAt",
+          "lastSeenAt"
+        ]
+      },
+      "TimeRange": {
+        "type": "string",
+        "enum": [
+          "15m",
+          "1h",
+          "6h",
+          "24h",
+          "7d",
+          "14d"
+        ]
+      },
+      "TimeBucketDto": {
+        "type": "object",
+        "properties": {
+          "t": {
+            "type": "string",
+            "description": "Bucket start (ISO)."
+          },
+          "count": {
+            "type": "number"
+          },
+          "errors": {
+            "type": "number"
+          },
+          "p95": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "t",
+          "count",
+          "errors",
+          "p95"
+        ]
+      },
+      "PercentilesDto": {
+        "type": "object",
+        "properties": {
+          "p50": {
+            "type": "number"
+          },
+          "p95": {
+            "type": "number"
+          },
+          "p99": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "p50",
+          "p95",
+          "p99"
+        ]
+      },
+      "RequestsOverviewDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number"
+          },
+          "errorRate": {
+            "type": "number",
+            "description": "Ratio 0..1."
+          },
+          "latency": {
+            "$ref": "#/components/schemas/PercentilesDto"
+          }
+        },
+        "required": [
+          "count",
+          "errorRate",
+          "latency"
+        ]
+      },
+      "JobsOverviewDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number"
+          },
+          "failureRate": {
+            "type": "number",
+            "description": "Ratio 0..1."
+          },
+          "latency": {
+            "$ref": "#/components/schemas/PercentilesDto"
+          }
+        },
+        "required": [
+          "count",
+          "failureRate",
+          "latency"
+        ]
+      },
+      "ErrorsOverviewDto": {
+        "type": "object",
+        "properties": {
+          "groups": {
+            "type": "number",
+            "description": "Error groups seen in the range."
+          },
+          "events": {
+            "type": "number",
+            "description": "Error occurrences in the range."
+          }
+        },
+        "required": [
+          "groups",
+          "events"
+        ]
+      },
+      "OverviewDto": {
+        "type": "object",
+        "properties": {
+          "timeline": {
+            "description": "Requests per bucket, gap-filled.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimeBucketDto"
+            }
+          },
+          "requests": {
+            "$ref": "#/components/schemas/RequestsOverviewDto"
+          },
+          "jobs": {
+            "$ref": "#/components/schemas/JobsOverviewDto"
+          },
+          "errors": {
+            "$ref": "#/components/schemas/ErrorsOverviewDto"
+          }
+        },
+        "required": [
+          "timeline",
+          "requests",
+          "jobs",
+          "errors"
+        ]
+      },
+      "OperationStatsDto": {
+        "type": "object",
+        "properties": {
+          "method": {
+            "type": "string",
+            "nullable": true
+          },
+          "operationId": {
+            "type": "string"
+          },
+          "protocol": {
+            "type": "string",
+            "description": "`http`, `rpc`, `grpc`, `graphql` or `ws`."
+          },
+          "count": {
+            "type": "number"
+          },
+          "errorCount": {
+            "type": "number"
+          },
+          "errorRate": {
+            "type": "number",
+            "description": "Ratio 0..1."
+          },
+          "latency": {
+            "$ref": "#/components/schemas/PercentilesDto"
+          },
+          "lastSeenAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "method",
+          "operationId",
+          "protocol",
+          "count",
+          "errorCount",
+          "errorRate",
+          "latency",
+          "lastSeenAt"
+        ]
+      },
+      "RequestStatus": {
+        "type": "string",
+        "enum": [
+          "ok",
+          "error"
+        ]
+      },
+      "RequestListItemDto": {
+        "type": "object",
+        "properties": {
+          "method": {
+            "type": "string",
+            "nullable": true
+          },
+          "statusCode": {
+            "type": "number",
+            "nullable": true
+          },
+          "url": {
+            "type": "string",
+            "nullable": true
+          },
+          "userId": {
+            "type": "string",
+            "nullable": true
+          },
+          "id": {
+            "type": "string",
+            "description": "UUIDv7"
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "serviceId": {
+            "type": "string"
+          },
+          "operationId": {
+            "type": "string"
+          },
+          "protocol": {
+            "type": "string"
+          },
+          "durationMs": {
+            "type": "number"
+          },
+          "calledAt": {
+            "type": "string"
+          },
+          "hasError": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "method",
+          "statusCode",
+          "url",
+          "userId",
+          "id",
+          "traceId",
+          "serviceId",
+          "operationId",
+          "protocol",
+          "durationMs",
+          "calledAt",
+          "hasError"
+        ]
+      },
+      "RequestPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequestListItemDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
+      "WireErrorDto": {
+        "type": "object",
+        "properties": {
+          "tags": {
+            "type": "object",
+            "additionalProperties": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                }
+              ]
+            }
+          },
+          "cls": {
+            "type": "string",
+            "description": "Error class name."
+          },
+          "message": {
+            "type": "string"
+          },
+          "stack": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ]
+      },
+      "SpanOrigin": {
+        "type": "string",
+        "enum": [
+          "manual",
+          "auto"
+        ]
+      },
+      "TraceSpanDto": {
+        "type": "object",
+        "properties": {
+          "spanId": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "origin": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SpanOrigin"
+              }
+            ]
+          },
+          "durationMs": {
+            "type": "number",
+            "nullable": true
+          },
+          "startOffsetMs": {
+            "type": "number",
+            "nullable": true,
+            "description": "Start offset from the operation start, in ms."
+          },
+          "tags": {
+            "type": "object",
+            "additionalProperties": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                }
+              ]
+            }
+          },
+          "error": {
+            "description": "Error details, or `true` when the span failed without details.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/WireErrorDto"
+              },
+              {
+                "type": "boolean"
+              }
+            ],
+            "nullable": true
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TraceSpanDto"
+            }
+          },
+          "className": {
+            "type": "string"
+          },
+          "methodName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "spanId",
+          "name",
+          "origin",
+          "durationMs",
+          "startOffsetMs",
+          "tags",
+          "error",
+          "children",
+          "className",
+          "methodName"
+        ]
+      },
+      "RequestDetailDto": {
+        "type": "object",
+        "properties": {
+          "method": {
+            "type": "string",
+            "nullable": true
+          },
+          "statusCode": {
+            "type": "number",
+            "nullable": true
+          },
+          "url": {
+            "type": "string",
+            "nullable": true
+          },
+          "userId": {
+            "type": "string",
+            "nullable": true
+          },
+          "serviceVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "tags": {
+            "type": "object",
+            "additionalProperties": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                }
+              ]
+            }
+          },
+          "error": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WireErrorDto"
+              }
+            ]
+          },
+          "request": {
+            "type": "object",
+            "additionalProperties": true,
+            "nullable": true,
+            "description": "Captured request (redacted headers / body)."
+          },
+          "trace": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TraceSpanDto"
+            }
+          },
+          "id": {
+            "type": "string",
+            "description": "UUIDv7"
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "serviceId": {
+            "type": "string"
+          },
+          "operationId": {
+            "type": "string"
+          },
+          "protocol": {
+            "type": "string"
+          },
+          "durationMs": {
+            "type": "number"
+          },
+          "calledAt": {
+            "type": "string"
+          },
+          "hasError": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "method",
+          "statusCode",
+          "url",
+          "userId",
+          "serviceVersion",
+          "tags",
+          "error",
+          "request",
+          "trace",
+          "id",
+          "traceId",
+          "serviceId",
+          "operationId",
+          "protocol",
+          "durationMs",
+          "calledAt",
+          "hasError"
+        ]
+      },
+      "JobStatsDto": {
+        "type": "object",
+        "properties": {
+          "queue": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "count": {
+            "type": "number"
+          },
+          "failedCount": {
+            "type": "number"
+          },
+          "failureRate": {
+            "type": "number",
+            "description": "Ratio 0..1."
+          },
+          "latency": {
+            "$ref": "#/components/schemas/PercentilesDto"
+          },
+          "avgWaitMs": {
+            "type": "number"
+          },
+          "lastSeenAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "queue",
+          "name",
+          "count",
+          "failedCount",
+          "failureRate",
+          "latency",
+          "avgWaitMs",
+          "lastSeenAt"
+        ]
+      },
+      "JobStatus": {
+        "type": "string",
+        "enum": [
+          "completed",
+          "failed"
+        ]
+      },
+      "JobListItemDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JobStatus"
+              }
+            ]
+          },
+          "waitMs": {
+            "type": "number",
+            "nullable": true
+          },
+          "attemptsMade": {
+            "type": "number",
+            "nullable": true
+          },
+          "maxAttempts": {
+            "type": "number",
+            "nullable": true
+          },
+          "id": {
+            "type": "string",
+            "description": "UUIDv7"
+          },
+          "jobId": {
+            "type": "string",
+            "description": "Queue job id."
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "serviceId": {
+            "type": "string"
+          },
+          "queue": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "durationMs": {
+            "type": "number"
+          },
+          "calledAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "waitMs",
+          "attemptsMade",
+          "maxAttempts",
+          "id",
+          "jobId",
+          "traceId",
+          "serviceId",
+          "queue",
+          "name",
+          "durationMs",
+          "calledAt"
+        ]
+      },
+      "JobPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JobListItemDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
+      "JobDetailDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JobStatus"
+              }
+            ]
+          },
+          "waitMs": {
+            "type": "number",
+            "nullable": true
+          },
+          "attemptsMade": {
+            "type": "number",
+            "nullable": true
+          },
+          "maxAttempts": {
+            "type": "number",
+            "nullable": true
+          },
+          "enqueuedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "tags": {
+            "type": "object",
+            "additionalProperties": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                }
+              ]
+            }
+          },
+          "error": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WireErrorDto"
+              }
+            ]
+          },
+          "trace": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TraceSpanDto"
+            }
+          },
+          "id": {
+            "type": "string",
+            "description": "UUIDv7"
+          },
+          "jobId": {
+            "type": "string",
+            "description": "Queue job id."
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "serviceId": {
+            "type": "string"
+          },
+          "queue": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "durationMs": {
+            "type": "number"
+          },
+          "calledAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "waitMs",
+          "attemptsMade",
+          "maxAttempts",
+          "enqueuedAt",
+          "tags",
+          "error",
+          "trace",
+          "id",
+          "jobId",
+          "traceId",
+          "serviceId",
+          "queue",
+          "name",
+          "durationMs",
+          "calledAt"
+        ]
+      },
+      "ErrorSource": {
+        "type": "string",
+        "enum": [
+          "request",
+          "job"
+        ]
+      },
+      "ErrorGroupDto": {
+        "type": "object",
+        "properties": {
+          "errorClass": {
+            "type": "string",
+            "nullable": true
+          },
+          "source": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ErrorSource"
+              }
+            ]
+          },
+          "culprit": {
+            "type": "string",
+            "nullable": true,
+            "description": "operationId or `queue/name` where it happens most."
+          },
+          "id": {
+            "type": "string"
+          },
+          "fingerprint": {
+            "type": "string"
+          },
+          "serviceId": {
+            "type": "string",
+            "description": "Error groups are per service."
+          },
+          "message": {
+            "type": "string"
+          },
+          "count": {
+            "type": "number",
+            "description": "All-time count (within retention)."
+          },
+          "firstSeenAt": {
+            "type": "string"
+          },
+          "lastSeenAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "errorClass",
+          "source",
+          "culprit",
+          "id",
+          "fingerprint",
+          "serviceId",
+          "message",
+          "count",
+          "firstSeenAt",
+          "lastSeenAt"
+        ]
+      },
+      "ErrorGroupPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ErrorGroupDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
+      "ErrorOccurrenceDto": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ErrorSource"
+              }
+            ]
+          },
+          "executionId": {
+            "type": "string",
+            "description": "Request or job id, links to its detail route."
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "serviceId": {
+            "type": "string"
+          },
+          "occurredAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "executionId",
+          "traceId",
+          "serviceId",
+          "occurredAt"
+        ]
+      },
+      "ErrorGroupDetailDto": {
+        "type": "object",
+        "properties": {
+          "errorClass": {
+            "type": "string",
+            "nullable": true
+          },
+          "source": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ErrorSource"
+              }
+            ]
+          },
+          "culprit": {
+            "type": "string",
+            "nullable": true,
+            "description": "operationId or `queue/name` where it happens most."
+          },
+          "stack": {
+            "type": "string",
+            "nullable": true
+          },
+          "timeline": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimeBucketDto"
+            }
+          },
+          "occurrences": {
+            "description": "Most recent occurrences in the time range.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ErrorOccurrenceDto"
+            }
+          },
+          "id": {
+            "type": "string"
+          },
+          "fingerprint": {
+            "type": "string"
+          },
+          "serviceId": {
+            "type": "string",
+            "description": "Error groups are per service."
+          },
+          "message": {
+            "type": "string"
+          },
+          "count": {
+            "type": "number",
+            "description": "All-time count (within retention)."
+          },
+          "firstSeenAt": {
+            "type": "string"
+          },
+          "lastSeenAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "errorClass",
+          "source",
+          "culprit",
+          "stack",
+          "timeline",
+          "occurrences",
+          "id",
+          "fingerprint",
+          "serviceId",
+          "message",
+          "count",
+          "firstSeenAt",
+          "lastSeenAt"
+        ]
+      },
+      "LogLevel": {
+        "type": "string",
+        "enum": [
+          "fatal",
+          "error",
+          "warn",
+          "log",
+          "debug",
+          "verbose"
+        ]
+      },
+      "LogItemDto": {
+        "type": "object",
+        "properties": {
+          "level": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LogLevel"
+              }
+            ]
+          },
+          "context": {
+            "type": "string",
+            "nullable": true
+          },
+          "traceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "spanId": {
+            "type": "string",
+            "nullable": true
+          },
+          "attributes": {
+            "type": "object",
+            "additionalProperties": true,
+            "nullable": true
+          },
+          "id": {
+            "type": "string",
+            "description": "UUIDv7"
+          },
+          "serviceId": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "level",
+          "context",
+          "traceId",
+          "spanId",
+          "attributes",
+          "id",
+          "serviceId",
+          "timestamp",
+          "text"
+        ]
+      },
+      "LogPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LogItemDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
+      "TraceDetailDto": {
+        "type": "object",
+        "properties": {
+          "requests": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequestDetailDto"
+            }
+          },
+          "jobs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JobDetailDto"
+            }
+          },
+          "logs": {
+            "description": "Logs carrying this trace id, oldest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LogItemDto"
+            }
+          },
+          "traceId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "requests",
+          "jobs",
+          "logs",
+          "traceId"
+        ]
+      },
+      "RuntimeSeriesPointDto": {
+        "type": "object",
+        "properties": {
+          "cpuPercent": {
+            "type": "number",
+            "nullable": true,
+            "description": "As reported by the agent (expected 0..100)."
+          },
+          "memoryRss": {
+            "type": "number",
+            "nullable": true,
+            "description": "Bytes."
+          },
+          "heapUsed": {
+            "type": "number",
+            "nullable": true,
+            "description": "Bytes."
+          },
+          "heapTotal": {
+            "type": "number",
+            "nullable": true,
+            "description": "Bytes."
+          },
+          "eventLoopLagMs": {
+            "type": "number",
+            "nullable": true
+          },
+          "eventLoopUtilization": {
+            "type": "number",
+            "nullable": true,
+            "description": "0..1"
+          },
+          "gcCount": {
+            "type": "number",
+            "nullable": true
+          },
+          "gcDurationMs": {
+            "type": "number",
+            "nullable": true
+          },
+          "t": {
+            "type": "string",
+            "description": "Bucket start (ISO)."
+          }
+        },
+        "required": [
+          "cpuPercent",
+          "memoryRss",
+          "heapUsed",
+          "heapTotal",
+          "eventLoopLagMs",
+          "eventLoopUtilization",
+          "gcCount",
+          "gcDurationMs",
+          "t"
+        ]
+      },
+      "CustomMetricType": {
+        "type": "string",
+        "enum": [
+          "counter",
+          "gauge",
+          "summary"
+        ]
+      },
+      "CustomMetricSummaryDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CustomMetricType"
+              }
+            ]
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastValue": {
+            "type": "number",
+            "nullable": true,
+            "description": "Scalar of the latest sample (sum over labels; mean for summaries and ratios; max for peaks)."
+          },
+          "name": {
+            "type": "string"
+          },
+          "lastSeenAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "description",
+          "lastValue",
+          "name",
+          "lastSeenAt"
+        ]
+      }
+    }
+  }
+}
