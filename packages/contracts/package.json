@@ -1,0 +1,22 @@
+{
+  "name": "@selfhosted-observe/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Shared types: @nestjs/observe wire format and the dashboard query API",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.2"
+  }
+}

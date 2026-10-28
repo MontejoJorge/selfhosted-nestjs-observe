@@ -9,13 +9,20 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "pnpm -r --parallel --filter ./apps/* dev",
+    "dev": "pnpm --filter @selfhosted-observe/contracts build && pnpm -r --parallel dev",
     "dev:api": "pnpm --filter api start:dev",
     "dev:web": "pnpm --filter web dev",
     "build": "pnpm -r --filter ./packages/* --filter ./apps/* build",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
     "db:up": "docker compose up -d postgres",
-    "db:down": "docker compose down"
+    "db:down": "docker compose down",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "prettier": "^3.9.10",
+    "prettier-plugin-organize-imports": "^4.3.0",
+    "typescript": "^6.0.3"
   }
 }
