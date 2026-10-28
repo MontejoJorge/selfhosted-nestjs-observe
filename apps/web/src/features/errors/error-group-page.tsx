@@ -12,6 +12,7 @@ import {
 } from '@/components/data/data-table';
 import { Stat, StatGrid } from '@/components/data/stat';
 import { Page, PageHeader, PageSection, PageTitle } from '@/components/page';
+import { ScopedLink } from '@/components/scoped-link';
 import {
   Table,
   TableBody,
@@ -26,14 +27,13 @@ import {
   formatRelative,
   shortId,
 } from '@/lib/format';
+import { paths } from '@/lib/paths';
 import { useScope } from '@/lib/scope-hooks';
 import type { TimeBucket } from '@selfhosted-observe/contracts';
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { getRouteApi, Link } from '@tanstack/react-router';
 import { useMemo } from 'react';
+import { useParams } from 'react-router';
 import { errorGroupQueryOptions } from './queries';
-
-const route = getRouteApi('/errors/$errorId');
 
 const occurrenceSeries: SeriesSpec[] = [
   { key: 'count', label: 'Events', color: 'var(--status-error)', mark: 'bar' },
@@ -54,7 +54,7 @@ function OccurrenceChart({ buckets }: { buckets: readonly TimeBucket[] }) {
 }
 
 export function ErrorGroupPage() {
-  const { errorId } = route.useParams();
+  const { errorId = '' } = useParams();
   const scope = useScope();
   const { data: group } = useSuspenseQuery(
     errorGroupQueryOptions(errorId, scope),
@@ -65,9 +65,9 @@ export function ErrorGroupPage() {
       <PageHeader>
         <PageTitle
           eyebrow={
-            <Link to="/errors" className="hover:underline">
+            <ScopedLink to="/errors" className="hover:underline">
               Errors
-            </Link>
+            </ScopedLink>
           }
         >
           <span className="font-mono text-status-error">
@@ -130,21 +130,19 @@ export function ErrorGroupPage() {
                   <LinkRow key={occurrence.executionId}>
                     <TableCell className="font-mono text-xs">
                       {occurrence.source === 'request' ? (
-                        <Link
-                          to="/requests/$requestId"
-                          params={{ requestId: occurrence.executionId }}
+                        <ScopedLink
+                          to={paths.request(occurrence.executionId)}
                           className={stretchedLink}
                         >
                           {formatDateTime(occurrence.occurredAt)}
-                        </Link>
+                        </ScopedLink>
                       ) : (
-                        <Link
-                          to="/jobs/$jobId"
-                          params={{ jobId: occurrence.executionId }}
+                        <ScopedLink
+                          to={paths.job(occurrence.executionId)}
                           className={stretchedLink}
                         >
                           {formatDateTime(occurrence.occurredAt)}
-                        </Link>
+                        </ScopedLink>
                       )}
                     </TableCell>
                     <TableCell>
@@ -154,13 +152,12 @@ export function ErrorGroupPage() {
                       {occurrence.serviceId}
                     </TableCell>
                     <TableCell>
-                      <Link
-                        to="/traces/$traceId"
-                        params={{ traceId: occurrence.traceId }}
+                      <ScopedLink
+                        to={paths.trace(occurrence.traceId)}
                         className="relative z-10 font-mono text-xs text-primary hover:underline"
                       >
                         {shortId(occurrence.traceId)}
-                      </Link>
+                      </ScopedLink>
                     </TableCell>
                   </LinkRow>
                 ))}

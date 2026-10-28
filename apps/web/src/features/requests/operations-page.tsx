@@ -11,6 +11,7 @@ import {
   type SortAccessors,
 } from '@/components/data/use-sorted-rows';
 import { Page, PageActions, PageHeader, PageTitle } from '@/components/page';
+import { ScopedLink } from '@/components/scoped-link';
 import { EmptyState, NoTelemetryHint } from '@/components/states';
 import { Input } from '@/components/ui/input';
 import {
@@ -31,7 +32,6 @@ import { useScope } from '@/lib/scope-hooks';
 import { cn } from '@/lib/utils';
 import type { OperationStats } from '@selfhosted-observe/contracts';
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { Link } from '@tanstack/react-router';
 import { useDeferredValue, useMemo, useState } from 'react';
 import { operationsQueryOptions } from './queries';
 
@@ -78,12 +78,12 @@ export function OperationsPage() {
             aria-label="Filter operations"
             className="h-7 w-64 text-xs"
           />
-          <Link
+          <ScopedLink
             to="/requests/list"
             className="text-xs text-muted-foreground hover:text-foreground hover:underline"
           >
             All requests →
-          </Link>
+          </ScopedLink>
         </PageActions>
       </PageHeader>
 
@@ -156,7 +156,7 @@ export function OperationsPage() {
                   <TableCell className="max-w-md">
                     <div className="flex items-center gap-2">
                       <MethodBadge method={op.method} />
-                      <Link
+                      <ScopedLink
                         to="/requests/list"
                         search={{ operationId: op.operationId }}
                         className={cn(
@@ -165,7 +165,7 @@ export function OperationsPage() {
                         )}
                       >
                         {op.operationId}
-                      </Link>
+                      </ScopedLink>
                     </div>
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">

@@ -1,13 +1,12 @@
 import { Page, PageHeader, PageTitle } from '@/components/page';
+import { ScopedLink } from '@/components/scoped-link';
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { getRouteApi, Link } from '@tanstack/react-router';
+import { useParams } from 'react-router';
 import { JobDetailView, JobSummary } from './job-detail';
 import { jobDetailQueryOptions } from './queries';
 
-const route = getRouteApi('/jobs/$jobId');
-
 export function JobDetailPage() {
-  const { jobId } = route.useParams();
+  const { jobId = '' } = useParams();
   const { data: job } = useSuspenseQuery(jobDetailQueryOptions(jobId));
 
   return (
@@ -15,13 +14,13 @@ export function JobDetailPage() {
       <PageHeader>
         <PageTitle
           eyebrow={
-            <Link
+            <ScopedLink
               to="/jobs/list"
               search={{ queue: job.queue, name: job.name }}
               className="hover:underline"
             >
               Jobs / {job.queue}/{job.name}
-            </Link>
+            </ScopedLink>
           }
         >
           <span className="font-mono">

@@ -8,6 +8,7 @@ import {
 import { FilterBar, FilterChip, OptionFilter } from '@/components/data/filters';
 import { LoadMore } from '@/components/data/load-more';
 import { Page, PageHeader, PageTitle } from '@/components/page';
+import { ScopedLink } from '@/components/scoped-link';
 import { EmptyState, NoTelemetryHint } from '@/components/states';
 import {
   Table,
@@ -18,13 +19,12 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { formatDateTime, formatDuration, shortId } from '@/lib/format';
-import { useScope } from '@/lib/scope-hooks';
+import { paths } from '@/lib/paths';
+import { useScope, useTypedSearch } from '@/lib/scope-hooks';
 import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
-import { getRouteApi, Link } from '@tanstack/react-router';
 import { useCallback } from 'react';
 import { jobListQueryOptions, type JobFilters } from './queries';
-
-const route = getRouteApi('/jobs/list');
+import { jobListSearch } from './search';
 
 const STATUS_OPTIONS = [
   { value: 'completed', label: 'Completed' },
@@ -33,15 +33,13 @@ const STATUS_OPTIONS = [
 
 export function JobListPage() {
   const scope = useScope();
-  const filters = route.useLoaderDeps({ select: (deps) => deps.filters });
-  const navigate = route.useNavigate();
+  const [filters, setSearch] = useTypedSearch(jobListSearch);
   const query = useSuspenseInfiniteQuery(jobListQueryOptions(scope, filters));
   const rows = query.data.pages.flatMap((page) => page.items);
 
   const setFilter = useCallback(
-    (patch: Partial<JobFilters>) =>
-      void navigate({ search: (prev) => ({ ...prev, ...patch }) }),
-    [navigate],
+    (patch: Partial<JobFilters>) => setSearch(patch),
+    [setSearch],
   );
   const hasFilters = Object.values(filters).some(
     (value) => value !== undefined,
@@ -56,9 +54,9 @@ export function JobListPage() {
       <PageHeader>
         <PageTitle
           eyebrow={
-            <Link to="/jobs" className="hover:underline">
+            <ScopedLink to="/jobs" className="hover:underline">
               Jobs
-            </Link>
+            </ScopedLink>
           }
         >
           <span className="font-mono">{title}</span>
@@ -125,13 +123,12 @@ export function JobListPage() {
                 {rows.map((job) => (
                   <LinkRow key={job.id}>
                     <TableCell className="font-mono text-xs whitespace-nowrap">
-                      <Link
-                        to="/jobs/$jobId"
-                        params={{ jobId: job.id }}
+                      <ScopedLink
+                        to={paths.job(job.id)}
                         className={stretchedLink}
                       >
                         {formatDateTime(job.calledAt)}
-                      </Link>
+                      </ScopedLink>
                     </TableCell>
                     <TableCell className="font-mono text-xs">
                       <span className="text-muted-foreground">
@@ -152,13 +149,12 @@ export function JobListPage() {
                       {job.maxAttempts ? ` / ${job.maxAttempts}` : ''}
                     </NumCell>
                     <TableCell>
-                      <Link
-                        to="/traces/$traceId"
-                        params={{ traceId: job.traceId }}
+                      <ScopedLink
+                        to={paths.trace(job.traceId)}
                         className="relative z-10 font-mono text-xs text-primary hover:underline"
                       >
                         {shortId(job.traceId)}
-                      </Link>
+                      </ScopedLink>
                     </TableCell>
                   </LinkRow>
                 ))}

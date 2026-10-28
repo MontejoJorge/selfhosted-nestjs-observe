@@ -1,9 +1,9 @@
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ThemeProvider } from '@/features/theme/theme-provider';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { RouterProvider } from '@tanstack/react-router';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { RouterProvider } from 'react-router';
 import './index.css';
 import { queryClient, router } from './router';
 

@@ -1,13 +1,12 @@
 import { Page, PageHeader, PageTitle } from '@/components/page';
+import { ScopedLink } from '@/components/scoped-link';
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { getRouteApi, Link } from '@tanstack/react-router';
+import { useParams } from 'react-router';
 import { requestDetailQueryOptions } from './queries';
 import { RequestDetailView, RequestSummary } from './request-detail';
 
-const route = getRouteApi('/requests/$requestId');
-
 export function RequestDetailPage() {
-  const { requestId } = route.useParams();
+  const { requestId = '' } = useParams();
   const { data: request } = useSuspenseQuery(
     requestDetailQueryOptions(requestId),
   );
@@ -17,13 +16,13 @@ export function RequestDetailPage() {
       <PageHeader>
         <PageTitle
           eyebrow={
-            <Link
+            <ScopedLink
               to="/requests/list"
               search={{ operationId: request.operationId }}
               className="hover:underline"
             >
               Requests / {request.operationId}
-            </Link>
+            </ScopedLink>
           }
         >
           <span className="font-mono">

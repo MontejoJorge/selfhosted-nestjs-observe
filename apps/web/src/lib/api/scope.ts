@@ -1,4 +1,6 @@
 import type { TimeRange } from '@selfhosted-observe/contracts';
+import { z } from 'zod';
+import { optionalEnum, optionalString } from '../search';
 
 export const TIME_RANGES = [
   '15m',
@@ -20,7 +22,15 @@ export const TIME_RANGE_LABELS: Record<TimeRange, string> = {
   '14d': 'Last 14 days',
 };
 
-/** The global filters every query is scoped by (kept in the URL by the root route). */
+/** Search params kept across navigation by ScopedLink / useScopedNavigate. */
+export const SCOPE_KEYS = ['service', 'range'] as const;
+
+export const scopeSearchSchema = z.object({
+  service: optionalString,
+  range: optionalEnum(TIME_RANGES),
+});
+
+/** The global filters every query is scoped by. */
 export interface Scope {
   service: string | undefined;
   range: TimeRange;
@@ -31,4 +41,8 @@ export function toScope(search: {
   range?: TimeRange;
 }): Scope {
   return { service: search.service, range: search.range ?? DEFAULT_RANGE };
+}
+
+export function scopeFromParams(params: URLSearchParams): Scope {
+  return toScope(scopeSearchSchema.parse(Object.fromEntries(params)));
 }

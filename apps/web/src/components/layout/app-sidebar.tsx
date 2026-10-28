@@ -1,3 +1,4 @@
+import { ScopedLink } from '@/components/scoped-link';
 import {
   Sidebar,
   SidebarContent,
@@ -11,7 +12,6 @@ import {
   SidebarRail,
 } from '@/components/ui/sidebar';
 import { API_URL } from '@/lib/api/client';
-import { Link, useLocation } from '@tanstack/react-router';
 import {
   ActivityIcon,
   BugIcon,
@@ -21,9 +21,10 @@ import {
   ScrollTextIcon,
   type LucideIcon,
 } from 'lucide-react';
+import { useLocation } from 'react-router';
 
 interface NavItem {
-  to: '/' | '/requests' | '/jobs' | '/errors' | '/logs' | '/metrics';
+  to: string;
   label: string;
   icon: LucideIcon;
 }
@@ -43,7 +44,7 @@ function isActive(pathname: string, to: NavItem['to']): boolean {
 }
 
 export function AppSidebar() {
-  const pathname = useLocation({ select: (location) => location.pathname });
+  const { pathname } = useLocation();
 
   return (
     <Sidebar collapsible="icon">
@@ -51,7 +52,7 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link to="/">
+              <ScopedLink to="/">
                 <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
                   <ActivityIcon className="size-4" />
                 </span>
@@ -61,7 +62,7 @@ export function AppSidebar() {
                     self-hosted
                   </span>
                 </span>
-              </Link>
+              </ScopedLink>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -77,10 +78,10 @@ export function AppSidebar() {
                     isActive={isActive(pathname, item.to)}
                     tooltip={item.label}
                   >
-                    <Link to={item.to}>
+                    <ScopedLink to={item.to}>
                       <item.icon />
                       <span>{item.label}</span>
-                    </Link>
+                    </ScopedLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

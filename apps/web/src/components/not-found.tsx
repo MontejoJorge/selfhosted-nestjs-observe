@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router';
+import { ScopedLink } from './scoped-link';
 import { EmptyState } from './states';
 import { Button } from './ui/button';
 
@@ -7,7 +7,7 @@ export function NotFound() {
     <div className="p-4 md:p-6">
       <EmptyState title="Page not found">
         <Button asChild variant="outline" size="sm" className="mt-2">
-          <Link to="/">Back to overview</Link>
+          <ScopedLink to="/">Back to overview</ScopedLink>
         </Button>
       </EmptyState>
     </div>

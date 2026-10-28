@@ -5,12 +5,13 @@ import {
   RecordList,
 } from '@/components/data/key-value';
 import { PageSection } from '@/components/page';
+import { ScopedLink } from '@/components/scoped-link';
 import { ErrorPanel } from '@/components/trace/error-panel';
 import { TraceWaterfall } from '@/components/trace/trace-waterfall';
 import { Card, CardContent } from '@/components/ui/card';
 import { formatDateTime, formatDuration } from '@/lib/format';
+import { paths } from '@/lib/paths';
 import type { JobDetail } from '@selfhosted-observe/contracts';
-import { Link } from '@tanstack/react-router';
 
 export function JobSummary({ job }: { job: JobDetail }) {
   return (
@@ -28,13 +29,12 @@ export function JobMetadata({ job }: { job: JobDetail }) {
   return (
     <KeyValueList>
       <KeyValue label="Trace ID">
-        <Link
-          to="/traces/$traceId"
-          params={{ traceId: job.traceId }}
+        <ScopedLink
+          to={paths.trace(job.traceId)}
           className="font-mono text-xs text-primary hover:underline"
         >
           {job.traceId}
-        </Link>
+        </ScopedLink>
       </KeyValue>
       <KeyValue label="Job ID">
         <code className="text-xs">{job.jobId}</code>
@@ -86,13 +86,13 @@ export function JobDetailView({ job }: { job: JobDetail }) {
         <PageSection
           title="Tags"
           actions={
-            <Link
+            <ScopedLink
               to="/logs"
               search={{ traceId: job.traceId }}
               className="text-xs text-primary hover:underline"
             >
               Logs for this trace →
-            </Link>
+            </ScopedLink>
           }
         >
           <RecordList record={job.tags} />

@@ -10,5 +10,5 @@
       }
     ]
   },
-  "ignorePatterns": ["src/routeTree.gen.ts", "dist"]
+  "ignorePatterns": ["src/lib/api/generated", "dist"]
 }

@@ -17,6 +17,7 @@ import {
 } from '@/components/data/filters';
 import { LoadMore } from '@/components/data/load-more';
 import { Page, PageHeader, PageTitle } from '@/components/page';
+import { ScopedLink } from '@/components/scoped-link';
 import { EmptyState, NoTelemetryHint } from '@/components/states';
 import {
   Table,
@@ -27,14 +28,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { formatDateTime, formatDuration, shortId } from '@/lib/format';
-import { useScope } from '@/lib/scope-hooks';
+import { paths } from '@/lib/paths';
+import { useScope, useTypedSearch } from '@/lib/scope-hooks';
 import { cn } from '@/lib/utils';
 import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
-import { getRouteApi, Link } from '@tanstack/react-router';
 import { useCallback } from 'react';
 import { requestListQueryOptions, type RequestFilters } from './queries';
-
-const route = getRouteApi('/requests/list');
+import { requestListSearch } from './search';
 
 const STATUS_OPTIONS = [
   { value: 'ok', label: 'Succeeded' },
@@ -43,17 +43,15 @@ const STATUS_OPTIONS = [
 
 export function RequestListPage() {
   const scope = useScope();
-  const filters = route.useLoaderDeps({ select: (deps) => deps.filters });
-  const navigate = route.useNavigate();
+  const [filters, setSearch] = useTypedSearch(requestListSearch);
   const query = useSuspenseInfiniteQuery(
     requestListQueryOptions(scope, filters),
   );
   const rows = query.data.pages.flatMap((page) => page.items);
 
   const setFilter = useCallback(
-    (patch: Partial<RequestFilters>) =>
-      void navigate({ search: (prev) => ({ ...prev, ...patch }) }),
-    [navigate],
+    (patch: Partial<RequestFilters>) => setSearch(patch),
+    [setSearch],
   );
   const commitMinDuration = useCallback(
     (value: string) => {
@@ -73,9 +71,9 @@ export function RequestListPage() {
       <PageHeader>
         <PageTitle
           eyebrow={
-            <Link to="/requests" className="hover:underline">
+            <ScopedLink to="/requests" className="hover:underline">
               Requests
-            </Link>
+            </ScopedLink>
           }
         >
           {filters.operationId ?? 'All requests'}
@@ -144,13 +142,12 @@ export function RequestListPage() {
                 {rows.map((request) => (
                   <LinkRow key={request.id}>
                     <TableCell className="font-mono text-xs whitespace-nowrap">
-                      <Link
-                        to="/requests/$requestId"
-                        params={{ requestId: request.id }}
+                      <ScopedLink
+                        to={paths.request(request.id)}
                         className={stretchedLink}
                       >
                         {formatDateTime(request.calledAt)}
-                      </Link>
+                      </ScopedLink>
                     </TableCell>
                     <TableCell className="max-w-md">
                       <div className="flex items-center gap-2">
@@ -174,15 +171,14 @@ export function RequestListPage() {
                       {request.serviceId}
                     </TableCell>
                     <TableCell>
-                      <Link
-                        to="/traces/$traceId"
-                        params={{ traceId: request.traceId }}
+                      <ScopedLink
+                        to={paths.trace(request.traceId)}
                         className={cn(
                           'relative z-10 font-mono text-xs text-primary hover:underline',
                         )}
                       >
                         {shortId(request.traceId)}
-                      </Link>
+                      </ScopedLink>
                     </TableCell>
                   </LinkRow>
                 ))}

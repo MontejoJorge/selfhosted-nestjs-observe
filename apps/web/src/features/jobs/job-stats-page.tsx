@@ -10,6 +10,7 @@ import {
   type SortAccessors,
 } from '@/components/data/use-sorted-rows';
 import { Page, PageHeader, PageTitle } from '@/components/page';
+import { ScopedLink } from '@/components/scoped-link';
 import { EmptyState, NoTelemetryHint } from '@/components/states';
 import {
   Table,
@@ -28,7 +29,6 @@ import { useScope } from '@/lib/scope-hooks';
 import { cn } from '@/lib/utils';
 import type { JobStats } from '@selfhosted-observe/contracts';
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { Link } from '@tanstack/react-router';
 import { jobStatsQueryOptions } from './queries';
 
 type SortKey =
@@ -56,12 +56,12 @@ export function JobStatsPage() {
     <Page>
       <PageHeader>
         <PageTitle eyebrow="Jobs">Queues</PageTitle>
-        <Link
+        <ScopedLink
           to="/jobs/list"
           className="text-xs text-muted-foreground hover:text-foreground hover:underline"
         >
           All jobs →
-        </Link>
+        </ScopedLink>
       </PageHeader>
 
       {data.length === 0 ? (
@@ -134,7 +134,7 @@ export function JobStatsPage() {
               {sorted.map((job) => (
                 <LinkRow key={`${job.queue}/${job.name}`}>
                   <TableCell>
-                    <Link
+                    <ScopedLink
                       to="/jobs/list"
                       search={{ queue: job.queue, name: job.name }}
                       className={cn(stretchedLink, 'font-mono text-xs')}
@@ -143,7 +143,7 @@ export function JobStatsPage() {
                         {job.queue}/
                       </span>
                       {job.name}
-                    </Link>
+                    </ScopedLink>
                   </TableCell>
                   <NumCell>{formatCount(job.count)}</NumCell>
                   <NumCell

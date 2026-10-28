@@ -10,12 +10,13 @@ import {
   RecordList,
 } from '@/components/data/key-value';
 import { PageSection } from '@/components/page';
+import { ScopedLink } from '@/components/scoped-link';
 import { ErrorPanel } from '@/components/trace/error-panel';
 import { TraceWaterfall } from '@/components/trace/trace-waterfall';
 import { Card, CardContent } from '@/components/ui/card';
 import { formatDateTime, formatDuration } from '@/lib/format';
+import { paths } from '@/lib/paths';
 import type { RequestDetail } from '@selfhosted-observe/contracts';
-import { Link } from '@tanstack/react-router';
 
 /** Headline of a request: method, operation, status and timing. */
 export function RequestSummary({ request }: { request: RequestDetail }) {
@@ -36,13 +37,12 @@ export function RequestMetadata({ request }: { request: RequestDetail }) {
   return (
     <KeyValueList>
       <KeyValue label="Trace ID">
-        <Link
-          to="/traces/$traceId"
-          params={{ traceId: request.traceId }}
+        <ScopedLink
+          to={paths.trace(request.traceId)}
           className="font-mono text-xs text-primary hover:underline"
         >
           {request.traceId}
-        </Link>
+        </ScopedLink>
       </KeyValue>
       <KeyValue label="Request ID">
         <code className="text-xs">{request.id}</code>
@@ -104,13 +104,13 @@ export function RequestDetailView({ request }: { request: RequestDetail }) {
         <PageSection
           title="Tags"
           actions={
-            <Link
+            <ScopedLink
               to="/logs"
               search={{ traceId: request.traceId }}
               className="text-xs text-primary hover:underline"
             >
               Logs for this trace →
-            </Link>
+            </ScopedLink>
           }
         >
           <RecordList record={request.tags} />

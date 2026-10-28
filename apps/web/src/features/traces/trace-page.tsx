@@ -1,18 +1,18 @@
 import { Page, PageHeader, PageSection, PageTitle } from '@/components/page';
+import { ScopedLink } from '@/components/scoped-link';
 import { EmptyState } from '@/components/states';
 import { TraceWaterfall } from '@/components/trace/trace-waterfall';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { JobSummary } from '@/features/jobs/job-detail';
 import { LogStream } from '@/features/logs/log-stream';
 import { RequestSummary } from '@/features/requests/request-detail';
+import { paths } from '@/lib/paths';
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { getRouteApi, Link } from '@tanstack/react-router';
+import { useParams } from 'react-router';
 import { traceQueryOptions } from './queries';
 
-const route = getRouteApi('/traces/$traceId');
-
 export function TracePage() {
-  const { traceId } = route.useParams();
+  const { traceId = '' } = useParams();
   const { data: trace } = useSuspenseQuery(traceQueryOptions(traceId));
   const executions = trace.requests.length + trace.jobs.length;
 
@@ -40,13 +40,12 @@ export function TracePage() {
         <Card key={request.id} size="sm">
           <CardHeader className="flex flex-wrap items-center justify-between gap-2">
             <CardTitle>
-              <Link
-                to="/requests/$requestId"
-                params={{ requestId: request.id }}
+              <ScopedLink
+                to={paths.request(request.id)}
                 className="font-mono hover:underline"
               >
                 {request.operationId}
-              </Link>
+              </ScopedLink>
               <span className="ml-2 text-xs font-normal text-muted-foreground">
                 request · {request.serviceId}
               </span>
@@ -68,13 +67,12 @@ export function TracePage() {
         <Card key={job.id} size="sm">
           <CardHeader className="flex flex-wrap items-center justify-between gap-2">
             <CardTitle>
-              <Link
-                to="/jobs/$jobId"
-                params={{ jobId: job.id }}
+              <ScopedLink
+                to={paths.job(job.id)}
                 className="font-mono hover:underline"
               >
                 {job.queue}/{job.name}
-              </Link>
+              </ScopedLink>
               <span className="ml-2 text-xs font-normal text-muted-foreground">
                 job #{job.jobId} · {job.serviceId}
               </span>

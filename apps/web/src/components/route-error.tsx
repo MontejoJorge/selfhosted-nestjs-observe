@@ -1,20 +1,31 @@
 import { useQueryErrorResetBoundary } from '@tanstack/react-query';
-import { useRouter, type ErrorComponentProps } from '@tanstack/react-router';
-import { useEffect } from 'react';
+import {
+  isRouteErrorResponse,
+  useRevalidator,
+  useRouteError,
+} from 'react-router';
+import { NotFound } from './not-found';
 import { ErrorState } from './states';
 
-/** Route-level error boundary: shows the error and retries loader + queries. */
-export function RouteError({ error }: ErrorComponentProps) {
-  const router = useRouter();
-  const queryErrorResetBoundary = useQueryErrorResetBoundary();
+/** Route error boundary: shows the error and retries the loaders and queries. */
+export function RouteError() {
+  const error = useRouteError();
+  const revalidator = useRevalidator();
+  const { reset } = useQueryErrorResetBoundary();
 
-  useEffect(() => {
-    queryErrorResetBoundary.reset();
-  }, [queryErrorResetBoundary]);
+  if (isRouteErrorResponse(error) && error.status === 404) {
+    return <NotFound />;
+  }
 
   return (
     <div className="p-4 md:p-6">
-      <ErrorState error={error} onRetry={() => void router.invalidate()} />
+      <ErrorState
+        error={error}
+        onRetry={() => {
+          reset();
+          void revalidator.revalidate();
+        }}
+      />
     </div>
   );
 }

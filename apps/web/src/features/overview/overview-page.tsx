@@ -5,12 +5,12 @@ import {
 import { ChartCard } from '@/components/charts/chart-card';
 import { Stat, StatGrid } from '@/components/data/stat';
 import { Page, PageHeader, PageTitle } from '@/components/page';
+import { ScopedLink } from '@/components/scoped-link';
 import { EmptyState, NoTelemetryHint } from '@/components/states';
 import { TIME_RANGE_LABELS } from '@/lib/api/scope';
 import { formatCount, formatDuration, formatRate } from '@/lib/format';
 import { useScope } from '@/lib/scope-hooks';
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { Link } from '@tanstack/react-router';
 import { overviewQueryOptions } from './queries';
 
 export function OverviewPage() {
@@ -41,9 +41,9 @@ export function OverviewPage() {
       <StatGrid>
         <Stat
           label={
-            <Link to="/requests" className="hover:underline">
+            <ScopedLink to="/requests" className="hover:underline">
               Requests
-            </Link>
+            </ScopedLink>
           }
           value={formatCount(data.requests.count)}
           detail={`p50 ${formatDuration(data.requests.latency.p50)}`}
@@ -60,9 +60,9 @@ export function OverviewPage() {
         />
         <Stat
           label={
-            <Link to="/jobs" className="hover:underline">
+            <ScopedLink to="/jobs" className="hover:underline">
               Job failure rate
-            </Link>
+            </ScopedLink>
           }
           value={formatRate(data.jobs.failureRate)}
           detail={`${formatCount(data.jobs.count)} jobs`}
@@ -70,9 +70,9 @@ export function OverviewPage() {
         />
         <Stat
           label={
-            <Link to="/errors" className="hover:underline">
+            <ScopedLink to="/errors" className="hover:underline">
               Error groups
-            </Link>
+            </ScopedLink>
           }
           value={formatCount(data.errors.groups)}
           detail={`${formatCount(data.errors.events)} events`}

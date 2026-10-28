@@ -9,17 +9,17 @@ import {
 import { servicesQueryOptions } from '@/features/services/queries';
 import { TIME_RANGE_LABELS, TIME_RANGES } from '@/lib/api/scope';
 import { useScope } from '@/lib/scope-hooks';
+import { applySearchPatch } from '@/lib/search';
 import { cn } from '@/lib/utils';
-import type { TimeRange } from '@selfhosted-observe/contracts';
 import { useIsFetching, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate, useRouter } from '@tanstack/react-router';
 import { RefreshCwIcon } from 'lucide-react';
+import { useRevalidator, useSearchParams } from 'react-router';
 
 const ALL_SERVICES = '__all__';
 
 export function ServiceSelect() {
   const { service } = useScope();
-  const navigate = useNavigate();
+  const [, setParams] = useSearchParams();
   const services = useQuery(servicesQueryOptions());
 
   const options = services.data ?? [];
@@ -31,16 +31,18 @@ export function ServiceSelect() {
     <Select
       value={service ?? ALL_SERVICES}
       onValueChange={(value) =>
-        navigate({
-          to: '.',
-          search: (prev) => ({
-            ...prev,
+        setParams((prev) =>
+          applySearchPatch(prev, {
             service: value === ALL_SERVICES ? undefined : value,
           }),
-        })
+        )
       }
     >
-      <SelectTrigger size="sm" className="w-52" aria-label="Service">
+      <SelectTrigger
+        size="sm"
+        className="w-32 min-w-0 sm:w-52"
+        aria-label="Service"
+      >
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
@@ -70,19 +72,16 @@ export function ServiceSelect() {
 
 export function RangeSelect() {
   const { range } = useScope();
-  const navigate = useNavigate();
+  const [, setParams] = useSearchParams();
 
   return (
     <Select
       value={range}
       onValueChange={(value) =>
-        navigate({
-          to: '.',
-          search: (prev) => ({ ...prev, range: value as TimeRange }),
-        })
+        setParams((prev) => applySearchPatch(prev, { range: value }))
       }
     >
-      <SelectTrigger size="sm" className="w-40" aria-label="Time range">
+      <SelectTrigger size="sm" className="w-28 sm:w-40" aria-label="Time range">
         <SelectValue />
       </SelectTrigger>
       <SelectContent align="end">
@@ -98,7 +97,7 @@ export function RangeSelect() {
 
 export function RefreshButton() {
   const queryClient = useQueryClient();
-  const router = useRouter();
+  const revalidator = useRevalidator();
   const fetching = useIsFetching() > 0;
 
   return (
@@ -109,7 +108,7 @@ export function RefreshButton() {
       title="Refresh data"
       onClick={() => {
         void queryClient.invalidateQueries();
-        void router.invalidate();
+        void revalidator.revalidate();
       }}
     >
       <RefreshCwIcon className={cn(fetching && 'animate-spin')} />
