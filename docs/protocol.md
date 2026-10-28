@@ -144,6 +144,18 @@ parent ids. Every operation is a complete trace.
 `g` GC `{ c: count, td: totalDuration, b: { m: minor, j: major, i: incremental } each { count, duration } }`,
 `e` event loop `{ l: lag, u: utilization }`.
 
+Units, from `NodeRuntimeMetricsService` (one sample per flush):
+
+| Field                             | Unit                                                                                      |
+| --------------------------------- | ----------------------------------------------------------------------------------------- |
+| memory `r`, `ht`, `hu`, `e`, `ab` | **megabytes** (bytes / 1024 / 1024), not bytes                                            |
+| memory `p`                        | percent of total OS memory used by RSS                                                    |
+| CPU `u`, `s`                      | ms of CPU time spent **during the interval** (a delta, not cumulative)                    |
+| CPU `p`                           | percent of one core over the interval                                                     |
+| GC `c`, `td`, breakdown           | **per interval**: the agent resets them after every sample, so summing samples is correct |
+| event loop `l`                    | lag (ms)                                                                                  |
+| event loop `u`                    | utilization over the interval, 0–1                                                        |
+
 ### CustomMetric
 
 `n` name (required, max 100), `t` type (`counter`, `gauge` or `summary`, required),
