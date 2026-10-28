@@ -1,13 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import type {
-  JobDetail,
-  JobListItem,
-  JobStats,
-  Page,
-  Primitive,
-  WireError,
-} from '@selfhosted-observe/contracts';
 import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
+import type { Primitive, WireError } from '../../ingest/domain/wire.js';
 import {
   PercentilesDto,
   TAGS_SCHEMA,
@@ -42,7 +35,7 @@ export class JobsQueryDto extends PageQueryDto {
   traceId?: string;
 }
 
-export class JobStatsDto implements JobStats {
+export class JobStatsDto {
   queue: string;
   name: string;
   count: number;
@@ -54,7 +47,7 @@ export class JobStatsDto implements JobStats {
   lastSeenAt: string;
 }
 
-export class JobListItemDto implements JobListItem {
+export class JobListItemDto {
   /** UUIDv7 */
   id: string;
   /** Queue job id. */
@@ -77,7 +70,7 @@ export class JobListItemDto implements JobListItem {
   calledAt: string;
 }
 
-export class JobDetailDto extends JobListItemDto implements JobDetail {
+export class JobDetailDto extends JobListItemDto {
   @ApiProperty({ type: String, nullable: true })
   enqueuedAt: string | null;
   @ApiProperty(TAGS_SCHEMA)
@@ -88,7 +81,7 @@ export class JobDetailDto extends JobListItemDto implements JobDetail {
   trace: TraceSpanDto[];
 }
 
-export class JobPageDto implements Page<JobListItem> {
+export class JobPageDto {
   @ApiProperty({ type: [JobListItemDto] })
   items: JobListItemDto[];
   @ApiProperty({ type: String, nullable: true })

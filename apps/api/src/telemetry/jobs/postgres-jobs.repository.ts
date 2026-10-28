@@ -1,10 +1,4 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type {
-  JobDetail,
-  JobListItem,
-  JobStats,
-  Page,
-} from '@selfhosted-observe/contracts';
 import type { Selectable, SelectQueryBuilder } from 'kysely';
 import {
   KYSELY,
@@ -12,7 +6,7 @@ import {
   type Db,
   type JobsTable,
 } from '../../database/database.types.js';
-import { toPage, type KeysetCursor } from '../common/cursor.js';
+import { toPage, type KeysetCursor, type Page } from '../common/cursor.js';
 import { windowFromId } from '../common/id-window.js';
 import { inApplications, type TelemetryScope } from '../common/scope.js';
 import {
@@ -24,6 +18,7 @@ import {
   toPercentiles,
 } from '../common/sql.js';
 import { asTags, asWireError, decodeTrace } from '../common/trace-decoder.js';
+import type { JobDetailDto, JobListItemDto, JobStatsDto } from './jobs.dto.js';
 import { JobsRepository, type JobFilter } from './jobs.repository.js';
 
 const LIST_COLUMNS = [
@@ -76,7 +71,7 @@ export class PostgresJobsRepository extends JobsRepository {
     return q;
   }
 
-  async queues(filter: JobFilter): Promise<JobStats[]> {
+  async queues(filter: JobFilter): Promise<JobStatsDto[]> {
     const rows = await this.filtered(this.db.selectFrom('jobs'), filter)
       .select((eb) => [
         'queue',
@@ -107,7 +102,7 @@ export class PostgresJobsRepository extends JobsRepository {
   async list(
     filter: JobFilter,
     page: { limit: number; cursor: KeysetCursor | null },
-  ): Promise<Page<JobListItem>> {
+  ): Promise<Page<JobListItemDto>> {
     let query = this.filtered(this.db.selectFrom('jobs'), filter).select(
       LIST_COLUMNS,
     );
@@ -130,7 +125,10 @@ export class PostgresJobsRepository extends JobsRepository {
     );
   }
 
-  async findById(scope: TelemetryScope, id: string): Promise<JobDetail | null> {
+  async findById(
+    scope: TelemetryScope,
+    id: string,
+  ): Promise<JobDetailDto | null> {
     let query = scoped(this.db.selectFrom('jobs'), scope)
       .select(DETAIL_COLUMNS)
       .where('id', '=', id);
@@ -147,7 +145,7 @@ export class PostgresJobsRepository extends JobsRepository {
   async findByTraceId(
     scope: TelemetryScope,
     traceId: string,
-  ): Promise<JobDetail[]> {
+  ): Promise<JobDetailDto[]> {
     const rows = await scoped(this.db.selectFrom('jobs'), scope)
       .select(DETAIL_COLUMNS)
       .where('trace_id', '=', traceId)
@@ -166,7 +164,7 @@ function scoped<O>(
   return scope.instance ? q.where('service_id', '=', scope.instance) : q;
 }
 
-function toListItem(row: ListRow): JobListItem {
+function toListItem(row: ListRow): JobListItemDto {
   return {
     id: row.id,
     jobId: row.job_id,
@@ -185,12 +183,11 @@ function toListItem(row: ListRow): JobListItem {
   };
 }
 
-function toDetail(row: DetailRow): JobDetail {
-  return {
-    ...toListItem(row),
+function toDetail(row: DetailRow): JobDetailDto {
+  return Object.assign(toListItem(row), {
     enqueuedAt: row.enqueued_at ? row.enqueued_at.toISOString() : null,
     tags: asTags(row.tags),
     error: asWireError(row.error),
     trace: decodeTrace(row.trace),
-  };
+  });
 }

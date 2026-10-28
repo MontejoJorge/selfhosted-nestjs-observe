@@ -1,6 +1,6 @@
-import type { WireTraceNode } from '@selfhosted-observe/contracts';
 import type { ExecutionSource, SpanRecord } from './telemetry.js';
 import { asNumber, asString, asTags, isRecord } from './wire-readers.js';
+import type { WireTraceNode } from './wire.js';
 
 export interface ExecutionRef {
   executionId: string;

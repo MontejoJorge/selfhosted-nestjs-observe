@@ -1,19 +1,16 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type {
-  Page,
-  Project,
-  ProjectSummary,
-} from '@selfhosted-observe/contracts';
 import { sql } from 'kysely';
 import { KYSELY, type Db } from '../../database/database.types.js';
 import {
   encodeTextCursor,
   UUID_ID,
+  type Page,
   type TextKeysetCursor,
 } from '../../telemetry/common/cursor.js';
 import type { TimeWindow } from '../../telemetry/common/time-window.js';
 import { emptyActivity, requestActivity } from '../activity.js';
 import { isUniqueViolation } from '../pg-errors.js';
+import type { ProjectDto, ProjectSummaryDto } from './projects.dto.js';
 import {
   ProjectsRepository,
   SlugTakenError,
@@ -63,7 +60,7 @@ export class PostgresProjectsRepository extends ProjectsRepository {
       .select([...COLUMNS, 'stats.application_count', 'stats.last_seen_at']);
   }
 
-  async findByRef(ref: string): Promise<Project | null> {
+  async findByRef(ref: string): Promise<ProjectDto | null> {
     const query = this.withStats();
     const row = await (
       UUID_ID.test(ref)
@@ -78,7 +75,7 @@ export class PostgresProjectsRepository extends ProjectsRepository {
   async list(
     window: TimeWindow,
     page: { limit: number; cursor: TextKeysetCursor | null },
-  ): Promise<Page<ProjectSummary>> {
+  ): Promise<Page<ProjectSummaryDto>> {
     let query = this.withStats();
     const { cursor } = page;
     if (cursor) {
@@ -116,18 +113,18 @@ export class PostgresProjectsRepository extends ProjectsRepository {
     return {
       items: pageRows.map((row) => {
         const stats = activity.get(row.id) ?? emptyActivity(window);
-        return {
-          ...toProject({
-            ...row,
-            application_count: row.application_count ?? 0,
-          }),
+        const project = toProject({
+          ...row,
+          application_count: row.application_count ?? 0,
+        });
+        return Object.assign(project, {
           lastSeenAt: row.last_seen_at
             ? new Date(row.last_seen_at).toISOString()
             : null,
           requestCount: stats.requestCount,
           avgDurationMs: stats.avgDurationMs,
           activity: stats.activity,
-        };
+        });
       }),
       nextCursor:
         hasMore && last
@@ -147,7 +144,7 @@ export class PostgresProjectsRepository extends ProjectsRepository {
     return new Set(rows.map((row) => row.slug));
   }
 
-  async insert(project: NewProject): Promise<Project> {
+  async insert(project: NewProject): Promise<ProjectDto> {
     try {
       const row = await this.db
         .insertInto('projects')
@@ -162,7 +159,7 @@ export class PostgresProjectsRepository extends ProjectsRepository {
     }
   }
 
-  async update(id: string, patch: ProjectPatch): Promise<Project | null> {
+  async update(id: string, patch: ProjectPatch): Promise<ProjectDto | null> {
     if (patch.name !== undefined || patch.description !== undefined) {
       const updated = await this.db
         .updateTable('projects')
@@ -200,7 +197,7 @@ export class PostgresProjectsRepository extends ProjectsRepository {
   }
 }
 
-function toProject(row: ProjectRow): Project {
+function toProject(row: ProjectRow): ProjectDto {
   return {
     id: row.id,
     slug: row.slug,

@@ -1,14 +1,3 @@
-import type {
-  LogLevel,
-  WireCustomMetric,
-  WireJobSnapshot,
-  WireLogEntry,
-  WireObjectiveDeclaration,
-  WireRequestSnapshot,
-  WireRuntimeMetrics,
-  WireTelemetryBatch,
-  WireTraceNode,
-} from '@selfhosted-observe/contracts';
 import { errorFingerprint } from './error-fingerprint.js';
 import type {
   CustomMetricSample,
@@ -32,6 +21,17 @@ import {
   asTags,
   isRecord,
 } from './wire-readers.js';
+import type {
+  LogLevel,
+  WireCustomMetric,
+  WireJobSnapshot,
+  WireLogEntry,
+  WireObjectiveDeclaration,
+  WireRequestSnapshot,
+  WireRuntimeMetrics,
+  WireTelemetryBatch,
+  WireTraceNode,
+} from './wire.js';
 
 /** Events outside this window are dropped (older than retention, or from a skewed clock). */
 export interface AcceptanceWindow {

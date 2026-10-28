@@ -1,9 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { ApiKey, Page } from '@selfhosted-observe/contracts';
 import { sql } from 'kysely';
 import { KYSELY, type Db } from '../../database/database.types.js';
-import { toPage, type KeysetCursor } from '../../telemetry/common/cursor.js';
+import {
+  toPage,
+  type KeysetCursor,
+  type Page,
+} from '../../telemetry/common/cursor.js';
 import { apiKeyStatus } from '../domain/api-key.js';
+import type { ApiKeyDto } from './api-keys.dto.js';
 import { ApiKeysRepository, type NewApiKey } from './api-keys.repository.js';
 
 interface ApiKeyRow {
@@ -46,7 +50,7 @@ export class PostgresApiKeysRepository extends ApiKeysRepository {
     projectId: string,
     filter: { applicationId?: string },
     page: { limit: number; cursor: KeysetCursor | null },
-  ): Promise<Page<ApiKey>> {
+  ): Promise<Page<ApiKeyDto>> {
     let query = this.withApplication().where('k.project_id', '=', projectId);
     if (filter.applicationId)
       query = query.where('k.application_id', '=', filter.applicationId);
@@ -74,7 +78,7 @@ export class PostgresApiKeysRepository extends ApiKeysRepository {
     );
   }
 
-  async insert(key: NewApiKey): Promise<ApiKey | null> {
+  async insert(key: NewApiKey): Promise<ApiKeyDto | null> {
     // INSERT ... SELECT: no row (and no key) when the application is not in the project.
     const { rows } = await sql<ApiKeyRow>`
       with inserted as (
@@ -90,7 +94,7 @@ export class PostgresApiKeysRepository extends ApiKeysRepository {
     return rows[0] ? toApiKey(rows[0], new Date()) : null;
   }
 
-  async revoke(projectId: string, id: string): Promise<ApiKey | null> {
+  async revoke(projectId: string, id: string): Promise<ApiKeyDto | null> {
     await this.db
       .updateTable('api_keys')
       .set({ revoked_at: sql<Date>`coalesce(revoked_at, now())` })
@@ -115,7 +119,7 @@ export class PostgresApiKeysRepository extends ApiKeysRepository {
   }
 }
 
-function toApiKey(row: ApiKeyRow, now: Date): ApiKey {
+function toApiKey(row: ApiKeyRow, now: Date): ApiKeyDto {
   return {
     id: row.id,
     name: row.name,

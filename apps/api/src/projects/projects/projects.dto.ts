@@ -3,14 +3,6 @@ import {
   ApiPropertyOptional,
   IntersectionType,
 } from '@nestjs/swagger';
-import type {
-  ActivityBucket,
-  CreateProjectInput,
-  Page,
-  Project,
-  ProjectSummary,
-  UpdateProjectInput,
-} from '@selfhosted-observe/contracts';
 import { Transform } from 'class-transformer';
 import {
   IsNotEmpty,
@@ -33,7 +25,7 @@ export class StatsPageQueryDto extends IntersectionType(
   CursorQueryDto,
 ) {}
 
-export class ActivityBucketDto implements ActivityBucket {
+export class ActivityBucketDto {
   /** Bucket start (ISO). */
   t: string;
   count: number;
@@ -43,7 +35,7 @@ export class ActivityBucketDto implements ActivityBucket {
   avgDurationMs: number | null;
 }
 
-export class ProjectDto implements Project {
+export class ProjectDto {
   @ApiProperty({ format: 'uuid' })
   id: string;
   /** URL-safe and unique; generated from the name at creation and never changed. */
@@ -55,7 +47,7 @@ export class ProjectDto implements Project {
   applicationCount: number;
 }
 
-export class ProjectSummaryDto extends ProjectDto implements ProjectSummary {
+export class ProjectSummaryDto extends ProjectDto {
   /** Most recent telemetry from any of its applications. */
   @ApiProperty({ type: String, nullable: true })
   lastSeenAt: string | null;
@@ -69,14 +61,14 @@ export class ProjectSummaryDto extends ProjectDto implements ProjectSummary {
   activity: ActivityBucketDto[];
 }
 
-export class ProjectSummaryPageDto implements Page<ProjectSummary> {
+export class ProjectSummaryPageDto {
   @ApiProperty({ type: [ProjectSummaryDto] })
   items: ProjectSummaryDto[];
   @ApiProperty({ type: String, nullable: true })
   nextCursor: string | null;
 }
 
-export class CreateProjectDto implements CreateProjectInput {
+export class CreateProjectDto {
   @Transform(trim)
   @IsString()
   @IsNotEmpty()
@@ -91,7 +83,7 @@ export class CreateProjectDto implements CreateProjectInput {
   description?: string | null;
 }
 
-export class UpdateProjectDto implements UpdateProjectInput {
+export class UpdateProjectDto {
   @Transform(trim)
   @IsOptional()
   @IsString()

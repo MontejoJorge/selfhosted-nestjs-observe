@@ -5,13 +5,7 @@ import {
   getSchemaPath,
   type ApiPropertyOptions,
 } from '@nestjs/swagger';
-import type {
-  Percentiles,
-  Primitive,
-  TimeBucket,
-  TraceSpan,
-  WireError,
-} from '@selfhosted-observe/contracts';
+import type { Primitive, WireError } from '../../ingest/domain/wire.js';
 
 /** Shared response DTOs. Classes (not interfaces) so they appear in the OpenAPI spec. */
 
@@ -29,7 +23,7 @@ export const JSON_OBJECT_SCHEMA: ApiPropertyOptions = {
   additionalProperties: true,
 };
 
-export class PercentilesDto implements Percentiles {
+export class PercentilesDto {
   p50: number;
   p95: number;
   p99: number;
@@ -37,7 +31,7 @@ export class PercentilesDto implements Percentiles {
   avg: number;
 }
 
-export class TimeBucketDto implements TimeBucket {
+export class TimeBucketDto {
   /** Bucket start (ISO). */
   t: string;
   count: number;
@@ -64,7 +58,7 @@ export class WireErrorDto implements WireError {
 export const SPAN_ORIGINS = ['manual', 'auto'] as const;
 
 @ApiExtraModels(WireErrorDto)
-export class TraceSpanDto implements TraceSpan {
+export class TraceSpanDto {
   @ApiProperty({ type: String, nullable: true })
   spanId: string | null;
 

@@ -1,12 +1,11 @@
-import type {
-  OperationStats,
-  Page,
-  RequestDetail,
-  RequestListItem,
-} from '@selfhosted-observe/contracts';
-import type { KeysetCursor } from '../common/cursor.js';
+import type { KeysetCursor, Page } from '../common/cursor.js';
 import type { TelemetryScope } from '../common/scope.js';
 import type { TimeWindow } from '../common/time-window.js';
+import type {
+  OperationStatsDto,
+  RequestDetailDto,
+  RequestListItemDto,
+} from './requests.dto.js';
 
 export interface RequestFilter {
   scope: TelemetryScope;
@@ -19,17 +18,17 @@ export interface RequestFilter {
 
 /** Read port for request executions. */
 export abstract class RequestsRepository {
-  abstract operations(filter: RequestFilter): Promise<OperationStats[]>;
+  abstract operations(filter: RequestFilter): Promise<OperationStatsDto[]>;
   abstract list(
     filter: RequestFilter,
     page: { limit: number; cursor: KeysetCursor | null },
-  ): Promise<Page<RequestListItem>>;
+  ): Promise<Page<RequestListItemDto>>;
   abstract findById(
     scope: TelemetryScope,
     id: string,
-  ): Promise<RequestDetail | null>;
+  ): Promise<RequestDetailDto | null>;
   abstract findByTraceId(
     scope: TelemetryScope,
     traceId: string,
-  ): Promise<RequestDetail[]>;
+  ): Promise<RequestDetailDto[]>;
 }

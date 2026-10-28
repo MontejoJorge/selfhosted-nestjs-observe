@@ -1,11 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type {
-  ErrorGroup,
-  ErrorGroupDetail,
-  Page,
-} from '@selfhosted-observe/contracts';
 import { KYSELY, type Db } from '../../database/database.types.js';
-import { toPage, type KeysetCursor } from '../common/cursor.js';
+import { toPage, type KeysetCursor, type Page } from '../common/cursor.js';
 import { inApplications, type TelemetryScope } from '../common/scope.js';
 import {
   avgOf,
@@ -19,6 +14,7 @@ import {
   fillTimeline,
   type TimeWindow,
 } from '../common/time-window.js';
+import type { ErrorGroupDetailDto, ErrorGroupDto } from './errors.dto.js';
 import { ErrorsRepository, type ErrorFilter } from './errors.repository.js';
 
 /** Recent occurrences returned on the detail view. */
@@ -85,7 +81,7 @@ export class PostgresErrorsRepository extends ErrorsRepository {
   async list(
     filter: ErrorFilter,
     page: { limit: number; cursor: KeysetCursor | null },
-  ): Promise<Page<ErrorGroup>> {
+  ): Promise<Page<ErrorGroupDto>> {
     const { window, scope } = filter;
     let query = this.groups(scope)
       .where('g.last_seen_at', '>=', window.from)
@@ -142,7 +138,7 @@ export class PostgresErrorsRepository extends ErrorsRepository {
     scope: TelemetryScope,
     id: string,
     window: TimeWindow,
-  ): Promise<ErrorGroupDetail | null> {
+  ): Promise<ErrorGroupDetailDto | null> {
     const groupId = Number(id);
     const group = await this.groups(scope)
       .where('g.id', '=', groupId)
@@ -185,8 +181,7 @@ export class PostgresErrorsRepository extends ErrorsRepository {
         .execute(),
     ]);
 
-    return {
-      ...toErrorGroup(group),
+    return Object.assign(toErrorGroup(group), {
       stack: group.stack,
       timeline: fillTimeline(
         window,
@@ -201,17 +196,17 @@ export class PostgresErrorsRepository extends ErrorsRepository {
       ),
       occurrences: occurrences.map((row) => ({
         executionId: row.execution_id,
-        source: row.source === 'job' ? 'job' : 'request',
+        source: row.source === 'job' ? ('job' as const) : ('request' as const),
         traceId: row.trace_id,
         applicationId: row.application_id,
         serviceId: row.service_id,
         occurredAt: row.occurred_at.toISOString(),
       })),
-    };
+    });
   }
 }
 
-function toErrorGroup(row: GroupRow): ErrorGroup {
+function toErrorGroup(row: GroupRow): ErrorGroupDto {
   return {
     id: String(row.id),
     fingerprint: row.fingerprint,

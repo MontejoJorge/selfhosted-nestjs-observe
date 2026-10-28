@@ -1,4 +1,4 @@
-import type { Tags, WireError } from '@selfhosted-observe/contracts';
+import type { Tags, WireError } from './wire.js';
 
 /** Defensive readers for wire values: the agent is a third party, so never trust shapes. */
 

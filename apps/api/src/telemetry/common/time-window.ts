@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
-import type { TimeBucket, TimeRange } from '@selfhosted-observe/contracts';
-import type { RangeQueryDto } from './query.dto.js';
+import type { TimeBucketDto } from './common.dto.js';
+import type { RangeQueryDto, TimeRange } from './query.dto.js';
 
 /** Half-open interval [from, to). Every query filters its partition key on it. */
 export interface TimeWindow {
@@ -58,11 +58,11 @@ export function fillTimeline(
     status4xx?: number;
     status5xx?: number;
   }>,
-): TimeBucket[] {
+): TimeBucketDto[] {
   const stepMs = stepSeconds * 1000;
   const origin = Date.parse(BUCKET_ORIGIN);
   const byStart = new Map(rows.map((row) => [row.t.getTime(), row]));
-  const buckets: TimeBucket[] = [];
+  const buckets: TimeBucketDto[] = [];
   const first =
     origin + Math.floor((window.from.getTime() - origin) / stepMs) * stepMs;
   for (let start = first; start < window.to.getTime(); start += stepMs) {

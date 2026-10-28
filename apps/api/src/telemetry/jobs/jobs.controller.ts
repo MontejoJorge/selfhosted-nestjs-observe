@@ -12,13 +12,7 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import type {
-  JobDetail,
-  JobListItem,
-  JobStats,
-  Page,
-} from '@selfhosted-observe/contracts';
-import { decodeCursor, UUID_ID } from '../common/cursor.js';
+import { decodeCursor, UUID_ID, type Page } from '../common/cursor.js';
 import { DEFAULT_PAGE_SIZE, ScopeQueryDto } from '../common/query.dto.js';
 import { ScopeResolver } from '../common/scope.js';
 import { resolveWindow } from '../common/time-window.js';
@@ -28,6 +22,7 @@ import {
   JobsQueryDto,
   JobStatsDto,
   QueuesQueryDto,
+  type JobListItemDto,
 } from './jobs.dto.js';
 import { JobsRepository } from './jobs.repository.js';
 
@@ -45,7 +40,7 @@ export class JobsController {
     summary: 'Job stats aggregated per queue and name',
   })
   @ApiOkResponse({ type: [JobStatsDto] })
-  async queues(@Query() query: QueuesQueryDto): Promise<JobStats[]> {
+  async queues(@Query() query: QueuesQueryDto): Promise<JobStatsDto[]> {
     return this.jobs.queues({
       scope: await this.scopes.resolve(query),
       window: resolveWindow(query),
@@ -58,7 +53,7 @@ export class JobsController {
     summary: 'Job executions, newest first',
   })
   @ApiOkResponse({ type: JobPageDto })
-  async list(@Query() query: JobsQueryDto): Promise<Page<JobListItem>> {
+  async list(@Query() query: JobsQueryDto): Promise<Page<JobListItemDto>> {
     return this.jobs.list(
       {
         scope: await this.scopes.resolve(query),
@@ -85,7 +80,7 @@ export class JobsController {
   async detail(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Query() query: ScopeQueryDto,
-  ): Promise<JobDetail> {
+  ): Promise<JobDetailDto> {
     const scope = await this.scopes.resolve(query);
     const job = await this.jobs.findById(scope, id);
     if (!job) throw new NotFoundException(`Job ${id} not found`);

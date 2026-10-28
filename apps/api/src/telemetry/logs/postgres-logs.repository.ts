@@ -1,5 +1,4 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { LogItem, LogLevel, Page } from '@selfhosted-observe/contracts';
 import type { Selectable, SelectQueryBuilder } from 'kysely';
 import {
   KYSELY,
@@ -7,9 +6,11 @@ import {
   type Db,
   type LogsTable,
 } from '../../database/database.types.js';
-import { toPage, type KeysetCursor } from '../common/cursor.js';
+import type { LogLevel } from '../../ingest/domain/wire.js';
+import { toPage, type KeysetCursor, type Page } from '../common/cursor.js';
 import { inApplications, type TelemetryScope } from '../common/scope.js';
 import { likeContains } from '../common/sql.js';
+import type { LogItemDto } from './logs.dto.js';
 import { LogsRepository, type LogFilter } from './logs.repository.js';
 
 const COLUMNS = [
@@ -39,7 +40,7 @@ export class PostgresLogsRepository extends LogsRepository {
   async list(
     filter: LogFilter,
     page: { limit: number; cursor: KeysetCursor | null },
-  ): Promise<Page<LogItem>> {
+  ): Promise<Page<LogItemDto>> {
     let query = scoped(this.db.selectFrom('logs'), filter.scope)
       .select(COLUMNS)
       .where('timestamp', '>=', filter.window.from)
@@ -70,7 +71,7 @@ export class PostgresLogsRepository extends LogsRepository {
   async findByTraceId(
     scope: TelemetryScope,
     traceId: string,
-  ): Promise<LogItem[]> {
+  ): Promise<LogItemDto[]> {
     const rows = await scoped(this.db.selectFrom('logs'), scope)
       .select(COLUMNS)
       .where('trace_id', '=', traceId)
@@ -90,7 +91,7 @@ function scoped<O>(
   return scope.instance ? q.where('service_id', '=', scope.instance) : q;
 }
 
-function toLogItem(row: Row): LogItem {
+function toLogItem(row: Row): LogItemDto {
   return {
     id: row.id,
     applicationId: row.application_id,

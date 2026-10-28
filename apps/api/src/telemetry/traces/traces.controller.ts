@@ -12,7 +12,6 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import type { TraceDetail } from '@selfhosted-observe/contracts';
 import { ScopeQueryDto } from '../common/query.dto.js';
 import { ScopeResolver } from '../common/scope.js';
 import { JobsRepository } from '../jobs/jobs.repository.js';
@@ -44,7 +43,7 @@ export class TracesController {
   async detail(
     @Param('traceId') traceId: string,
     @Query() query: ScopeQueryDto,
-  ): Promise<TraceDetail> {
+  ): Promise<TraceDetailDto> {
     if (traceId.length === 0 || traceId.length > 255) {
       throw new BadRequestException('Invalid trace id');
     }

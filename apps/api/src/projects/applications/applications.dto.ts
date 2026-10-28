@@ -1,11 +1,4 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import type {
-  Application,
-  ApplicationSummary,
-  CreateApplicationInput,
-  Page,
-  UpdateApplicationInput,
-} from '@selfhosted-observe/contracts';
 import { Transform } from 'class-transformer';
 import {
   ArrayMaxSize,
@@ -28,7 +21,7 @@ const trimAll = ({ value }: { value: unknown }) =>
     ? value.map((item) => (typeof item === 'string' ? item.trim() : item))
     : value;
 
-export class ApplicationDto implements Application {
+export class ApplicationDto {
   @ApiProperty({ format: 'uuid' })
   id: string;
   @ApiProperty({ format: 'uuid' })
@@ -42,10 +35,7 @@ export class ApplicationDto implements Application {
   lastSeenAt: string | null;
 }
 
-export class ApplicationSummaryDto
-  extends ApplicationDto
-  implements ApplicationSummary
-{
+export class ApplicationSummaryDto extends ApplicationDto {
   /** Requests in the range. */
   requestCount: number;
   requestsPerSecond: number;
@@ -67,14 +57,14 @@ export class ApplicationSummaryDto
   activity: ActivityBucketDto[];
 }
 
-export class ApplicationSummaryPageDto implements Page<ApplicationSummary> {
+export class ApplicationSummaryPageDto {
   @ApiProperty({ type: [ApplicationSummaryDto] })
   items: ApplicationSummaryDto[];
   @ApiProperty({ type: String, nullable: true })
   nextCursor: string | null;
 }
 
-export class CreateApplicationDto implements CreateApplicationInput {
+export class CreateApplicationDto {
   /** Unique within the project. */
   @Transform(trim)
   @IsString()
@@ -94,7 +84,7 @@ export class CreateApplicationDto implements CreateApplicationInput {
   tags?: string[];
 }
 
-export class UpdateApplicationDto implements UpdateApplicationInput {
+export class UpdateApplicationDto {
   @Transform(trim)
   @IsOptional()
   @IsString()

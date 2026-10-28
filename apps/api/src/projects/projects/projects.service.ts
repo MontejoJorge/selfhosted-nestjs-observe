@@ -1,9 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import type { Project } from '@selfhosted-observe/contracts';
 import { ApplicationPurger } from '../../maintenance/application-purger.js';
 import { ApiKeyAuthenticator } from '../api-keys/api-key-authenticator.js';
 import { slugify, uniqueSlug } from '../domain/slug.js';
-import type { CreateProjectDto, UpdateProjectDto } from './projects.dto.js';
+import type {
+  CreateProjectDto,
+  ProjectDto,
+  UpdateProjectDto,
+} from './projects.dto.js';
 import { ProjectsRepository, SlugTakenError } from './projects.repository.js';
 
 /** Attempts at picking a free slug when concurrent creates race for it. */
@@ -17,14 +20,14 @@ export class ProjectsService {
     private readonly authenticator: ApiKeyAuthenticator,
   ) {}
 
-  async get(ref: string): Promise<Project> {
+  async get(ref: string): Promise<ProjectDto> {
     const project = await this.projects.findByRef(ref);
     if (!project) throw new NotFoundException(`Project ${ref} not found`);
     return project;
   }
 
   /** The slug comes from the name; a numeric suffix keeps it unique (`shop`, `shop-2`, ...). */
-  async create(input: CreateProjectDto): Promise<Project> {
+  async create(input: CreateProjectDto): Promise<ProjectDto> {
     const base = slugify(input.name);
     for (let attempt = 1; ; attempt++) {
       const slug = uniqueSlug(base, await this.projects.slugsLike(base));
@@ -41,7 +44,7 @@ export class ProjectsService {
     }
   }
 
-  async update(ref: string, input: UpdateProjectDto): Promise<Project> {
+  async update(ref: string, input: UpdateProjectDto): Promise<ProjectDto> {
     const { id } = await this.get(ref);
     const project = await this.projects.update(id, {
       name: input.name,

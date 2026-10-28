@@ -1,6 +1,5 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import type { Overview } from '@selfhosted-observe/contracts';
 import { ScopeResolver } from '../common/scope.js';
 import { resolveWindow } from '../common/time-window.js';
 import { OverviewDto, OverviewQueryDto } from './overview.dto.js';
@@ -20,7 +19,7 @@ export class OverviewController {
     summary: 'Request, job and error totals with a request timeline',
   })
   @ApiOkResponse({ type: OverviewDto })
-  async get(@Query() query: OverviewQueryDto): Promise<Overview> {
+  async get(@Query() query: OverviewQueryDto): Promise<OverviewDto> {
     return this.overview.get({
       scope: await this.scopes.resolve(query),
       window: resolveWindow(query),

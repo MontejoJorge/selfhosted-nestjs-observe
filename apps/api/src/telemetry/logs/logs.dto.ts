@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import type { LogItem, LogLevel, Page } from '@selfhosted-observe/contracts';
 import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
+import type { LogLevel } from '../../ingest/domain/wire.js';
 import { JSON_OBJECT_SCHEMA } from '../common/common.dto.js';
 import { PageQueryDto } from '../common/query.dto.js';
 
@@ -37,7 +37,7 @@ export class LogsQueryDto extends PageQueryDto {
   q?: string;
 }
 
-export class LogItemDto implements LogItem {
+export class LogItemDto {
   /** UUIDv7 */
   id: string;
   applicationId: string;
@@ -57,7 +57,7 @@ export class LogItemDto implements LogItem {
   attributes: Record<string, unknown> | null;
 }
 
-export class LogPageDto implements Page<LogItem> {
+export class LogPageDto {
   @ApiProperty({ type: [LogItemDto] })
   items: LogItemDto[];
   @ApiProperty({ type: String, nullable: true })

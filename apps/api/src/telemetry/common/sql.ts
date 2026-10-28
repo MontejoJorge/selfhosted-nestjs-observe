@@ -1,5 +1,5 @@
-import type { Percentiles } from '@selfhosted-observe/contracts';
 import { sql, type RawBuilder } from 'kysely';
+import type { PercentilesDto } from './common.dto.js';
 import { BUCKET_ORIGIN } from './time-window.js';
 
 /** p50/p95/p99 in a single sort. Only use it over a time-pruned range. */
@@ -39,7 +39,7 @@ export function countWhere(column: string): RawBuilder<number> {
 export function toPercentiles(
   values: number[] | null | undefined,
   avg: number | null | undefined,
-): Percentiles {
+): PercentilesDto {
   return {
     p50: values?.[0] ?? 0,
     p95: values?.[1] ?? 0,

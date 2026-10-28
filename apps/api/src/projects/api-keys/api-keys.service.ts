@@ -3,10 +3,13 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import type { ApiKey, CreatedApiKey } from '@selfhosted-observe/contracts';
 import { generateApiKey } from '../domain/api-key.js';
 import { ApiKeyAuthenticator } from './api-key-authenticator.js';
-import type { CreateApiKeyDto } from './api-keys.dto.js';
+import type {
+  ApiKeyDto,
+  CreateApiKeyDto,
+  CreatedApiKeyDto,
+} from './api-keys.dto.js';
 import { ApiKeysRepository } from './api-keys.repository.js';
 
 @Injectable()
@@ -20,7 +23,7 @@ export class ApiKeysService {
   async create(
     projectId: string,
     input: CreateApiKeyDto,
-  ): Promise<CreatedApiKey> {
+  ): Promise<CreatedApiKeyDto> {
     const expiresAt = input.expiresAt ? new Date(input.expiresAt) : null;
     if (expiresAt && expiresAt <= new Date())
       throw new BadRequestException('expiresAt must be in the future');
@@ -37,10 +40,10 @@ export class ApiKeysService {
       throw new NotFoundException(
         `Application ${input.applicationId} not found in this project`,
       );
-    return { ...key, secret: generated.secret };
+    return Object.assign(key, { secret: generated.secret });
   }
 
-  async revoke(projectId: string, id: string): Promise<ApiKey> {
+  async revoke(projectId: string, id: string): Promise<ApiKeyDto> {
     const key = await this.keys.revoke(projectId, id);
     if (!key) throw new NotFoundException(`API key ${id} not found`);
     this.authenticator.evict(key.keyId);

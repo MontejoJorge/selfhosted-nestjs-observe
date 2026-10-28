@@ -1,6 +1,6 @@
-import type { Overview } from '@selfhosted-observe/contracts';
 import type { TelemetryScope } from '../common/scope.js';
 import type { TimeWindow } from '../common/time-window.js';
+import type { OverviewDto } from './overview.dto.js';
 
 export interface OverviewFilter {
   scope: TelemetryScope;
@@ -14,5 +14,5 @@ export interface OverviewFilter {
 
 /** Read port for the overview page. */
 export abstract class OverviewRepository {
-  abstract get(filter: OverviewFilter): Promise<Overview>;
+  abstract get(filter: OverviewFilter): Promise<OverviewDto>;
 }

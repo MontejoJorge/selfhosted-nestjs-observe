@@ -1,9 +1,6 @@
-import type {
-  RuntimeInstance,
-  RuntimeMetrics,
-} from '@selfhosted-observe/contracts';
 import type { TelemetryScope } from '../common/scope.js';
 import type { TimeWindow } from '../common/time-window.js';
+import type { RuntimeInstanceDto, RuntimeMetricsDto } from './metrics.dto.js';
 
 /** Read port for runtime metrics. */
 export abstract class MetricsRepository {
@@ -11,10 +8,10 @@ export abstract class MetricsRepository {
   abstract runtime(
     scope: TelemetryScope,
     window: TimeWindow,
-  ): Promise<RuntimeMetrics>;
+  ): Promise<RuntimeMetricsDto>;
   /** Instances that sent runtime samples in the window, with their newest sample. */
   abstract instances(
     scope: TelemetryScope,
     window: TimeWindow,
-  ): Promise<RuntimeInstance[]>;
+  ): Promise<RuntimeInstanceDto[]>;
 }

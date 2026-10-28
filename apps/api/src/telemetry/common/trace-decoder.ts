@@ -1,8 +1,5 @@
-import type {
-  Primitive,
-  TraceSpan,
-  WireError,
-} from '@selfhosted-observe/contracts';
+import type { Primitive, WireError } from '../../ingest/domain/wire.js';
+import type { TraceSpanDto } from './common.dto.js';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -13,7 +10,7 @@ const num = (value: unknown) =>
   typeof value === 'number' && Number.isFinite(value) ? value : null;
 
 /** Decodes the stored wire span tree (single-letter keys) into the API shape. */
-export function decodeTrace(nodes: unknown): TraceSpan[] {
+export function decodeTrace(nodes: unknown): TraceSpanDto[] {
   if (!Array.isArray(nodes)) return [];
   return nodes.filter(isRecord).map((node) => ({
     spanId: str(node.s),

@@ -1,18 +1,18 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type {
-  Application,
-  ApplicationSummary,
-  Page,
-} from '@selfhosted-observe/contracts';
 import { KYSELY, type Db } from '../../database/database.types.js';
 import {
   encodeTextCursor,
+  type Page,
   type TextKeysetCursor,
 } from '../../telemetry/common/cursor.js';
 import { ratio } from '../../telemetry/common/sql.js';
 import type { TimeWindow } from '../../telemetry/common/time-window.js';
 import { emptyActivity, requestActivity } from '../activity.js';
 import { isUniqueViolation } from '../pg-errors.js';
+import type {
+  ApplicationDto,
+  ApplicationSummaryDto,
+} from './applications.dto.js';
 import {
   ApplicationNameTakenError,
   ApplicationsRepository,
@@ -53,7 +53,7 @@ export class PostgresApplicationsRepository extends ApplicationsRepository {
     projectId: string,
     window: TimeWindow,
     page: { limit: number; cursor: TextKeysetCursor | null },
-  ): Promise<Page<ApplicationSummary>> {
+  ): Promise<Page<ApplicationSummaryDto>> {
     let query = this.db
       .selectFrom('applications as a')
       .leftJoinLateral(
@@ -100,8 +100,7 @@ export class PostgresApplicationsRepository extends ApplicationsRepository {
     return {
       items: pageRows.map((row) => {
         const stats = activity.get(row.id) ?? emptyActivity(window);
-        return {
-          ...toApplication(row),
+        return Object.assign(toApplication(row), {
           requestCount: stats.requestCount,
           requestsPerSecond: stats.requestCount / seconds,
           errorRate: ratio(stats.errorCount, stats.requestCount),
@@ -110,7 +109,7 @@ export class PostgresApplicationsRepository extends ApplicationsRepository {
           memoryPercent: row.memory_percent ?? null,
           memoryRssMb: row.memory_rss ?? null,
           activity: stats.activity,
-        };
+        });
       }),
       nextCursor:
         hasMore && last
@@ -119,7 +118,10 @@ export class PostgresApplicationsRepository extends ApplicationsRepository {
     };
   }
 
-  async findById(projectId: string, id: string): Promise<Application | null> {
+  async findById(
+    projectId: string,
+    id: string,
+  ): Promise<ApplicationDto | null> {
     const row = await this.db
       .selectFrom('applications')
       .select(COLUMNS)
@@ -132,7 +134,7 @@ export class PostgresApplicationsRepository extends ApplicationsRepository {
   async insert(
     projectId: string,
     application: { name: string; tags: string[] },
-  ): Promise<Application> {
+  ): Promise<ApplicationDto> {
     try {
       const row = await this.db
         .insertInto('applications')
@@ -149,7 +151,7 @@ export class PostgresApplicationsRepository extends ApplicationsRepository {
     projectId: string,
     id: string,
     patch: ApplicationPatch,
-  ): Promise<Application | null> {
+  ): Promise<ApplicationDto | null> {
     if (patch.name === undefined && patch.tags === undefined)
       return this.findById(projectId, id);
     try {
@@ -201,7 +203,7 @@ function mapNameTaken(error: unknown, name: string): unknown {
     : error;
 }
 
-function toApplication(row: ApplicationRow): Application {
+function toApplication(row: ApplicationRow): ApplicationDto {
   return {
     id: row.id,
     projectId: row.project_id,

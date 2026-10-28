@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { InstanceSummary } from '@selfhosted-observe/contracts';
 import { KYSELY, type Db } from '../../database/database.types.js';
 import { inApplications, type TelemetryScope } from '../common/scope.js';
+import type { InstanceSummaryDto } from './instances.dto.js';
 import { InstancesRepository } from './instances.repository.js';
 
 /** Upper bound on instances returned (pods come and go). */
@@ -14,7 +14,7 @@ export class PostgresInstancesRepository extends InstancesRepository {
   }
 
   /** Primary key range scan on (application_id, service_id). */
-  async list(scope: TelemetryScope): Promise<InstanceSummary[]> {
+  async list(scope: TelemetryScope): Promise<InstanceSummaryDto[]> {
     const rows = await this.db
       .selectFrom('services')
       .select([

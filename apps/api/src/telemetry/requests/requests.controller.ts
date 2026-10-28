@@ -12,13 +12,7 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import type {
-  OperationStats,
-  Page,
-  RequestDetail,
-  RequestListItem,
-} from '@selfhosted-observe/contracts';
-import { decodeCursor, UUID_ID } from '../common/cursor.js';
+import { decodeCursor, UUID_ID, type Page } from '../common/cursor.js';
 import { DEFAULT_PAGE_SIZE, ScopeQueryDto } from '../common/query.dto.js';
 import { ScopeResolver } from '../common/scope.js';
 import { resolveWindow } from '../common/time-window.js';
@@ -28,6 +22,7 @@ import {
   RequestDetailDto,
   RequestPageDto,
   RequestsQueryDto,
+  type RequestListItemDto,
 } from './requests.dto.js';
 import { RequestsRepository } from './requests.repository.js';
 
@@ -47,7 +42,7 @@ export class RequestsController {
   @ApiOkResponse({ type: [OperationStatsDto] })
   async operations(
     @Query() query: OperationsQueryDto,
-  ): Promise<OperationStats[]> {
+  ): Promise<OperationStatsDto[]> {
     return this.requests.operations({
       scope: await this.scopes.resolve(query),
       window: resolveWindow(query),
@@ -60,7 +55,9 @@ export class RequestsController {
     summary: 'Request executions, newest first',
   })
   @ApiOkResponse({ type: RequestPageDto })
-  async list(@Query() query: RequestsQueryDto): Promise<Page<RequestListItem>> {
+  async list(
+    @Query() query: RequestsQueryDto,
+  ): Promise<Page<RequestListItemDto>> {
     return this.requests.list(
       {
         scope: await this.scopes.resolve(query),
@@ -87,7 +84,7 @@ export class RequestsController {
   async detail(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Query() query: ScopeQueryDto,
-  ): Promise<RequestDetail> {
+  ): Promise<RequestDetailDto> {
     const scope = await this.scopes.resolve(query);
     const request = await this.requests.findById(scope, id);
     if (!request) throw new NotFoundException(`Request ${id} not found`);

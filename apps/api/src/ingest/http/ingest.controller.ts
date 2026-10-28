@@ -1,8 +1,8 @@
 import { Body, Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
-import type { WireIngestReply } from '@selfhosted-observe/contracts';
 import { IngestProfilesUseCase } from '../application/ingest-profiles.use-case.js';
 import { IngestTelemetryUseCase } from '../application/ingest-telemetry.use-case.js';
+import type { WireIngestReply } from '../domain/wire.js';
 import { IngestApplication, IngestAuthGuard } from './ingest-auth.guard.js';
 import {
   parseProfilesPayload,

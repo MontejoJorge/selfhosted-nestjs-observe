@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
-import type { WireTelemetryBatch } from '@selfhosted-observe/contracts';
 import type { ProfilesPayload } from '../application/ingest-profiles.use-case.js';
+import type { WireTelemetryBatch } from '../domain/wire.js';
 
 const ARRAY_SECTIONS = [
   'snapshots',

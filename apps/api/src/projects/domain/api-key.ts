@@ -1,5 +1,7 @@
-import type { ApiKeyStatus } from '@selfhosted-observe/contracts';
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
+
+export const API_KEY_STATUSES = ['active', 'expired', 'revoked'] as const;
+export type ApiKeyStatus = (typeof API_KEY_STATUSES)[number];
 
 /** Public key id prefix (sent as `x-api-key`). */
 export const KEY_ID_PREFIX = 'obs_';

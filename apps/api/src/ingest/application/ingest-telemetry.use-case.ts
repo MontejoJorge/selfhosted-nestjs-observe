@@ -1,11 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import type {
-  WireIngestReply,
-  WireTelemetryBatch,
-} from '@selfhosted-observe/contracts';
 import type { Env } from '../../config/env.js';
 import { mapTelemetryBatch } from '../domain/telemetry-batch.mapper.js';
+import type { WireIngestReply, WireTelemetryBatch } from '../domain/wire.js';
 import { TelemetryWriter } from './ports.js';
 
 const DAY_MS = 86_400_000;

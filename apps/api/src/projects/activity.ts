@@ -1,4 +1,3 @@
-import type { ActivityBucket } from '@selfhosted-observe/contracts';
 import { sql, type Kysely } from 'kysely';
 import type { Database } from '../database/database.types.js';
 import { inApplications } from '../telemetry/common/scope.js';
@@ -8,13 +7,14 @@ import {
   bucketSeconds,
   type TimeWindow,
 } from '../telemetry/common/time-window.js';
+import type { ActivityBucketDto } from './projects/projects.dto.js';
 
 /** Request activity of one group (a project or an application) over a window. */
 export interface ActivityStats {
   requestCount: number;
   errorCount: number;
   avgDurationMs: number | null;
-  activity: ActivityBucket[];
+  activity: ActivityBucketDto[];
 }
 
 interface BucketRow {
@@ -88,7 +88,7 @@ function summarize(
 ): ActivityStats {
   const stepMs = stepSeconds * 1000;
   const origin = Date.parse(BUCKET_ORIGIN);
-  const activity: ActivityBucket[] = [];
+  const activity: ActivityBucketDto[] = [];
   let requestCount = 0;
   let errorCount = 0;
   let totalMs = 0;

@@ -1,12 +1,7 @@
-import type {
-  JobDetail,
-  JobListItem,
-  JobStats,
-  Page,
-} from '@selfhosted-observe/contracts';
-import type { KeysetCursor } from '../common/cursor.js';
+import type { KeysetCursor, Page } from '../common/cursor.js';
 import type { TelemetryScope } from '../common/scope.js';
 import type { TimeWindow } from '../common/time-window.js';
+import type { JobDetailDto, JobListItemDto, JobStatsDto } from './jobs.dto.js';
 
 export interface JobFilter {
   scope: TelemetryScope;
@@ -19,17 +14,17 @@ export interface JobFilter {
 
 /** Read port for job executions. */
 export abstract class JobsRepository {
-  abstract queues(filter: JobFilter): Promise<JobStats[]>;
+  abstract queues(filter: JobFilter): Promise<JobStatsDto[]>;
   abstract list(
     filter: JobFilter,
     page: { limit: number; cursor: KeysetCursor | null },
-  ): Promise<Page<JobListItem>>;
+  ): Promise<Page<JobListItemDto>>;
   abstract findById(
     scope: TelemetryScope,
     id: string,
-  ): Promise<JobDetail | null>;
+  ): Promise<JobDetailDto | null>;
   abstract findByTraceId(
     scope: TelemetryScope,
     traceId: string,
-  ): Promise<JobDetail[]>;
+  ): Promise<JobDetailDto[]>;
 }

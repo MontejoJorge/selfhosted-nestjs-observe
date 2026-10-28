@@ -1,7 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import type { InstanceSummary } from '@selfhosted-observe/contracts';
 
-export class InstanceSummaryDto implements InstanceSummary {
+export class InstanceSummaryDto {
   applicationId: string;
   /** The agent's serviceId. */
   serviceId: string;

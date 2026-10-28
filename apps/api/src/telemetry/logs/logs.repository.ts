@@ -1,7 +1,8 @@
-import type { LogItem, LogLevel, Page } from '@selfhosted-observe/contracts';
-import type { KeysetCursor } from '../common/cursor.js';
+import type { LogLevel } from '../../ingest/domain/wire.js';
+import type { KeysetCursor, Page } from '../common/cursor.js';
 import type { TelemetryScope } from '../common/scope.js';
 import type { TimeWindow } from '../common/time-window.js';
+import type { LogItemDto } from './logs.dto.js';
 
 export interface LogFilter {
   scope: TelemetryScope;
@@ -18,9 +19,9 @@ export abstract class LogsRepository {
   abstract list(
     filter: LogFilter,
     page: { limit: number; cursor: KeysetCursor | null },
-  ): Promise<Page<LogItem>>;
+  ): Promise<Page<LogItemDto>>;
   abstract findByTraceId(
     scope: TelemetryScope,
     traceId: string,
-  ): Promise<LogItem[]>;
+  ): Promise<LogItemDto[]>;
 }

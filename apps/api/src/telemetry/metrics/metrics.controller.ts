@@ -5,10 +5,6 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import type {
-  RuntimeInstance,
-  RuntimeMetrics,
-} from '@selfhosted-observe/contracts';
 import { ScopeResolver } from '../common/scope.js';
 import { resolveWindow } from '../common/time-window.js';
 import {
@@ -37,7 +33,7 @@ export class MetricsController {
   @ApiNotFoundResponse()
   async runtime(
     @Query() query: RuntimeMetricsQueryDto,
-  ): Promise<RuntimeMetrics> {
+  ): Promise<RuntimeMetricsDto> {
     return this.metrics.runtime(
       await this.scopes.resolve(query),
       resolveWindow(query),
@@ -54,7 +50,7 @@ export class MetricsController {
   @ApiNotFoundResponse()
   async instances(
     @Query() query: RuntimeInstancesQueryDto,
-  ): Promise<RuntimeInstance[]> {
+  ): Promise<RuntimeInstanceDto[]> {
     return this.metrics.instances(
       await this.scopes.resolve(query),
       resolveWindow(query),

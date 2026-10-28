@@ -1,5 +1,4 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { Overview } from '@selfhosted-observe/contracts';
 import { KYSELY, type Db } from '../../database/database.types.js';
 import { inApplications } from '../common/scope.js';
 import {
@@ -15,6 +14,7 @@ import {
   toPercentiles,
 } from '../common/sql.js';
 import { bucketSeconds, fillTimeline } from '../common/time-window.js';
+import type { OverviewDto } from './overview.dto.js';
 import {
   OverviewRepository,
   type OverviewFilter,
@@ -37,7 +37,7 @@ export class PostgresOverviewRepository extends OverviewRepository {
     operationId,
     queue,
     name,
-  }: OverviewFilter): Promise<Overview> {
+  }: OverviewFilter): Promise<OverviewDto> {
     const apps = inApplications('application_id', scope.applicationIds);
     const instance = scope.instance;
 

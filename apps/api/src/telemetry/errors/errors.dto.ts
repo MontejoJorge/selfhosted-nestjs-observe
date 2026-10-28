@@ -1,9 +1,4 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import type {
-  ErrorGroup,
-  ErrorGroupDetail,
-  Page,
-} from '@selfhosted-observe/contracts';
 import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
 import { TimeBucketDto } from '../common/common.dto.js';
 import { PageQueryDto, TimeRangeQueryDto } from '../common/query.dto.js';
@@ -26,7 +21,7 @@ export class ErrorsQueryDto extends PageQueryDto {
 /** The time range limits the timeline and occurrences; default 1h. */
 export class ErrorDetailQueryDto extends TimeRangeQueryDto {}
 
-export class ErrorGroupDto implements ErrorGroup {
+export class ErrorGroupDto {
   id: string;
   fingerprint: string;
   /** Error groups are per application. */
@@ -59,10 +54,7 @@ export class ErrorOccurrenceDto {
   occurredAt: string;
 }
 
-export class ErrorGroupDetailDto
-  extends ErrorGroupDto
-  implements ErrorGroupDetail
-{
+export class ErrorGroupDetailDto extends ErrorGroupDto {
   @ApiProperty({ type: String, nullable: true })
   stack: string | null;
   @ApiProperty({ type: [TimeBucketDto] })
@@ -72,7 +64,7 @@ export class ErrorGroupDetailDto
   occurrences: ErrorOccurrenceDto[];
 }
 
-export class ErrorGroupPageDto implements Page<ErrorGroup> {
+export class ErrorGroupPageDto {
   @ApiProperty({ type: [ErrorGroupDto] })
   items: ErrorGroupDto[];
   @ApiProperty({ type: String, nullable: true })

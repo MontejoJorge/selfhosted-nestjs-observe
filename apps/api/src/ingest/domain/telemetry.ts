@@ -1,9 +1,4 @@
-import type {
-  LogLevel,
-  Tags,
-  WireError,
-  WireTraceNode,
-} from '@selfhosted-observe/contracts';
+import type { LogLevel, Tags, WireError, WireTraceNode } from './wire.js';
 
 /**
  * Domain records produced from one telemetry batch. They are storage-agnostic:

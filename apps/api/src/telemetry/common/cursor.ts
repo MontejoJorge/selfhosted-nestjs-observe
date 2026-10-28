@@ -1,5 +1,10 @@
 import { BadRequestException } from '@nestjs/common';
-import type { Page } from '@selfhosted-observe/contracts';
+
+/** One page of a keyset-paginated list. */
+export interface Page<T> {
+  items: T[];
+  nextCursor: string | null;
+}
 
 /** Keyset position: the sort time and id of the last row of the previous page. */
 export interface KeysetCursor {

@@ -1,10 +1,4 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger';
-import type {
-  RuntimeInstance,
-  RuntimeMetrics,
-  RuntimeSeriesPoint,
-  RuntimeSnapshot,
-} from '@selfhosted-observe/contracts';
 import { IsUUID } from 'class-validator';
 import { TimeRangeQueryDto } from '../common/query.dto.js';
 
@@ -27,7 +21,7 @@ const nullableNumber = { type: Number, nullable: true } as const;
  * One bucket. Gauges are averaged; per-interval deltas (CPU ms, GC counts and durations)
  * are summed, across instances too when no instance is selected. Memory is in megabytes.
  */
-export class RuntimeSeriesPointDto implements RuntimeSeriesPoint {
+export class RuntimeSeriesPointDto {
   /** Bucket start (ISO). */
   t: string;
   /** Percent of one core, as reported by the agent. */
@@ -77,7 +71,7 @@ export class RuntimeSeriesPointDto implements RuntimeSeriesPoint {
 }
 
 /** KPI values. Memory is in megabytes. */
-export class RuntimeSnapshotDto implements RuntimeSnapshot {
+export class RuntimeSnapshotDto {
   @ApiProperty(nullableNumber)
   cpuPercent: number | null;
   @ApiProperty(nullableNumber)
@@ -99,7 +93,7 @@ export class LatestRuntimeSampleDto extends RuntimeSnapshotDto {
   serviceId: string;
 }
 
-export class RuntimeMetricsDto implements RuntimeMetrics {
+export class RuntimeMetricsDto {
   /** Averages over the range. */
   avg: RuntimeSnapshotDto;
   /** Newest sample in the range, null when there is none. */
@@ -109,10 +103,7 @@ export class RuntimeMetricsDto implements RuntimeMetrics {
   series: RuntimeSeriesPointDto[];
 }
 
-export class RuntimeInstanceDto
-  extends RuntimeSnapshotDto
-  implements RuntimeInstance
-{
+export class RuntimeInstanceDto extends RuntimeSnapshotDto {
   /** The agent's serviceId. */
   serviceId: string;
   @ApiProperty({ type: String, nullable: true })

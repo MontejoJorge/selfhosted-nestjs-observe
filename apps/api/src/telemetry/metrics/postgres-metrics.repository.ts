@@ -1,14 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type {
-  RuntimeInstance,
-  RuntimeMetrics,
-  RuntimeSnapshot,
-} from '@selfhosted-observe/contracts';
 import { sql, type RawBuilder } from 'kysely';
 import { KYSELY, type Db } from '../../database/database.types.js';
 import { inApplications, type TelemetryScope } from '../common/scope.js';
 import { bucketStart } from '../common/sql.js';
 import { bucketSeconds, type TimeWindow } from '../common/time-window.js';
+import type {
+  RuntimeInstanceDto,
+  RuntimeMetricsDto,
+  RuntimeSnapshotDto,
+} from './metrics.dto.js';
 import { MetricsRepository } from './metrics.repository.js';
 
 /** Upper bound on instances returned for one application. */
@@ -51,7 +51,7 @@ export class PostgresMetricsRepository extends MetricsRepository {
   async runtime(
     scope: TelemetryScope,
     window: TimeWindow,
-  ): Promise<RuntimeMetrics> {
+  ): Promise<RuntimeMetricsDto> {
     const samples = () => {
       const q = this.db
         .selectFrom('runtime_metrics')
@@ -100,11 +100,10 @@ export class PostgresMetricsRepository extends MetricsRepository {
     return {
       avg: toSnapshot(averages as SnapshotRow),
       latest: latest
-        ? {
-            ...toSnapshot(latest),
+        ? Object.assign(toSnapshot(latest), {
             sampledAt: latest.sampled_at.toISOString(),
             serviceId: latest.service_id,
-          }
+          })
         : null,
       series: series.map((row) => ({
         t: row.t.toISOString(),
@@ -138,7 +137,7 @@ export class PostgresMetricsRepository extends MetricsRepository {
   async instances(
     scope: TelemetryScope,
     window: TimeWindow,
-  ): Promise<RuntimeInstance[]> {
+  ): Promise<RuntimeInstanceDto[]> {
     const rows = await this.db
       .selectFrom('services as s')
       .innerJoinLateral(
@@ -181,16 +180,17 @@ export class PostgresMetricsRepository extends MetricsRepository {
       .orderBy('s.service_id')
       .limit(INSTANCES_LIMIT)
       .execute();
-    return rows.map((row) => ({
-      ...toSnapshot(row),
-      serviceId: row.service_id,
-      serviceVersion: row.service_version,
-      lastSeenAt: row.sampled_at.toISOString(),
-    }));
+    return rows.map((row) =>
+      Object.assign(toSnapshot(row), {
+        serviceId: row.service_id,
+        serviceVersion: row.service_version,
+        lastSeenAt: row.sampled_at.toISOString(),
+      }),
+    );
   }
 }
 
-function toSnapshot(row: SnapshotRow): RuntimeSnapshot {
+function toSnapshot(row: SnapshotRow): RuntimeSnapshotDto {
   return {
     cpuPercent: row.cpu_percent,
     memoryPercent: row.memory_percent,

@@ -1,11 +1,4 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import type {
-  ApiKey,
-  ApiKeyStatus,
-  CreateApiKeyInput,
-  CreatedApiKey,
-  Page,
-} from '@selfhosted-observe/contracts';
 import { Transform } from 'class-transformer';
 import {
   IsISO8601,
@@ -17,12 +10,7 @@ import {
   ValidateIf,
 } from 'class-validator';
 import { CursorQueryDto } from '../../telemetry/common/query.dto.js';
-
-export const API_KEY_STATUSES = [
-  'active',
-  'expired',
-  'revoked',
-] as const satisfies readonly ApiKeyStatus[];
+import { API_KEY_STATUSES, type ApiKeyStatus } from '../domain/api-key.js';
 
 const trim = ({ value }: { value: unknown }) =>
   typeof value === 'string' ? value.trim() : value;
@@ -35,7 +23,7 @@ export class ApiKeysQueryDto extends CursorQueryDto {
   applicationId?: string;
 }
 
-export class ApiKeyDto implements ApiKey {
+export class ApiKeyDto {
   @ApiProperty({ format: 'uuid' })
   id: string;
   name: string;
@@ -57,19 +45,19 @@ export class ApiKeyDto implements ApiKey {
   createdAt: string;
 }
 
-export class CreatedApiKeyDto extends ApiKeyDto implements CreatedApiKey {
+export class CreatedApiKeyDto extends ApiKeyDto {
   /** The agent's `appSecret`, sent as `x-api-secret`. Returned only once, at creation. */
   secret: string;
 }
 
-export class ApiKeyPageDto implements Page<ApiKey> {
+export class ApiKeyPageDto {
   @ApiProperty({ type: [ApiKeyDto] })
   items: ApiKeyDto[];
   @ApiProperty({ type: String, nullable: true })
   nextCursor: string | null;
 }
 
-export class CreateApiKeyDto implements CreateApiKeyInput {
+export class CreateApiKeyDto {
   @Transform(trim)
   @IsString()
   @IsNotEmpty()

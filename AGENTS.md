@@ -10,14 +10,13 @@ which ingests the batches into PostgreSQL. The web app renders requests, jobs, e
 
 ## Layout
 
-| Path                 | What                                                                     |
-| -------------------- | ------------------------------------------------------------------------ |
-| `apps/api`           | NestJS collector + query API ([apps/api/AGENTS.md](apps/api/AGENTS.md))  |
-| `apps/web`           | Vite + React dashboard ([apps/web/AGENTS.md](apps/web/AGENTS.md))        |
-| `packages/contracts` | Shared TypeScript types: decoded wire format and query API DTOs          |
-| `docs/protocol.md`   | The `@nestjs/observe` wire protocol. **Read it before touching ingest.** |
-| `docs/adr/`          | Architecture decision records                                            |
-| `.claude/skills/`    | Vendored agent skills (React and NestJS best practices and architecture) |
+| Path               | What                                                                     |
+| ------------------ | ------------------------------------------------------------------------ |
+| `apps/api`         | NestJS collector + query API ([apps/api/AGENTS.md](apps/api/AGENTS.md))  |
+| `apps/web`         | Vite + React dashboard ([apps/web/AGENTS.md](apps/web/AGENTS.md))        |
+| `docs/protocol.md` | The `@nestjs/observe` wire protocol. **Read it before touching ingest.** |
+| `docs/adr/`        | Architecture decision records                                            |
+| `.claude/skills/`  | Vendored agent skills (React and NestJS best practices and architecture) |
 
 ## Commands
 
@@ -40,7 +39,8 @@ Filter to one app with `pnpm --filter api <script>` or `pnpm --filter web <scrip
 - Everything in the repo is in **English**: code, comments, commits, docs, UI copy.
 - **No tests for now.** Do not add test files, test runners or test dependencies until the maintainer asks.
 - Prettier config lives at the root (`.prettierrc`, with organize-imports). Run `pnpm format` before committing.
-- Wire-format types live in `packages/contracts`. Change them there, never by duplicating them in an app.
+- Wire-format types live in `apps/api/src/ingest/domain/wire.ts`. The query API's shapes are the DTO classes in
+  `apps/api` and reach the dashboard through `apps/api/openapi.json`.
 - The API's ingest endpoints (`POST /applications/telemetry`, `POST /applications/profiles`) are a contract
   with a third-party agent. Never change their paths or response semantics without updating `docs/protocol.md`.
 - Use [Conventional Commits](https://www.conventionalcommits.org) (`feat(api): ...`, `fix(web): ...`).

@@ -47,7 +47,8 @@ src/
     api-keys/api-key-authenticator.ts    ingest credentials -> application id (60 s cache)
     activity.ts                          request buckets for the project and application cards
   ingest/                                write side (hexagonal)
-    domain/                              pure TS: wire -> domain mapping, span flattening, fingerprints, UUIDv7
+    domain/                              pure TS: wire types (wire.ts), wire -> domain mapping, span flattening,
+                                         fingerprints, UUIDv7
     application/                         use cases + output ports (TelemetryWriter, ProfileWriter)
     infrastructure/                      Postgres adapters of the ports
     http/                                controller (/applications/*), auth guard, light payload validation
@@ -137,8 +138,8 @@ hourly, and on demand for any day an ingest batch touches (advisory-locked). Ret
 
 The dashboard's client is generated from `apps/api/openapi.json`, which is committed as the contract.
 
-- Response and query shapes are DTO **classes** in `*.dto.ts` files (the Swagger CLI plugin only scans those),
-  `implements` the matching interface from `@selfhosted-observe/contracts`.
+- Response and query shapes are DTO **classes** in `*.dto.ts` files (the Swagger CLI plugin only scans those).
+  They are the single source of truth: services and repositories use them as types too.
 - String unions use `@ApiProperty({ enum, enumName })` so the generator emits named enums. Nullable fields need
   an explicit `@ApiProperty({ type, nullable: true })`.
 - Every route has `@ApiTags`, a stable `@ApiOperation({ operationId })` (generated method names come from it)
@@ -151,6 +152,6 @@ The dashboard's client is generated from `apps/api/openapi.json`, which is commi
 
 ## Conventions
 
-- ESM: relative imports end in `.js`. Type-only imports from contracts (`import type`).
+- ESM: relative imports end in `.js`. Use `import type` for type-only imports.
 - No tests (maintainer's decision). Verify with build/typecheck/lint and by running the app.
-- Contracts changes: edit `packages/contracts`, `pnpm --filter @selfhosted-observe/contracts build`, keep DTOs in sync.
+- Wire-format changes: edit `src/ingest/domain/wire.ts` and `docs/protocol.md` together.

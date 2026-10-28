@@ -17,12 +17,11 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import type {
-  ApiKey,
-  CreatedApiKey,
-  Page,
-} from '@selfhosted-observe/contracts';
-import { decodeCursor, UUID_ID } from '../../telemetry/common/cursor.js';
+import {
+  decodeCursor,
+  UUID_ID,
+  type Page,
+} from '../../telemetry/common/cursor.js';
 import { DEFAULT_PAGE_SIZE } from '../../telemetry/common/query.dto.js';
 import { ProjectsService } from '../projects/projects.service.js';
 import {
@@ -55,7 +54,7 @@ export class ApiKeysController {
   async list(
     @Param('project') project: string,
     @Query() query: ApiKeysQueryDto,
-  ): Promise<Page<ApiKey>> {
+  ): Promise<Page<ApiKeyDto>> {
     const { id } = await this.projects.get(project);
     return this.repository.list(
       id,
@@ -78,7 +77,7 @@ export class ApiKeysController {
   async create(
     @Param('project') project: string,
     @Body() body: CreateApiKeyDto,
-  ): Promise<CreatedApiKey> {
+  ): Promise<CreatedApiKeyDto> {
     const { id } = await this.projects.get(project);
     return this.keys.create(id, body);
   }
@@ -94,7 +93,7 @@ export class ApiKeysController {
   async revoke(
     @Param('project') project: string,
     @Param('keyId', new ParseUUIDPipe()) keyId: string,
-  ): Promise<ApiKey> {
+  ): Promise<ApiKeyDto> {
     const { id } = await this.projects.get(project);
     return this.keys.revoke(id, keyId);
   }

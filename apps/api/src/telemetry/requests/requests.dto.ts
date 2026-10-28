@@ -1,12 +1,4 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import type {
-  OperationStats,
-  Page,
-  Primitive,
-  RequestDetail,
-  RequestListItem,
-  WireError,
-} from '@selfhosted-observe/contracts';
 import { Type } from 'class-transformer';
 import {
   IsIn,
@@ -16,6 +8,7 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
+import type { Primitive, WireError } from '../../ingest/domain/wire.js';
 import {
   JSON_OBJECT_SCHEMA,
   PercentilesDto,
@@ -54,7 +47,7 @@ export class RequestsQueryDto extends PageQueryDto {
   traceId?: string;
 }
 
-export class OperationStatsDto implements OperationStats {
+export class OperationStatsDto {
   operationId: string;
   /** `http`, `rpc`, `grpc`, `graphql` or `ws`. */
   protocol: string;
@@ -68,7 +61,7 @@ export class OperationStatsDto implements OperationStats {
   lastSeenAt: string;
 }
 
-export class RequestListItemDto implements RequestListItem {
+export class RequestListItemDto {
   /** UUIDv7 */
   id: string;
   traceId: string;
@@ -90,10 +83,7 @@ export class RequestListItemDto implements RequestListItem {
   hasError: boolean;
 }
 
-export class RequestDetailDto
-  extends RequestListItemDto
-  implements RequestDetail
-{
+export class RequestDetailDto extends RequestListItemDto {
   @ApiProperty({ type: String, nullable: true })
   serviceVersion: string | null;
   @ApiProperty(TAGS_SCHEMA)
@@ -107,7 +97,7 @@ export class RequestDetailDto
   trace: TraceSpanDto[];
 }
 
-export class RequestPageDto implements Page<RequestListItem> {
+export class RequestPageDto {
   @ApiProperty({ type: [RequestListItemDto] })
   items: RequestListItemDto[];
   @ApiProperty({ type: String, nullable: true })

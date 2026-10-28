@@ -11,12 +11,7 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import type {
-  ErrorGroup,
-  ErrorGroupDetail,
-  Page,
-} from '@selfhosted-observe/contracts';
-import { decodeCursor, NUMERIC_ID } from '../common/cursor.js';
+import { decodeCursor, NUMERIC_ID, type Page } from '../common/cursor.js';
 import { DEFAULT_PAGE_SIZE } from '../common/query.dto.js';
 import { ScopeResolver } from '../common/scope.js';
 import { resolveWindow } from '../common/time-window.js';
@@ -25,6 +20,7 @@ import {
   ErrorGroupDetailDto,
   ErrorGroupPageDto,
   ErrorsQueryDto,
+  type ErrorGroupDto,
 } from './errors.dto.js';
 import { ErrorsRepository } from './errors.repository.js';
 
@@ -42,7 +38,7 @@ export class ErrorsController {
     summary: 'Error groups seen in the range, most recently seen first',
   })
   @ApiOkResponse({ type: ErrorGroupPageDto })
-  async list(@Query() query: ErrorsQueryDto): Promise<Page<ErrorGroup>> {
+  async list(@Query() query: ErrorsQueryDto): Promise<Page<ErrorGroupDto>> {
     return this.errors.list(
       {
         scope: await this.scopes.resolve(query),
@@ -68,7 +64,7 @@ export class ErrorsController {
   async detail(
     @Param('id') id: string,
     @Query() query: ErrorDetailQueryDto,
-  ): Promise<ErrorGroupDetail> {
+  ): Promise<ErrorGroupDetailDto> {
     const scope = await this.scopes.resolve(query);
     const group = NUMERIC_ID.test(id)
       ? await this.errors.findById(scope, id, resolveWindow(query))

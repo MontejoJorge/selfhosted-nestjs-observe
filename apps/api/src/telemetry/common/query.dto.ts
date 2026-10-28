@@ -1,10 +1,4 @@
 import { ApiPropertyOptional, IntersectionType } from '@nestjs/swagger';
-import type {
-  PageQuery,
-  ScopeQuery,
-  TimeRange,
-  TimeRangeQuery,
-} from '@selfhosted-observe/contracts';
 import { Type } from 'class-transformer';
 import {
   IsIn,
@@ -19,17 +13,14 @@ import {
   Min,
 } from 'class-validator';
 
-export const TIME_RANGES = [
-  '1h',
-  '24h',
-  '7d',
-] as const satisfies readonly TimeRange[];
+export const TIME_RANGES = ['1h', '24h', '7d'] as const;
+export type TimeRange = (typeof TIME_RANGES)[number];
 
 export const DEFAULT_PAGE_SIZE = 50;
 export const MAX_PAGE_SIZE = 500;
 
 /** `range` or `from`/`to`. */
-export class RangeQueryDto implements TimeRangeQuery {
+export class RangeQueryDto {
   /** Relative window ending now (default `1h`). Ignored when `from` is given. */
   @ApiPropertyOptional({ enum: TIME_RANGES, enumName: 'TimeRange' })
   @IsOptional()
@@ -50,7 +41,7 @@ export class RangeQueryDto implements TimeRangeQuery {
 }
 
 /** Scope shared by every telemetry route: a project, optionally narrowed to one application. */
-export class ScopeQueryDto implements ScopeQuery {
+export class ScopeQueryDto {
   /** Project id or slug. */
   @IsString()
   @IsNotEmpty()
@@ -77,7 +68,7 @@ export class TimeRangeQueryDto extends IntersectionType(
 }
 
 /** Page size and cursor, without a time range or scope. */
-export class CursorQueryDto implements PageQuery {
+export class CursorQueryDto {
   /** Page size (default 50, max 500). */
   @ApiPropertyOptional({ type: 'integer', default: 50 })
   @IsOptional()

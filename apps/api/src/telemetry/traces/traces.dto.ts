@@ -1,10 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import type { TraceDetail } from '@selfhosted-observe/contracts';
 import { JobDetailDto } from '../jobs/jobs.dto.js';
 import { LogItemDto } from '../logs/logs.dto.js';
 import { RequestDetailDto } from '../requests/requests.dto.js';
 
-export class TraceDetailDto implements TraceDetail {
+export class TraceDetailDto {
   traceId: string;
   @ApiProperty({ type: [RequestDetailDto] })
   requests: RequestDetailDto[];

@@ -1,5 +1,4 @@
 import { ApiProperty } from '@nestjs/swagger';
-import type { Overview } from '@selfhosted-observe/contracts';
 import { IsOptional, IsString, MaxLength } from 'class-validator';
 import { PercentilesDto, TimeBucketDto } from '../common/common.dto.js';
 import { TimeRangeQueryDto } from '../common/query.dto.js';
@@ -51,7 +50,7 @@ export class ErrorsOverviewDto {
   events: number;
 }
 
-export class OverviewDto implements Overview {
+export class OverviewDto {
   requests: RequestsOverviewDto;
   jobs: JobsOverviewDto;
   errors: ErrorsOverviewDto;

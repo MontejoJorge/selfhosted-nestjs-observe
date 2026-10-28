@@ -46,7 +46,7 @@ export interface WireRequestSnapshot {
   /** duration in ms */
   d?: number;
   /** protocol */
-  p?: Protocol | string;
+  p?: Protocol | (string & {});
   /** operationId */
   op: string;
   /** userId */

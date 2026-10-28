@@ -1,10 +1,9 @@
-import type {
-  Application,
-  ApplicationSummary,
-  Page,
-} from '@selfhosted-observe/contracts';
-import type { TextKeysetCursor } from '../../telemetry/common/cursor.js';
+import type { Page, TextKeysetCursor } from '../../telemetry/common/cursor.js';
 import type { TimeWindow } from '../../telemetry/common/time-window.js';
+import type {
+  ApplicationDto,
+  ApplicationSummaryDto,
+} from './applications.dto.js';
 
 export interface ApplicationPatch {
   name?: string;
@@ -21,17 +20,20 @@ export abstract class ApplicationsRepository {
     projectId: string,
     window: TimeWindow,
     page: { limit: number; cursor: TextKeysetCursor | null },
-  ): Promise<Page<ApplicationSummary>>;
-  abstract findById(projectId: string, id: string): Promise<Application | null>;
+  ): Promise<Page<ApplicationSummaryDto>>;
+  abstract findById(
+    projectId: string,
+    id: string,
+  ): Promise<ApplicationDto | null>;
   abstract insert(
     projectId: string,
     application: { name: string; tags: string[] },
-  ): Promise<Application>;
+  ): Promise<ApplicationDto>;
   abstract update(
     projectId: string,
     id: string,
     patch: ApplicationPatch,
-  ): Promise<Application | null>;
+  ): Promise<ApplicationDto | null>;
   /**
    * Deletes the application and its keys and queues the purge of its telemetry, in one
    * transaction. Returns the deleted key ids, or null when not found.

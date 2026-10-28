@@ -3,10 +3,10 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import type { Application } from '@selfhosted-observe/contracts';
 import { ApplicationPurger } from '../../maintenance/application-purger.js';
 import { ApiKeyAuthenticator } from '../api-keys/api-key-authenticator.js';
 import type {
+  ApplicationDto,
   CreateApplicationDto,
   UpdateApplicationDto,
 } from './applications.dto.js';
@@ -23,14 +23,17 @@ export class ApplicationsService {
     private readonly authenticator: ApiKeyAuthenticator,
   ) {}
 
-  async get(projectId: string, id: string): Promise<Application> {
+  async get(projectId: string, id: string): Promise<ApplicationDto> {
     const application = await this.applications.findById(projectId, id);
     if (!application)
       throw new NotFoundException(`Application ${id} not found`);
     return application;
   }
 
-  create(projectId: string, input: CreateApplicationDto): Promise<Application> {
+  create(
+    projectId: string,
+    input: CreateApplicationDto,
+  ): Promise<ApplicationDto> {
     return this.nameChecked(() =>
       this.applications.insert(projectId, {
         name: input.name,
@@ -43,7 +46,7 @@ export class ApplicationsService {
     projectId: string,
     id: string,
     input: UpdateApplicationDto,
-  ): Promise<Application> {
+  ): Promise<ApplicationDto> {
     const application = await this.nameChecked(() =>
       this.applications.update(projectId, id, {
         name: input.name,

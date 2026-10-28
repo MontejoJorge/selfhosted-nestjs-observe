@@ -17,12 +17,7 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import type {
-  Page,
-  Project,
-  ProjectSummary,
-} from '@selfhosted-observe/contracts';
-import { decodeTextCursor } from '../../telemetry/common/cursor.js';
+import { decodeTextCursor, type Page } from '../../telemetry/common/cursor.js';
 import { DEFAULT_PAGE_SIZE } from '../../telemetry/common/query.dto.js';
 import { resolveWindow } from '../../telemetry/common/time-window.js';
 import {
@@ -31,6 +26,7 @@ import {
   ProjectSummaryPageDto,
   StatsPageQueryDto,
   UpdateProjectDto,
+  type ProjectSummaryDto,
 } from './projects.dto.js';
 import { ProjectsRepository } from './projects.repository.js';
 import { ProjectsService } from './projects.service.js';
@@ -50,7 +46,7 @@ export class ProjectsController {
     summary: 'Projects sorted by name, with request activity over the range',
   })
   @ApiOkResponse({ type: ProjectSummaryPageDto })
-  list(@Query() query: StatsPageQueryDto): Promise<Page<ProjectSummary>> {
+  list(@Query() query: StatsPageQueryDto): Promise<Page<ProjectSummaryDto>> {
     return this.repository.list(resolveWindow(query), {
       limit: query.limit ?? DEFAULT_PAGE_SIZE,
       cursor: decodeTextCursor(query.cursor),
@@ -61,7 +57,7 @@ export class ProjectsController {
   @ApiOperation({ operationId: 'getProject', summary: 'One project' })
   @ApiOkResponse({ type: ProjectDto })
   @ApiNotFoundResponse()
-  get(@Param('project') project: string): Promise<Project> {
+  get(@Param('project') project: string): Promise<ProjectDto> {
     return this.projects.get(project);
   }
 
@@ -71,7 +67,7 @@ export class ProjectsController {
     summary: 'Create a project (the slug is generated from the name)',
   })
   @ApiCreatedResponse({ type: ProjectDto })
-  create(@Body() body: CreateProjectDto): Promise<Project> {
+  create(@Body() body: CreateProjectDto): Promise<ProjectDto> {
     return this.projects.create(body);
   }
 
@@ -85,7 +81,7 @@ export class ProjectsController {
   update(
     @Param('project') project: string,
     @Body() body: UpdateProjectDto,
-  ): Promise<Project> {
+  ): Promise<ProjectDto> {
     return this.projects.update(project, body);
   }
 

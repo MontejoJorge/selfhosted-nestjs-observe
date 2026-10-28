@@ -19,12 +19,7 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import type {
-  Application,
-  ApplicationSummary,
-  Page,
-} from '@selfhosted-observe/contracts';
-import { decodeTextCursor } from '../../telemetry/common/cursor.js';
+import { decodeTextCursor, type Page } from '../../telemetry/common/cursor.js';
 import { DEFAULT_PAGE_SIZE } from '../../telemetry/common/query.dto.js';
 import { resolveWindow } from '../../telemetry/common/time-window.js';
 import { StatsPageQueryDto } from '../projects/projects.dto.js';
@@ -34,6 +29,7 @@ import {
   ApplicationSummaryPageDto,
   CreateApplicationDto,
   UpdateApplicationDto,
+  type ApplicationSummaryDto,
 } from './applications.dto.js';
 import { ApplicationsRepository } from './applications.repository.js';
 import { ApplicationsService } from './applications.service.js';
@@ -59,7 +55,7 @@ export class ApplicationsController {
   async list(
     @Param('project') project: string,
     @Query() query: StatsPageQueryDto,
-  ): Promise<Page<ApplicationSummary>> {
+  ): Promise<Page<ApplicationSummaryDto>> {
     const { id } = await this.projects.get(project);
     return this.repository.list(id, resolveWindow(query), {
       limit: query.limit ?? DEFAULT_PAGE_SIZE,
@@ -74,7 +70,7 @@ export class ApplicationsController {
   async get(
     @Param('project') project: string,
     @Param('applicationId', new ParseUUIDPipe()) applicationId: string,
-  ): Promise<Application> {
+  ): Promise<ApplicationDto> {
     const { id } = await this.projects.get(project);
     return this.applications.get(id, applicationId);
   }
@@ -90,7 +86,7 @@ export class ApplicationsController {
   async create(
     @Param('project') project: string,
     @Body() body: CreateApplicationDto,
-  ): Promise<Application> {
+  ): Promise<ApplicationDto> {
     const { id } = await this.projects.get(project);
     return this.applications.create(id, body);
   }
@@ -107,7 +103,7 @@ export class ApplicationsController {
     @Param('project') project: string,
     @Param('applicationId', new ParseUUIDPipe()) applicationId: string,
     @Body() body: UpdateApplicationDto,
-  ): Promise<Application> {
+  ): Promise<ApplicationDto> {
     const { id } = await this.projects.get(project);
     return this.applications.update(id, applicationId, body);
   }

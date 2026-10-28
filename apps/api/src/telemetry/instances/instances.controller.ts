@@ -1,6 +1,5 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import type { InstanceSummary } from '@selfhosted-observe/contracts';
 import { ScopeQueryDto } from '../common/query.dto.js';
 import { ScopeResolver } from '../common/scope.js';
 import { InstanceSummaryDto } from './instances.dto.js';
@@ -21,7 +20,7 @@ export class InstancesController {
       'Instances (agent serviceIds) that sent telemetry, most recently seen first',
   })
   @ApiOkResponse({ type: [InstanceSummaryDto] })
-  async list(@Query() query: ScopeQueryDto): Promise<InstanceSummary[]> {
+  async list(@Query() query: ScopeQueryDto): Promise<InstanceSummaryDto[]> {
     return this.instances.list(await this.scopes.resolve(query));
   }
 }
