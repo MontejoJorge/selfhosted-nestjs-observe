@@ -36,6 +36,8 @@ ingest pipeline.
 - Errors are fingerprinted on ingest (class, normalized message, top stack
   frame) into `error_groups`. The issues view never scans raw rows.
 - Batches are written with multi-row inserts in a single transaction per batch.
+- Database access uses [Kysely](https://kysely.dev) (typed SQL builder, no ORM) so every query stays
+  explicit and tunable. Migrations use the Kysely `Migrator` with raw SQL for partitioned tables.
 
 ## Consequences
 

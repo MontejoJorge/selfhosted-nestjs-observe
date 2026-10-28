@@ -51,6 +51,7 @@ Filter to one app with `pnpm --filter api <script>` or `pnpm --filter web <scrip
 Load the matching skill before writing code:
 
 - Backend: `nestjs-best-practices`, `clean-architecture`
+- Database (schema, migrations, any SQL/Kysely query): `postgres-best-practices`
 - Frontend: `react-best-practices`, `composition-patterns`
 
 ## MCP servers
