@@ -11,7 +11,9 @@ import { TIME_RANGES } from '@/lib/api/scope';
 import { useRange, useScope } from '@/lib/scope-hooks';
 import { applySearchPatch } from '@/lib/search';
 import { cn } from '@/lib/utils';
-import { useQuery } from '@tanstack/react-query';
+import { useIsFetching, useQuery, useQueryClient } from '@tanstack/react-query';
+import { CheckIcon, RefreshCwIcon } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
 
 const ALL_APPLICATIONS = '__all__';
@@ -147,7 +149,54 @@ export function RangeSegmented() {
   );
 }
 
-/** The right side of a project page header: application, live and time range. */
+/** How long the check mark shows after a refresh completes. */
+const REFRESHED_MS = 1200;
+
+/**
+ * Refetches the queries the current page has mounted (its scope: project,
+ * application, range and filters). The icon spins while any of them is
+ * fetching, then shows a check for a moment.
+ */
+export function RefreshButton() {
+  const queryClient = useQueryClient();
+  const fetching = useIsFetching({ type: 'active' }) > 0;
+  const [phase, setPhase] = useState<'idle' | 'refreshing' | 'done'>('idle');
+  const spinning = fetching || phase === 'refreshing';
+
+  useEffect(() => {
+    if (phase !== 'done') return;
+    const timer = setTimeout(() => setPhase('idle'), REFRESHED_MS);
+    return () => clearTimeout(timer);
+  }, [phase]);
+
+  const label = spinning ? 'Refreshing data' : 'Refresh data';
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      aria-busy={spinning}
+      disabled={spinning}
+      onClick={async () => {
+        setPhase('refreshing');
+        await queryClient.invalidateQueries({ type: 'active' });
+        setPhase('done');
+      }}
+      className="inline-grid size-10 shrink-0 place-items-center rounded-md border bg-card text-muted-foreground transition-colors hover:text-foreground disabled:cursor-default disabled:hover:text-muted-foreground"
+    >
+      {phase === 'done' && !spinning ? (
+        <CheckIcon className="size-4 text-teal" aria-hidden />
+      ) : (
+        <RefreshCwIcon
+          className={cn('size-4', spinning && 'animate-spin')}
+          aria-hidden
+        />
+      )}
+    </button>
+  );
+}
+
+/** The right side of a project page header: application, live, time range and refresh. */
 export function ScopeControls({
   defaultApplication,
 }: {
@@ -159,6 +208,7 @@ export function ScopeControls({
       <ApplicationSelect defaultApplication={defaultApplication} />
       <LivePill />
       <RangeSegmented />
+      <RefreshButton />
     </div>
   );
 }

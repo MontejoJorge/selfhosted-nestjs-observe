@@ -14,13 +14,21 @@ import { Textarea } from '@/components/ui/textarea';
 import { paths } from '@/lib/paths';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { PlusIcon } from 'lucide-react';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import { createProjectMutation } from './queries';
 
-/** "Create project" button + dialog; opens the new project's dashboard on success. */
-export function CreateProjectDialog() {
+/**
+ * "Create project" button + dialog; opens the new project's Applications page
+ * on success, where the first application is created. `children` replaces the
+ * trigger's label.
+ */
+export function CreateProjectDialog({
+  children = 'Create project',
+}: {
+  children?: ReactNode;
+}) {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -30,7 +38,7 @@ export function CreateProjectDialog() {
       await queryClient.invalidateQueries({ queryKey: ['projects'] });
       toast.success(`Project “${project.name}” created`);
       setOpen(false);
-      navigate(paths.project(project.slug));
+      navigate(paths.applications(project.slug));
     },
   });
 
@@ -44,7 +52,7 @@ export function CreateProjectDialog() {
     >
       <DialogTrigger asChild>
         <Button variant="inverse" size="xl">
-          <PlusIcon /> Create project
+          <PlusIcon /> {children}
         </Button>
       </DialogTrigger>
       <DialogContent>

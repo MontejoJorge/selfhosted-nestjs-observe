@@ -9,7 +9,9 @@ import {
   PanelHeader,
   Trend,
 } from '@/components/panel';
+import { ScopedLink } from '@/components/scoped-link';
 import { EmptyState } from '@/components/states';
+import { Button } from '@/components/ui/button';
 import { applicationsQueryOptions } from '@/features/applications/queries';
 import { ProjectTitle } from '@/features/projects/project-title';
 import type {
@@ -24,6 +26,7 @@ import {
   formatPercent,
   formatRelative,
 } from '@/lib/format';
+import { paths } from '@/lib/paths';
 import { useScope, useTypedSearch } from '@/lib/scope-hooks';
 import { formatLongDate, relativeChange } from '@/lib/stats';
 import { cn } from '@/lib/utils';
@@ -497,7 +500,16 @@ export function ProfilerPage() {
           }}
         />
       ) : (
-        <EmptyState title="No applications yet">
+        <EmptyState
+          title="No applications yet"
+          action={
+            <Button variant="outline" size="lg" asChild>
+              <ScopedLink to={paths.applications(scope.project)}>
+                Go to Applications
+              </ScopedLink>
+            </Button>
+          }
+        >
           Create an application and run its agent to see runtime metrics.
         </EmptyState>
       )}

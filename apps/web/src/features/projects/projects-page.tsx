@@ -150,43 +150,55 @@ export function ProjectsPage() {
         <PageTitle subtitle="Group your applications into projects to manage them more effectively.">
           My projects <CountBadge>{data.items.length}</CountBadge>
         </PageTitle>
-        <PageActions>
-          <CreateProjectDialog />
-        </PageActions>
+        {data.items.length > 0 ? (
+          <PageActions>
+            <CreateProjectDialog />
+          </PageActions>
+        ) : null}
       </PageHeader>
 
-      <FilterBar>
-        <InputFilter
-          label="Name"
-          value={name}
-          placeholder="Project name contains…"
-          onChange={setName}
-        />
-        <OptionFilter
-          label="Status"
-          value={status}
-          options={STATUS_OPTIONS}
-          onChange={setStatus}
-        />
-      </FilterBar>
-
       {data.items.length === 0 ? (
-        <EmptyState title="No projects yet">
-          Create a project, add an application to it and generate an API key for
-          the agent.
+        <EmptyState
+          title="Create your first project"
+          action={
+            <CreateProjectDialog>Create your first project</CreateProjectDialog>
+          }
+          className="py-16"
+        >
+          A project groups the applications of one product. Create one, add an
+          application to it and point the application's agent at this collector
+          with the API key it gets.
         </EmptyState>
-      ) : projects.length === 0 ? (
-        <EmptyState title="No project matches these filters" />
       ) : (
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {projects.map((project) => (
-            <ProjectCard
-              key={project.id}
-              project={project}
-              active={isActive(project, now)}
+        <>
+          <FilterBar>
+            <InputFilter
+              label="Name"
+              value={name}
+              placeholder="Project name contains…"
+              onChange={setName}
             />
-          ))}
-        </div>
+            <OptionFilter
+              label="Status"
+              value={status}
+              options={STATUS_OPTIONS}
+              onChange={setStatus}
+            />
+          </FilterBar>
+          {projects.length === 0 ? (
+            <EmptyState title="No project matches these filters" />
+          ) : (
+            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+              {projects.map((project) => (
+                <ProjectCard
+                  key={project.id}
+                  project={project}
+                  active={isActive(project, now)}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
     </Page>
   );

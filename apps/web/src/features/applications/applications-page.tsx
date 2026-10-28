@@ -43,9 +43,9 @@ import { EllipsisVerticalIcon, PlusIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { ApplicationFormDialog } from './application-form-dialog';
+import { CreateApplicationDialog } from './create-application-dialog';
 import {
   applicationsQueryOptions,
-  createApplicationMutation,
   deleteApplicationMutation,
   updateApplicationMutation,
 } from './queries';
@@ -82,16 +82,6 @@ export function ApplicationsPage() {
       queryClient.invalidateQueries({ queryKey: ['projects'] }),
     ]);
   const close = () => setDialog(null);
-  const create = useMutation({
-    ...createApplicationMutation(project),
-    onSuccess: async (app) => {
-      await invalidate();
-      toast.success(`Application “${app.name}” created`, {
-        description: 'Generate an API key for it in API keys.',
-      });
-      close();
-    },
-  });
   const update = useMutation({
     ...updateApplicationMutation(project),
     onSuccess: async () => {
@@ -136,172 +126,180 @@ export function ApplicationsPage() {
           My applications <CountBadge>{data.items.length}</CountBadge>
         </ProjectTitle>
         <PageActions>
-          <Button
-            variant="inverse"
-            size="xl"
-            onClick={() => {
-              create.reset();
-              setDialog({ kind: 'create' });
-            }}
-          >
-            <PlusIcon /> Create application
-          </Button>
+          {data.items.length > 0 ? (
+            <Button
+              variant="inverse"
+              size="xl"
+              onClick={() => setDialog({ kind: 'create' })}
+            >
+              <PlusIcon /> Create application
+            </Button>
+          ) : null}
         </PageActions>
       </PageHeader>
 
-      <FilterBar>
-        <InputFilter
-          label="Name"
-          value={name}
-          placeholder="Name contains…"
-          onChange={setName}
-        />
-        <OptionFilter
-          label="Status"
-          value={status}
-          options={STATUS_OPTIONS}
-          onChange={setStatus}
-        />
-        <OptionFilter
-          label="Tags"
-          value={tag}
-          options={tags}
-          onChange={setTag}
-        />
-      </FilterBar>
-
       {data.items.length === 0 ? (
-        <EmptyState title="No applications yet">
-          Create an application for each Nest service, then add an API key for
-          its agent.
+        <EmptyState
+          title="Create your first application"
+          className="py-16"
+          action={
+            <Button
+              variant="inverse"
+              size="xl"
+              onClick={() => setDialog({ kind: 'create' })}
+            >
+              <PlusIcon /> Create your first application
+            </Button>
+          }
+        >
+          An application is one Nest service. Creating it gives you the API key
+          its agent uses to send telemetry here.
         </EmptyState>
       ) : (
-        <TableFrame>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Activity</TableHead>
-                <TableHead>Last seen</TableHead>
-                <TableHead>CPU</TableHead>
-                <TableHead>Memory</TableHead>
-                <TableHead className="text-right">Req/s</TableHead>
-                <TableHead className="text-right">Error rate</TableHead>
-                <TableHead>Tags</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {apps.map((app) => (
-                <TableRow key={app.id}>
-                  <TableCell className="font-medium">
-                    <ScopedLink
-                      to={paths.project(project)}
-                      search={{ application: app.id }}
-                      className="hover:underline"
-                    >
-                      {app.name}
-                    </ScopedLink>
-                  </TableCell>
-                  <TableCell className="w-28">
-                    <Sparkline
-                      values={app.activity.map((bucket) => bucket.count)}
-                      className="h-6 w-16"
-                    />
-                  </TableCell>
-                  <TableCell className="text-sm whitespace-nowrap text-muted-foreground">
-                    {app.lastSeenAt ? formatRelative(app.lastSeenAt) : 'Never'}
-                  </TableCell>
-                  <TableCell>
-                    <Meter percent={app.cpuPercent} />
-                  </TableCell>
-                  <TableCell>
-                    <Meter percent={app.memoryPercent} />
-                  </TableCell>
-                  <NumCell>{app.requestsPerSecond.toFixed(2)}</NumCell>
-                  <NumCell
-                    className={cn(app.errorRate >= 0.01 && 'text-primary')}
-                  >
-                    {(app.errorRate * 100).toFixed(2)}%
-                  </NumCell>
-                  <TableCell>
-                    <div className="flex flex-wrap gap-1.5">
-                      {app.tags.map((t) => (
-                        <TagChip key={t}>{t}</TagChip>
-                      ))}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          aria-label={`Actions for ${app.name}`}
-                        >
-                          <EllipsisVerticalIcon />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem asChild>
-                          <ScopedLink
-                            to={paths.requests(project)}
-                            search={{ application: app.id }}
-                          >
-                            View requests
-                          </ScopedLink>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <ScopedLink
-                            to={paths.profiler(project)}
-                            search={{ application: app.id }}
-                          >
-                            Open profiler
-                          </ScopedLink>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onSelect={() => {
-                            update.reset();
-                            setDialog({ kind: 'edit', app });
-                          }}
-                        >
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          variant="destructive"
-                          onSelect={() => {
-                            remove.reset();
-                            setDialog({ kind: 'delete', app });
-                          }}
-                        >
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+        <>
+          <FilterBar>
+            <InputFilter
+              label="Name"
+              value={name}
+              placeholder="Name contains…"
+              onChange={setName}
+            />
+            <OptionFilter
+              label="Status"
+              value={status}
+              options={STATUS_OPTIONS}
+              onChange={setStatus}
+            />
+            <OptionFilter
+              label="Tags"
+              value={tag}
+              options={tags}
+              onChange={setTag}
+            />
+          </FilterBar>
+          <TableFrame>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Activity</TableHead>
+                  <TableHead>Last seen</TableHead>
+                  <TableHead>CPU</TableHead>
+                  <TableHead>Memory</TableHead>
+                  <TableHead className="text-right">Req/s</TableHead>
+                  <TableHead className="text-right">Error rate</TableHead>
+                  <TableHead>Tags</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ))}
-              {apps.length === 0 ? (
-                <MessageRow colSpan={9}>
-                  No application matches these filters.
-                </MessageRow>
-              ) : null}
-            </TableBody>
-          </Table>
-        </TableFrame>
+              </TableHeader>
+              <TableBody>
+                {apps.map((app) => (
+                  <TableRow key={app.id}>
+                    <TableCell className="font-medium">
+                      <ScopedLink
+                        to={paths.project(project)}
+                        search={{ application: app.id }}
+                        className="hover:underline"
+                      >
+                        {app.name}
+                      </ScopedLink>
+                    </TableCell>
+                    <TableCell className="w-28">
+                      <Sparkline
+                        values={app.activity.map((bucket) => bucket.count)}
+                        className="h-6 w-16"
+                      />
+                    </TableCell>
+                    <TableCell className="text-sm whitespace-nowrap text-muted-foreground">
+                      {app.lastSeenAt
+                        ? formatRelative(app.lastSeenAt)
+                        : 'Never'}
+                    </TableCell>
+                    <TableCell>
+                      <Meter percent={app.cpuPercent} />
+                    </TableCell>
+                    <TableCell>
+                      <Meter percent={app.memoryPercent} />
+                    </TableCell>
+                    <NumCell>{app.requestsPerSecond.toFixed(2)}</NumCell>
+                    <NumCell
+                      className={cn(app.errorRate >= 0.01 && 'text-primary')}
+                    >
+                      {(app.errorRate * 100).toFixed(2)}%
+                    </NumCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1.5">
+                        {app.tags.map((t) => (
+                          <TagChip key={t}>{t}</TagChip>
+                        ))}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            aria-label={`Actions for ${app.name}`}
+                          >
+                            <EllipsisVerticalIcon />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem asChild>
+                            <ScopedLink
+                              to={paths.requests(project)}
+                              search={{ application: app.id }}
+                            >
+                              View requests
+                            </ScopedLink>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <ScopedLink
+                              to={paths.profiler(project)}
+                              search={{ application: app.id }}
+                            >
+                              Open profiler
+                            </ScopedLink>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onSelect={() => {
+                              update.reset();
+                              setDialog({ kind: 'edit', app });
+                            }}
+                          >
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            variant="destructive"
+                            onSelect={() => {
+                              remove.reset();
+                              setDialog({ kind: 'delete', app });
+                            }}
+                          >
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {apps.length === 0 ? (
+                  <MessageRow colSpan={9}>
+                    No application matches these filters.
+                  </MessageRow>
+                ) : null}
+              </TableBody>
+            </Table>
+          </TableFrame>
+        </>
       )}
 
-      <ApplicationFormDialog
+      <CreateApplicationDialog
         open={dialog?.kind === 'create'}
         onOpenChange={(open) => !open && close()}
-        title="Create application"
-        description="An application is one Nest service. Its agents authenticate with an API key of this application."
-        submitLabel="Create application"
-        initial={{ name: '', tags: [] }}
-        pending={create.isPending}
-        error={create.error}
-        onSubmit={(values) => create.mutate(values)}
+        project={project}
       />
       <ApplicationFormDialog
         open={dialog?.kind === 'edit'}

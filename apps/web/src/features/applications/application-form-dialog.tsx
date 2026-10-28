@@ -76,7 +76,7 @@ function TagInput({
   );
 }
 
-/** Create/edit dialog body for an application: name + up to three tags. */
+/** Edit dialog for an application: name + up to three tags. */
 export function ApplicationFormDialog({
   open,
   onOpenChange,
@@ -119,7 +119,8 @@ export function ApplicationFormDialog({
   );
 }
 
-function ApplicationForm({
+/** The application form (name + tags) for a dialog body. */
+export function ApplicationForm({
   title,
   description,
   submitLabel,

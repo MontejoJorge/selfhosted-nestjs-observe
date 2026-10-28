@@ -1,6 +1,9 @@
+import { ScopedLink } from '@/components/scoped-link';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { API_URL, errorMessage, errorStatus } from '@/lib/api/client';
+import { paths } from '@/lib/paths';
+import { useProjectRef } from '@/lib/scope-hooks';
 import { cn } from '@/lib/utils';
 import { AlertTriangleIcon, InboxIcon, RefreshCwIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
@@ -90,10 +93,13 @@ export function ErrorState({
 export function EmptyState({
   title,
   children,
+  action,
   className,
 }: {
   title: string;
   children?: ReactNode;
+  /** A call to action under the text, e.g. the "Create …" button. */
+  action?: ReactNode;
   className?: string;
 }) {
   return (
@@ -108,17 +114,25 @@ export function EmptyState({
       {children ? (
         <div className="max-w-md text-muted-foreground">{children}</div>
       ) : null}
+      {action ? <div className="mt-3">{action}</div> : null}
     </div>
   );
 }
 
-/** The hint shown when nothing has been ingested yet. */
+/** The hint shown when nothing has been ingested yet. Only under /projects/:projectId. */
 export function NoTelemetryHint() {
+  const project = useProjectRef();
   return (
     <>
       <p>
-        Create an application and an API key for it (API keys page), then start
-        the agent with:
+        Create an application on the{' '}
+        <ScopedLink
+          to={paths.applications(project)}
+          className="font-medium text-foreground underline underline-offset-4"
+        >
+          Applications
+        </ScopedLink>{' '}
+        page (its API key is shown once), then start the agent with:
       </p>
       <pre className="mt-2 rounded-md bg-muted px-3 py-2 text-left text-xs text-foreground">
         {`OBSERVE_APP_KEY=<key id>

@@ -1,5 +1,3 @@
-import { CodeBlock } from '@/components/data/code-block';
-import { CopyButton } from '@/components/data/copy';
 import { Field, FormError } from '@/components/form';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,14 +16,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { API_URL } from '@/lib/api/client';
 import type {
   ApplicationSummaryDto,
   CreatedApiKeyDto,
 } from '@/lib/api/generated/api';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { TriangleAlertIcon } from 'lucide-react';
 import { useState } from 'react';
+import { ApiKeyCredentials } from './api-key-credentials';
 import { createApiKeyMutation } from './queries';
 
 /** Today as `yyyy-mm-dd` in local time, the minimum for the expiry picker. */
@@ -133,22 +130,6 @@ function KeyForm({
   );
 }
 
-function Secret({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <span className="font-mono text-[11px] tracking-wider text-muted-foreground uppercase">
-        {label}
-      </span>
-      <div className="flex items-center gap-2 rounded-md border bg-background/60 py-1.5 pr-1.5 pl-3">
-        <code className="min-w-0 flex-1 font-mono text-sm break-all">
-          {value}
-        </code>
-        <CopyButton value={value} label={`Copy ${label.toLowerCase()}`} />
-      </div>
-    </div>
-  );
-}
-
 /** Shown once after creation: the only time the secret is visible. */
 function CreatedKey({
   apiKey,
@@ -157,12 +138,6 @@ function CreatedKey({
   apiKey: CreatedApiKeyDto;
   onDone: () => void;
 }) {
-  const env = [
-    `OBSERVE_APP_KEY=${apiKey.keyId}`,
-    `OBSERVE_APP_SECRET=${apiKey.secret}`,
-    `OBSERVE_ENDPOINT=${API_URL}`,
-  ].join('\n');
-
   return (
     <div className="flex min-w-0 flex-col gap-5">
       <DialogHeader>
@@ -171,27 +146,7 @@ function CreatedKey({
           Configure the agent of {apiKey.applicationName} with these values.
         </DialogDescription>
       </DialogHeader>
-      <p
-        role="alert"
-        className="flex items-start gap-2 rounded-md border border-primary/40 bg-primary/10 px-3 py-2 text-sm"
-      >
-        <TriangleAlertIcon className="mt-0.5 size-4 shrink-0 text-primary" />
-        <span>
-          Copy the secret now. <strong>It won't be shown again</strong>; if you
-          lose it, create a new key and revoke this one.
-        </span>
-      </p>
-      <Secret label="Key ID" value={apiKey.keyId} />
-      <Secret label="Secret" value={apiKey.secret} />
-      <div className="flex min-w-0 flex-col gap-1.5">
-        <div className="flex items-center justify-between">
-          <span className="font-mono text-[11px] tracking-wider text-muted-foreground uppercase">
-            .env
-          </span>
-          <CopyButton value={env} label="Copy .env snippet" />
-        </div>
-        <CodeBlock className="whitespace-pre-wrap break-all">{env}</CodeBlock>
-      </div>
+      <ApiKeyCredentials keyId={apiKey.keyId} secret={apiKey.secret} />
       <DialogFooter>
         <Button variant="inverse" size="lg" onClick={onDone}>
           I've saved the secret
