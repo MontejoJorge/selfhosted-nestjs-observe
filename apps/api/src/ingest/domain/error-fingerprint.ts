@@ -3,16 +3,19 @@ import type { ExecutionSource } from './telemetry.js';
 
 /** Replaces volatile parts of a message (ids, numbers, quoted values) so similar errors group together. */
 export function normalizeErrorMessage(message: string): string {
-  return message
-    .replace(
-      /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi,
-      '<uuid>',
-    )
-    .replace(/\b[0-9a-f]{16,}\b/gi, '<hex>')
-    .replace(/"[^"]*"|'[^']*'|`[^`]*`/g, '<str>')
-    .replace(/\b\d+(\.\d+)?\b/g, '<n>')
-    .replace(/\s+/g, ' ')
-    .trim();
+  return (
+    message
+      .replace(
+        /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi,
+        '<uuid>',
+      )
+      .replace(/\b[0-9a-f]{16,}\b/gi, '<hex>')
+      .replace(/"[^"]*"|'[^']*'|`[^`]*`/g, '<str>')
+      // no word boundaries, so '7250ms' or 'id42' normalize too
+      .replace(/\d+(\.\d+)?/g, '<n>')
+      .replace(/\s+/g, ' ')
+      .trim()
+  );
 }
 
 /** First `at ...` frame of a V8 stack, without line/column so it survives redeploys. */
