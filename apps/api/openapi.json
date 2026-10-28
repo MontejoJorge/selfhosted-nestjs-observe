@@ -92,6 +92,26 @@
             }
           },
           {
+            "name": "queue",
+            "required": false,
+            "in": "query",
+            "description": "With `name`, scopes the jobs block and the jobs timeline to one job.",
+            "schema": {
+              "maxLength": 255,
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "required": false,
+            "in": "query",
+            "description": "Job name, used with `queue`.",
+            "schema": {
+              "maxLength": 255,
+              "type": "string"
+            }
+          },
+          {
             "name": "service",
             "required": false,
             "in": "query",
@@ -1083,13 +1103,28 @@
           },
           "p95": {
             "type": "number"
+          },
+          "avg": {
+            "type": "number",
+            "description": "Mean duration (ms)."
+          },
+          "status4xx": {
+            "type": "number",
+            "description": "Requests with statusCode 400-499 (always 0 for jobs and error occurrences)."
+          },
+          "status5xx": {
+            "type": "number",
+            "description": "Requests with statusCode >= 500 (always 0 for jobs and error occurrences)."
           }
         },
         "required": [
           "t",
           "count",
           "errors",
-          "p95"
+          "p95",
+          "avg",
+          "status4xx",
+          "status5xx"
         ]
       },
       "PercentilesDto": {
@@ -1103,12 +1138,17 @@
           },
           "p99": {
             "type": "number"
+          },
+          "avg": {
+            "type": "number",
+            "description": "Mean."
           }
         },
         "required": [
           "p50",
           "p95",
-          "p99"
+          "p99",
+          "avg"
         ]
       },
       "RequestsOverviewDto": {
@@ -1123,12 +1163,22 @@
           },
           "latency": {
             "$ref": "#/components/schemas/PercentilesDto"
+          },
+          "status4xx": {
+            "type": "number",
+            "description": "Requests with statusCode 400-499."
+          },
+          "status5xx": {
+            "type": "number",
+            "description": "Requests with statusCode >= 500."
           }
         },
         "required": [
           "count",
           "errorRate",
-          "latency"
+          "latency",
+          "status4xx",
+          "status5xx"
         ]
       },
       "JobsOverviewDto": {
@@ -1178,6 +1228,13 @@
               "$ref": "#/components/schemas/TimeBucketDto"
             }
           },
+          "jobsTimeline": {
+            "description": "Job runs per bucket (errors = failed runs), gap-filled, same buckets as `timeline`.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimeBucketDto"
+            }
+          },
           "requests": {
             "$ref": "#/components/schemas/RequestsOverviewDto"
           },
@@ -1190,6 +1247,7 @@
         },
         "required": [
           "timeline",
+          "jobsTimeline",
           "requests",
           "jobs",
           "errors"

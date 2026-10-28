@@ -6,7 +6,7 @@ import type {
 } from '@selfhosted-observe/contracts';
 import { KYSELY, type Db } from '../../database/database.types.js';
 import { toPage, type KeysetCursor } from '../common/cursor.js';
-import { bucketStart, countAll, p95 } from '../common/sql.js';
+import { avgOf, bucketStart, countAll, p95 } from '../common/sql.js';
 import {
   bucketSeconds,
   fillTimeline,
@@ -121,7 +121,12 @@ export class PostgresErrorsRepository extends ErrorsRepository {
     const [timeline, occurrences] = await Promise.all([
       this.db
         .selectFrom('error_occurrences')
-        .select([t.as('t'), countAll.as('count'), p95('duration_ms').as('p95')])
+        .select([
+          t.as('t'),
+          countAll.as('count'),
+          p95('duration_ms').as('p95'),
+          avgOf('duration_ms').as('avg'),
+        ])
         .where('group_id', '=', groupId)
         .where('occurred_at', '>=', window.from)
         .where('occurred_at', '<', window.to)
@@ -156,6 +161,7 @@ export class PostgresErrorsRepository extends ErrorsRepository {
           count: row.count,
           errors: row.count,
           p95: row.p95,
+          avg: row.avg,
         })),
       ),
       occurrences: occurrences.map((row) => ({

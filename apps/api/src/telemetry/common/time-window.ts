@@ -49,7 +49,15 @@ export const BUCKET_ORIGIN = '2000-01-01T00:00:00Z';
 export function fillTimeline(
   window: TimeWindow,
   stepSeconds: number,
-  rows: Array<{ t: Date; count: number; errors: number; p95: number | null }>,
+  rows: Array<{
+    t: Date;
+    count: number;
+    errors: number;
+    p95: number | null;
+    avg: number | null;
+    status4xx?: number;
+    status5xx?: number;
+  }>,
 ): TimeBucket[] {
   const stepMs = stepSeconds * 1000;
   const origin = Date.parse(BUCKET_ORIGIN);
@@ -64,6 +72,9 @@ export function fillTimeline(
       count: row?.count ?? 0,
       errors: row?.errors ?? 0,
       p95: row?.p95 ?? 0,
+      avg: row?.avg ?? 0,
+      status4xx: row?.status4xx ?? 0,
+      status5xx: row?.status5xx ?? 0,
     });
   }
   return buckets;

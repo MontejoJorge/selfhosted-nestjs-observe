@@ -21,6 +21,8 @@ export class OverviewController {
       window: resolveWindow(query),
       serviceId: query.service,
       operationId: query.operationId,
+      queue: query.queue,
+      name: query.name,
     });
   }
 }

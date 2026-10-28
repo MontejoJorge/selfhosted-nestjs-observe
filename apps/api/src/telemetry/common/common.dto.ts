@@ -33,6 +33,8 @@ export class PercentilesDto implements Percentiles {
   p50: number;
   p95: number;
   p99: number;
+  /** Mean. */
+  avg: number;
 }
 
 export class TimeBucketDto implements TimeBucket {
@@ -41,6 +43,12 @@ export class TimeBucketDto implements TimeBucket {
   count: number;
   errors: number;
   p95: number;
+  /** Mean duration (ms). */
+  avg: number;
+  /** Requests with statusCode 400-499 (always 0 for jobs and error occurrences). */
+  status4xx: number;
+  /** Requests with statusCode >= 500 (always 0 for jobs and error occurrences). */
+  status5xx: number;
 }
 
 /** Error as reported by the agent. */

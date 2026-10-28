@@ -34,6 +34,8 @@ export interface Percentiles {
   p50: number;
   p95: number;
   p99: number;
+  /** mean */
+  avg: number;
 }
 
 export interface TimeBucket {
@@ -42,6 +44,12 @@ export interface TimeBucket {
   count: number;
   errors: number;
   p95: number;
+  /** mean duration (ms) */
+  avg: number;
+  /** requests with statusCode 400-499 (always 0 for jobs and error occurrences) */
+  status4xx: number;
+  /** requests with statusCode >= 500 (always 0 for jobs and error occurrences) */
+  status5xx: number;
 }
 
 // GET /api/services
@@ -52,12 +60,21 @@ export interface ServiceSummary {
   lastSeenAt: string;
 }
 
-// GET /api/overview  (filters: operationId, scopes the requests part and the timeline)
+// GET /api/overview  (filters: operationId scopes `requests` and `timeline`; queue + name scope `jobs` and `jobsTimeline`)
 export interface Overview {
-  requests: { count: number; errorRate: number; latency: Percentiles };
+  requests: {
+    count: number;
+    errorRate: number;
+    latency: Percentiles;
+    status4xx: number;
+    status5xx: number;
+  };
   jobs: { count: number; failureRate: number; latency: Percentiles };
   errors: { groups: number; events: number };
+  /** requests per bucket */
   timeline: TimeBucket[];
+  /** job runs per bucket (errors = failed runs), same buckets as `timeline` */
+  jobsTimeline: TimeBucket[];
 }
 
 // GET /api/requests/operations  (aggregated per operationId)

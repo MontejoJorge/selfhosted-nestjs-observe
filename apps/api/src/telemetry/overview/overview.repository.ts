@@ -6,6 +6,9 @@ export interface OverviewFilter {
   serviceId?: string;
   /** scopes the requests block and the timeline */
   operationId?: string;
+  /** with `name`, scopes the jobs block and the jobs timeline */
+  queue?: string;
+  name?: string;
 }
 
 /** Read port for the overview page. */

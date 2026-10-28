@@ -38,13 +38,24 @@ export function countWhere(column: string): RawBuilder<number> {
 
 export function toPercentiles(
   values: number[] | null | undefined,
+  avg: number | null | undefined,
 ): Percentiles {
   return {
     p50: values?.[0] ?? 0,
     p95: values?.[1] ?? 0,
     p99: values?.[2] ?? 0,
+    avg: avg ?? 0,
   };
 }
+
+export function avgOf(column: string): RawBuilder<number | null> {
+  return sql<number | null>`avg(${sql.ref(column)})::float8`;
+}
+
+/** Requests with a 4xx status code. */
+export const count4xx = sql<number>`(count(*) filter (where status_code between 400 and 499))::int8`;
+/** Requests with a 5xx (or higher) status code. */
+export const count5xx = sql<number>`(count(*) filter (where status_code >= 500))::int8`;
 
 export function ratio(part: number, total: number): number {
   return total > 0 ? part / total : 0;

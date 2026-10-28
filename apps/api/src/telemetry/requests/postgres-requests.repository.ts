@@ -15,6 +15,7 @@ import {
 import { toPage, type KeysetCursor } from '../common/cursor.js';
 import { windowFromId } from '../common/id-window.js';
 import {
+  avgOf,
   countAll,
   countWhere,
   latencyPercentiles,
@@ -91,6 +92,7 @@ export class PostgresRequestsRepository extends RequestsRepository {
         countAll.as('count'),
         countWhere('has_error').as('error_count'),
         latencyPercentiles('duration_ms').as('latency'),
+        avgOf('duration_ms').as('avg_ms'),
         eb.fn.max('called_at').as('last_seen_at'),
       ])
       .groupBy(['operation_id', 'protocol', 'method'])
@@ -104,7 +106,7 @@ export class PostgresRequestsRepository extends RequestsRepository {
       count: row.count,
       errorCount: row.error_count,
       errorRate: ratio(row.error_count, row.count),
-      latency: toPercentiles(row.latency),
+      latency: toPercentiles(row.latency, row.avg_ms),
       lastSeenAt: new Date(row.last_seen_at).toISOString(),
     }));
   }
