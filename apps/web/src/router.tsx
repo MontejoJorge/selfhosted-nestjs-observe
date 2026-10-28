@@ -22,6 +22,11 @@ import {
   previousOverviewQueryOptions,
 } from '@/features/overview/queries';
 import {
+  runtimeInstancesQueryOptions,
+  runtimeMetricsQueryOptions,
+} from '@/features/profiler/queries';
+import { profilerSearch } from '@/features/profiler/search';
+import {
   projectQueryOptions,
   projectsQueryOptions,
 } from '@/features/projects/queries';
@@ -215,6 +220,40 @@ export const router = createBrowserRouter([
                   Component: (
                     await import('@/features/requests/request-detail-page')
                   ).RequestDetailPage,
+                }),
+              },
+              {
+                path: 'profiler',
+                loader: async (args) => {
+                  const scope = scopeOf(args);
+                  const applications = await queryClient.ensureQueryData(
+                    applicationsQueryOptions(scope.project, scope.range),
+                  );
+                  // Runtime metrics are per application: default to the first.
+                  const application =
+                    scope.application ?? applications.items[0]?.id;
+                  if (!application) return;
+                  const { instance } = parseRequestSearch(
+                    profilerSearch,
+                    args.request,
+                  );
+                  const runtime = {
+                    project: scope.project,
+                    application,
+                    range: scope.range,
+                  };
+                  await Promise.all([
+                    queryClient.ensureQueryData(
+                      runtimeInstancesQueryOptions(runtime),
+                    ),
+                    queryClient.ensureQueryData(
+                      runtimeMetricsQueryOptions({ ...runtime, instance }),
+                    ),
+                  ]);
+                },
+                lazy: async () => ({
+                  Component: (await import('@/features/profiler/profiler-page'))
+                    .ProfilerPage,
                 }),
               },
               {

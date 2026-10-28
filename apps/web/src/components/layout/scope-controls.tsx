@@ -16,20 +16,31 @@ import { useSearchParams } from 'react-router';
 
 const ALL_APPLICATIONS = '__all__';
 
-/** "All applications" or one application of the current project (`?application=<id>`). */
-export function ApplicationSelect() {
+/**
+ * "All applications" or one application of the current project (`?application=<id>`).
+ * With `defaultApplication`, one app is always selected (pages that need one, like
+ * the Profiler): the "All" option is hidden and the default shows when the URL has none.
+ */
+export function ApplicationSelect({
+  defaultApplication,
+}: {
+  defaultApplication?: string;
+}) {
   const { project, application, range } = useScope();
   const [, setParams] = useSearchParams();
   const applications = useQuery(applicationsQueryOptions(project, range));
   const options = applications.data?.items ?? [];
+  const value = application ?? defaultApplication ?? ALL_APPLICATIONS;
 
   return (
     <Select
-      value={application ?? ALL_APPLICATIONS}
+      value={value}
       onValueChange={(value) =>
         setParams((prev) =>
           applySearchPatch(prev, {
             application: value === ALL_APPLICATIONS ? undefined : value,
+            // An instance belongs to one application (Profiler).
+            instance: undefined,
           }),
         )
       }
@@ -41,11 +52,13 @@ export function ApplicationSelect() {
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value={ALL_APPLICATIONS}>All applications</SelectItem>
-        {application !== undefined &&
-        !options.some((app) => app.id === application) ? (
+        {defaultApplication === undefined ? (
+          <SelectItem value={ALL_APPLICATIONS}>All applications</SelectItem>
+        ) : null}
+        {value !== ALL_APPLICATIONS &&
+        !options.some((app) => app.id === value) ? (
           // Keep the URL's application selectable before the list has loaded.
-          <SelectItem value={application}>
+          <SelectItem value={value}>
             {applications.isPending ? 'Loading…' : 'Unknown application'}
           </SelectItem>
         ) : null}
@@ -135,10 +148,15 @@ export function RangeSegmented() {
 }
 
 /** The right side of a project page header: application, live and time range. */
-export function ScopeControls() {
+export function ScopeControls({
+  defaultApplication,
+}: {
+  /** See ApplicationSelect. */
+  defaultApplication?: string;
+}) {
   return (
     <div className="flex flex-wrap items-center gap-3">
-      <ApplicationSelect />
+      <ApplicationSelect defaultApplication={defaultApplication} />
       <LivePill />
       <RangeSegmented />
     </div>

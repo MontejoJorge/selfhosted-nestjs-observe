@@ -1,51 +1,10 @@
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from '@/components/ui/chart';
+import { ChartContainer, type ChartConfig } from '@/components/ui/chart';
 import type { TimeBucketDto } from '@/lib/api/generated/api';
 import { formatCount, formatDuration } from '@/lib/format';
-import { formatLongDate } from '@/lib/stats';
 import { cn } from '@/lib/utils';
 import { useId, useMemo } from 'react';
 import { Area, AreaChart, Bar, BarChart, Line, XAxis, YAxis } from 'recharts';
-
-type Formatter = (value: number) => string;
-
-function tooltip(config: ChartConfig, format: Formatter) {
-  return (
-    <ChartTooltip
-      cursor={{
-        stroke: 'var(--border)',
-        fill: 'var(--muted)',
-        fillOpacity: 0.3,
-      }}
-      content={
-        <ChartTooltipContent
-          labelFormatter={(_, payload) => {
-            const t = (payload?.[0]?.payload as { t?: string } | undefined)?.t;
-            return t ? formatLongDate(t) : null;
-          }}
-          formatter={(value, name, item) => (
-            <div className="flex w-full items-center gap-2">
-              <span
-                className="h-3 w-[3px] shrink-0 rounded-full"
-                style={{ background: item.color }}
-              />
-              <span className="text-muted-foreground">
-                {config[String(name)]?.label ?? name}
-              </span>
-              <span className="ml-auto font-mono font-medium text-foreground tabular-nums">
-                {typeof value === 'number' ? format(value) : String(value)}
-              </span>
-            </div>
-          )}
-        />
-      }
-    />
-  );
-}
+import { chartTooltip } from './chart-tooltip';
 
 const requestConfig: ChartConfig = {
   ok: { label: '1/2/3xx', color: 'var(--bar)' },
@@ -86,7 +45,7 @@ export function RequestBarsChart({
       >
         <XAxis dataKey="t" hide />
         <YAxis hide />
-        {tooltip(requestConfig, formatCount)}
+        {chartTooltip(requestConfig, formatCount)}
         <Bar
           dataKey="ok"
           stackId="n"
@@ -145,7 +104,7 @@ export function JobBarsChart({
       >
         <XAxis dataKey="t" hide />
         <YAxis hide />
-        {tooltip(jobConfig, formatCount)}
+        {chartTooltip(jobConfig, formatCount)}
         <Bar
           dataKey="completed"
           stackId="n"
@@ -201,7 +160,7 @@ export function DurationChart({
         </defs>
         <XAxis dataKey="t" hide />
         <YAxis hide domain={[0, 'auto']} />
-        {tooltip(durationConfig, formatDuration)}
+        {chartTooltip(durationConfig, formatDuration)}
         <Area
           dataKey="p95"
           type="monotone"
@@ -282,7 +241,7 @@ export function ErrorStemChart({
       <BarChart data={data} margin={{ top: 6, right: 0, bottom: 0, left: 0 }}>
         <XAxis dataKey="t" hide />
         <YAxis hide />
-        {tooltip(errorConfig, formatCount)}
+        {chartTooltip(errorConfig, formatCount)}
         <Bar dataKey="errors" shape={<Stem />} isAnimationActive={false} />
       </BarChart>
     </ChartContainer>
