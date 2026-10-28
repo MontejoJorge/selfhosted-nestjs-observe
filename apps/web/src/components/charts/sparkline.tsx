@@ -22,7 +22,11 @@ export function Sparkline({
 
   return (
     <div className={cn('h-10 w-full', className)} aria-hidden>
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer
+        width="100%"
+        height="100%"
+        initialDimension={{ width: 1, height: 1 }}
+      >
         <AreaChart
           data={data}
           margin={{ top: 6, right: endDot ? 6 : 0, bottom: 0, left: 0 }}

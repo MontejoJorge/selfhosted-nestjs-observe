@@ -13,7 +13,13 @@ import { paths } from '@/lib/paths';
 import { cn } from '@/lib/utils';
 import { FoldersIcon, MenuIcon } from 'lucide-react';
 import { Suspense, useState } from 'react';
-import { Link, Outlet, useMatch, useNavigation } from 'react-router';
+import {
+  Link,
+  Outlet,
+  ScrollRestoration,
+  useMatch,
+  useNavigation,
+} from 'react-router';
 import { AppNav } from './app-nav';
 import { GlobalSearch } from './global-search';
 import { LogoMark } from './logo-mark';
@@ -95,6 +101,7 @@ export function AppShell() {
 
   return (
     <LiveProvider>
+      <ScrollRestoration />
       <div className="flex min-h-svh">
         <Rail />
         <Sidebar />

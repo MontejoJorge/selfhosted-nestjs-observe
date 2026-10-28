@@ -163,7 +163,7 @@ export const TraceWaterfall = memo(function TraceWaterfall({
             <Bar
               left={0}
               width={durationMs / total}
-              className={rootFailed ? 'bg-status-error' : 'bg-primary'}
+              className={rootFailed ? 'bg-status-error' : 'bg-foreground/60'}
               label={formatDuration(durationMs)}
             />
           </div>

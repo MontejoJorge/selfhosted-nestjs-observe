@@ -36,6 +36,25 @@ const STATUS_OPTIONS = [
   { value: 'inactive', label: 'Inactive' },
 ] as const;
 
+const SPARK_POINTS = 12;
+
+/** Averages the avg-duration buckets into a dozen points: a calm trend line. */
+function smooth(activity: ProjectSummaryDto['activity']): (number | null)[] {
+  const size = Math.max(1, Math.ceil(activity.length / SPARK_POINTS));
+  const points: (number | null)[] = [];
+  for (let i = 0; i < activity.length; i += size) {
+    let sum = 0;
+    let weight = 0;
+    for (const bucket of activity.slice(i, i + size)) {
+      if (bucket.avgDurationMs === null) continue;
+      sum += bucket.avgDurationMs * bucket.count;
+      weight += bucket.count;
+    }
+    points.push(weight > 0 ? sum / weight : null);
+  }
+  return points;
+}
+
 function ProjectCard({
   project,
   active,
@@ -44,10 +63,7 @@ function ProjectCard({
   active: boolean;
 }) {
   const [value, unit] = formatDuration(project.avgDurationMs).split(' ');
-  const series = useMemo(
-    () => project.activity.map((bucket) => bucket.avgDurationMs),
-    [project.activity],
-  );
+  const series = useMemo(() => smooth(project.activity), [project.activity]);
   const hasActivity = series.some((v) => v !== null);
 
   return (

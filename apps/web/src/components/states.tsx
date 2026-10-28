@@ -5,21 +5,26 @@ import { cn } from '@/lib/utils';
 import { AlertTriangleIcon, InboxIcon, RefreshCwIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 
-/** Generic skeleton shown while a route's loader is pending. */
+/** Generic skeleton shown while a route's loader is pending (same frame as Page). */
 export function PageSkeleton() {
   return (
     <div
-      className="flex flex-col gap-4 p-6"
+      className="flex flex-col gap-6 px-4 pt-6 pb-16 md:px-8 lg:px-[60px]"
       aria-busy="true"
       aria-label="Loading"
     >
-      <Skeleton className="h-7 w-48" />
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-        {Array.from({ length: 5 }, (_, i) => (
-          <Skeleton key={i} className="h-20" />
-        ))}
+      <div className="mb-4 flex items-start gap-4">
+        <Skeleton className="size-11 rounded-xl" />
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-4 w-72" />
+        </div>
       </div>
-      <Skeleton className="h-64" />
+      <div className="grid gap-6 xl:grid-cols-2">
+        <Skeleton className="h-80 rounded-2xl" />
+        <Skeleton className="h-80 rounded-2xl" />
+      </div>
+      <Skeleton className="h-64 rounded-2xl" />
     </div>
   );
 }
