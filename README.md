@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/assets/logo.svg" alt="" width="96" height="96" />
+</p>
+
 # selfhosted-nestjs-observe
 
 Self-hosted collector and dashboard for [`@nestjs/observe`](https://www.npmjs.com/package/@nestjs/observe).
