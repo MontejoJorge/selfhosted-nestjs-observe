@@ -56,6 +56,18 @@ An optional `2xx` body tells the agent to degrade:
 `{ "degraded": true, "trimmed"?: true, "paced"?: true, "errorsOnly"?: true, "reason"?: "spike" | "budget" }`.
 A self-hosted collector normally answers `200 {}` or `200 { "degraded": false }`.
 
+### What this collector does
+
+- `POST /applications/telemetry` inflates gzip (body limit 20 MB) and validates lightly: `serviceId` must be
+  a non-empty string of at most 100 characters, and `snapshots`, `jobs`, `custom`, `logs` and `objectives` must be
+  arrays and `runtime` an object when present. Anything else is a `400`. Malformed items inside a section
+  (for example a snapshot without `ti`/`op`) are skipped, not rejected.
+- With `INGEST_API_KEY` / `INGEST_API_SECRET` set, missing or wrong `x-api-key` / `x-api-secret` give `401`.
+- Success is always `200 {"degraded": false}`. The collector never asks the agent to degrade.
+- Events older than `RETENTION_DAYS`, or more than one day in the future, are dropped silently.
+- `POST /applications/profiles` stores the raw windows and answers `200 {}`. It never sends the `403`
+  entitlement error, so profiling stays on.
+
 ## Telemetry batch
 
 Top level (`TELEMETRY_BATCH`):
