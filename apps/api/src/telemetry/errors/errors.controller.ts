@@ -48,6 +48,7 @@ export class ErrorsController {
         scope: await this.scopes.resolve(query),
         window: resolveWindow(query),
         source: query.source,
+        q: query.q,
       },
       {
         limit: query.limit ?? DEFAULT_PAGE_SIZE,

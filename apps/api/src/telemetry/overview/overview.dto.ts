@@ -37,6 +37,8 @@ export class RequestsOverviewDto {
 
 export class JobsOverviewDto {
   count: number;
+  /** Failed runs. */
+  failed: number;
   /** Ratio 0..1. */
   failureRate: number;
   latency: PercentilesDto;

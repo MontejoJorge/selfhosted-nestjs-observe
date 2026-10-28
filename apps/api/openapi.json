@@ -1451,6 +1451,16 @@
             }
           },
           {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Case-insensitive substring of the message or error class.",
+            "schema": {
+              "maxLength": 200,
+              "type": "string"
+            }
+          },
+          {
             "name": "project",
             "required": true,
             "in": "query",
@@ -2638,6 +2648,10 @@
           "count": {
             "type": "number"
           },
+          "failed": {
+            "type": "number",
+            "description": "Failed runs."
+          },
           "failureRate": {
             "type": "number",
             "description": "Ratio 0..1."
@@ -2648,6 +2662,7 @@
         },
         "required": [
           "count",
+          "failed",
           "failureRate",
           "latency"
         ]

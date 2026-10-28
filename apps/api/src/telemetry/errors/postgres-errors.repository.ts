@@ -7,7 +7,13 @@ import type {
 import { KYSELY, type Db } from '../../database/database.types.js';
 import { toPage, type KeysetCursor } from '../common/cursor.js';
 import { inApplications, type TelemetryScope } from '../common/scope.js';
-import { avgOf, bucketStart, countAll, p95 } from '../common/sql.js';
+import {
+  avgOf,
+  bucketStart,
+  countAll,
+  likeContains,
+  p95,
+} from '../common/sql.js';
 import {
   bucketSeconds,
   fillTimeline,
@@ -99,6 +105,16 @@ export class PostgresErrorsRepository extends ErrorsRepository {
       );
     }
     if (filter.source) query = query.where('g.source', '=', filter.source);
+    if (filter.q) {
+      // Applied to the scoped, time-filtered groups (a small set), so no trigram index is needed.
+      const pattern = likeContains(filter.q);
+      query = query.where((eb) =>
+        eb.or([
+          eb('g.message', 'ilike', pattern),
+          eb('g.error_class', 'ilike', pattern),
+        ]),
+      );
+    }
     const { cursor } = page;
     if (cursor) {
       query = query.where((eb) =>

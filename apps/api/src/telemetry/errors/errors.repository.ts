@@ -12,6 +12,8 @@ export interface ErrorFilter {
   scope: TelemetryScope;
   window: TimeWindow;
   source?: 'request' | 'job';
+  /** case-insensitive substring of the message or error class */
+  q?: string;
 }
 
 /** Read port for error groups and their occurrences. */

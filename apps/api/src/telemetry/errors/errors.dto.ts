@@ -4,7 +4,7 @@ import type {
   ErrorGroupDetail,
   Page,
 } from '@selfhosted-observe/contracts';
-import { IsIn, IsOptional } from 'class-validator';
+import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
 import { TimeBucketDto } from '../common/common.dto.js';
 import { PageQueryDto, TimeRangeQueryDto } from '../common/query.dto.js';
 
@@ -15,6 +15,12 @@ export class ErrorsQueryDto extends PageQueryDto {
   @IsOptional()
   @IsIn(ERROR_SOURCES)
   source?: 'request' | 'job';
+
+  /** Case-insensitive substring of the message or error class. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  q?: string;
 }
 
 /** The time range limits the timeline and occurrences; default 1h. */

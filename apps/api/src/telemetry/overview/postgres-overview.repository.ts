@@ -138,6 +138,7 @@ export class PostgresOverviewRepository extends OverviewRepository {
       },
       jobs: {
         count: jobStats.count,
+        failed: jobStats.failed,
         failureRate: ratio(jobStats.failed, jobStats.count),
         latency: toPercentiles(jobStats.latency, jobStats.avg),
       },

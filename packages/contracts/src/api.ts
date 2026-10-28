@@ -82,7 +82,13 @@ export interface Overview {
     status4xx: number;
     status5xx: number;
   };
-  jobs: { count: number; failureRate: number; latency: Percentiles };
+  jobs: {
+    count: number;
+    /** failed runs */
+    failed: number;
+    failureRate: number;
+    latency: Percentiles;
+  };
   errors: { groups: number; events: number };
   /** requests per bucket */
   timeline: TimeBucket[];
@@ -165,7 +171,7 @@ export interface JobDetail extends JobListItem {
   trace: TraceSpan[];
 }
 
-// GET /api/errors  (filters: source ('request' | 'job')) -> Page<ErrorGroup>
+// GET /api/errors  (filters: source ('request' | 'job'), q (substring of message or class)) -> Page<ErrorGroup>
 export interface ErrorGroup {
   id: string;
   fingerprint: string;
