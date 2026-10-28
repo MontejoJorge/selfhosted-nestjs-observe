@@ -15,3 +15,6 @@ coverage/
 
 # Generated API client (regenerate with: pnpm api:generate)
 apps/web/src/lib/api/generated/
+
+# Playwright MCP snapshots and screenshots
+.playwright-mcp/

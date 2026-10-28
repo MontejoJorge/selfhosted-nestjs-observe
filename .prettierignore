@@ -5,3 +5,4 @@ pnpm-lock.yaml
 .claude/skills
 apps/web/src/lib/api/generated
 apps/api/openapi.json
+.playwright-mcp
