@@ -5,6 +5,7 @@
  */
 import { Logger } from '@nestjs/common';
 import { existsSync } from 'node:fs';
+import 'reflect-metadata';
 import { databaseOptions, validateEnv } from '../config/env.js';
 import { createDatabase } from './create-database.js';
 import { migrateToLatest } from './migrator.js';
