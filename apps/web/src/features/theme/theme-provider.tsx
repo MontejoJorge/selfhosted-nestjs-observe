@@ -18,7 +18,7 @@ function readStoredTheme(): Theme {
   } catch {
     // Storage can be unavailable (private mode, blocked site data).
   }
-  return 'system';
+  return 'dark';
 }
 
 /** Owns the theme state; components read it through `useTheme()`. */

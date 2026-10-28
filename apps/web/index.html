@@ -12,9 +12,9 @@
     <script>
       // Apply the stored theme before first paint to avoid a light flash.
       (function () {
-        var theme = 'system';
+        var theme = 'dark';
         try {
-          theme = localStorage.getItem('observe-theme') || 'system';
+          theme = localStorage.getItem('observe-theme') || 'dark';
         } catch (e) {}
         var dark =
           theme === 'dark' ||

@@ -1,17 +1,22 @@
-import { ChartCard } from '@/components/charts/chart-card';
-import {
-  TimeSeriesChart,
-  type SeriesSpec,
-} from '@/components/charts/time-series-chart';
+import { ErrorStemChart } from '@/components/charts/bucket-charts';
 import { SourceBadge } from '@/components/data/badges';
 import { CodeBlock } from '@/components/data/code-block';
+import { IdChip } from '@/components/data/copy';
 import {
   LinkRow,
   stretchedLink,
   TableFrame,
 } from '@/components/data/data-table';
-import { Stat, StatGrid } from '@/components/data/stat';
-import { Page, PageHeader, PageSection, PageTitle } from '@/components/page';
+import { KeyValue, KeyValueList } from '@/components/data/key-value';
+import { ScopeControls } from '@/components/layout/scope-controls';
+import { Page, PageHeader, PageSection } from '@/components/page';
+import {
+  ChartRange,
+  CountBadge,
+  Panel,
+  PanelBody,
+  PanelHeader,
+} from '@/components/panel';
 import { ScopedLink } from '@/components/scoped-link';
 import {
   Table,
@@ -21,37 +26,20 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { useApplicationNames } from '@/features/applications/use-application-names';
+import { ProjectTitle } from '@/features/projects/project-title';
 import type { TimeBucketDto } from '@/lib/api/generated/api';
-import {
-  formatCount,
-  formatDateTime,
-  formatRelative,
-  shortId,
-} from '@/lib/format';
+import { formatCount, formatRelative } from '@/lib/format';
 import { paths } from '@/lib/paths';
 import { useScope } from '@/lib/scope-hooks';
+import { formatLongDate } from '@/lib/stats';
+import { cn } from '@/lib/utils';
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
 import { useParams } from 'react-router';
 import { errorGroupQueryOptions } from './queries';
 
-const occurrenceSeries: SeriesSpec[] = [
-  { key: 'count', label: 'Events', color: 'var(--status-error)', mark: 'bar' },
-];
-
-function OccurrenceChart({ buckets }: { buckets: readonly TimeBucketDto[] }) {
-  const data = useMemo(
-    () => buckets.map((b) => ({ t: b.t, count: b.count })),
-    [buckets],
-  );
-  return (
-    <TimeSeriesChart
-      data={data}
-      series={occurrenceSeries}
-      formatValue={formatCount}
-    />
-  );
-}
+/** Occurrences per bucket: the group's timeline counts are its events. */
+const pickCount = (bucket: TimeBucketDto) => bucket.count;
 
 export function ErrorGroupPage() {
   const { errorId = '' } = useParams();
@@ -59,57 +47,76 @@ export function ErrorGroupPage() {
   const { data: group } = useSuspenseQuery(
     errorGroupQueryOptions(errorId, scope),
   );
+  const names = useApplicationNames();
+  const inRange = group.timeline.reduce((sum, b) => sum + b.count, 0);
 
   return (
     <Page>
       <PageHeader>
-        <PageTitle
-          eyebrow={
-            <ScopedLink to="/errors" className="hover:underline">
-              Errors
-            </ScopedLink>
-          }
-        >
-          <span className="font-mono text-status-error">
-            {group.errorClass ?? 'Error'}
-          </span>
-        </PageTitle>
-        <SourceBadge source={group.source} />
+        <ProjectTitle subtitle="Analytics and insights on errors within your project.">
+          Errors
+        </ProjectTitle>
+        <ScopeControls />
       </PageHeader>
 
-      <p className="text-sm break-words">{group.message}</p>
-
-      <StatGrid className="lg:grid-cols-4">
-        <Stat label="Events" value={formatCount(group.count)} />
-        <Stat
-          label="Culprit"
-          value={
-            <span className="font-mono text-sm">{group.culprit ?? '–'}</span>
-          }
-        />
-        <Stat
-          label="First seen"
-          value={formatRelative(group.firstSeenAt)}
-          detail={formatDateTime(group.firstSeenAt)}
-        />
-        <Stat
-          label="Last seen"
-          value={formatRelative(group.lastSeenAt)}
-          detail={formatDateTime(group.lastSeenAt)}
-        />
-      </StatGrid>
-
-      <ChartCard title="Occurrences" description={`Service ${group.serviceId}`}>
-        <OccurrenceChart buckets={group.timeline} />
-      </ChartCard>
+      <div className="grid min-w-0 gap-6 xl:grid-cols-2">
+        <Panel>
+          <PanelHeader title="Details" />
+          <PanelBody>
+            <KeyValueList>
+              <KeyValue label="Error" tone="error">
+                {group.errorClass ?? 'Error'}
+              </KeyValue>
+              <KeyValue label="Message">{group.message}</KeyValue>
+              <KeyValue label="Culprit">{group.culprit ?? '-'}</KeyValue>
+              <KeyValue label="Source">
+                <SourceBadge source={group.source} />
+              </KeyValue>
+              <KeyValue label="Application">
+                {names.get(group.applicationId) ?? group.serviceId}
+              </KeyValue>
+              <KeyValue label="Events (all time)">
+                {formatCount(group.count)}
+              </KeyValue>
+              <KeyValue label="First seen">
+                {formatRelative(group.firstSeenAt)}
+              </KeyValue>
+              <KeyValue label="Last seen">
+                {formatRelative(group.lastSeenAt)}
+              </KeyValue>
+            </KeyValueList>
+          </PanelBody>
+        </Panel>
+        <Panel>
+          <PanelHeader title="Occurrences">
+            <CountBadge>{formatCount(inRange)}</CountBadge>
+          </PanelHeader>
+          <PanelBody>
+            <ErrorStemChart
+              buckets={group.timeline}
+              pick={pickCount}
+              className="h-56"
+            />
+            {group.timeline.length > 0 ? (
+              <ChartRange
+                from={formatLongDate(group.timeline[0].t)}
+                to={formatLongDate(group.timeline[group.timeline.length - 1].t)}
+              />
+            ) : null}
+          </PanelBody>
+        </Panel>
+      </div>
 
       {group.stack ? (
-        <PageSection title="Stack trace">
-          <CodeBlock>{group.stack}</CodeBlock>
-        </PageSection>
+        <Panel>
+          <PanelHeader title="Stack trace" />
+          <PanelBody>
+            <CodeBlock className="max-h-[32rem]">{group.stack}</CodeBlock>
+          </PanelBody>
+        </Panel>
       ) : null}
 
-      <PageSection title="Recent occurrences">
+      <PageSection title="Recent occurrences" className="mt-4">
         {group.occurrences.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             No occurrences in this time range.
@@ -119,45 +126,38 @@ export function ErrorGroupPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Time</TableHead>
+                  <TableHead>Trace ID</TableHead>
                   <TableHead>Source</TableHead>
-                  <TableHead>Service</TableHead>
-                  <TableHead>Trace</TableHead>
+                  <TableHead>Instance</TableHead>
+                  <TableHead className="text-right">Occurred</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {group.occurrences.map((occurrence) => (
                   <LinkRow key={occurrence.executionId}>
-                    <TableCell className="font-mono text-xs">
-                      {occurrence.source === 'request' ? (
-                        <ScopedLink
-                          to={paths.request(occurrence.executionId)}
-                          className={stretchedLink}
-                        >
-                          {formatDateTime(occurrence.occurredAt)}
-                        </ScopedLink>
-                      ) : (
-                        <ScopedLink
-                          to={paths.job(occurrence.executionId)}
-                          className={stretchedLink}
-                        >
-                          {formatDateTime(occurrence.occurredAt)}
-                        </ScopedLink>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <SourceBadge source={occurrence.source} />
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {occurrence.serviceId}
+                    <TableCell className="w-40">
+                      <IdChip value={occurrence.traceId} />
                     </TableCell>
                     <TableCell>
                       <ScopedLink
-                        to={paths.trace(occurrence.traceId)}
-                        className="relative z-10 font-mono text-xs text-primary hover:underline"
+                        to={
+                          occurrence.source === 'request'
+                            ? paths.request(
+                                scope.project,
+                                occurrence.executionId,
+                              )
+                            : paths.job(scope.project, occurrence.executionId)
+                        }
+                        className={cn(stretchedLink)}
                       >
-                        {shortId(occurrence.traceId)}
+                        <SourceBadge source={occurrence.source} />
                       </ScopedLink>
+                    </TableCell>
+                    <TableCell className="font-mono text-[13px]">
+                      {occurrence.serviceId}
+                    </TableCell>
+                    <TableCell className="text-right text-sm whitespace-nowrap text-muted-foreground">
+                      {formatRelative(occurrence.occurredAt)}
                     </TableCell>
                   </LinkRow>
                 ))}

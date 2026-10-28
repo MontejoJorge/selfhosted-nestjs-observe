@@ -22,9 +22,9 @@ export const jobListQueryOptions = (scope: Scope, filters: JobFilters) =>
     api.jobs.listJobs({ ...scope, ...filters, ...page }, { signal }),
   );
 
-export const jobDetailQueryOptions = (id: string) =>
+export const jobDetailQueryOptions = (project: string, id: string) =>
   queryOptions({
-    queryKey: ['jobs', 'detail', id],
-    queryFn: ({ signal }) => api.jobs.getJob({ id }, { signal }),
+    queryKey: ['jobs', 'detail', project, id],
+    queryFn: ({ signal }) => api.jobs.getJob({ id, project }, { signal }),
     staleTime: Infinity,
   });

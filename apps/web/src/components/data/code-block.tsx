@@ -10,7 +10,7 @@ export function CodeBlock({
   return (
     <pre
       className={cn(
-        'max-h-96 overflow-auto rounded-md bg-muted px-3 py-2 text-xs leading-relaxed whitespace-pre',
+        'max-h-96 overflow-auto rounded-xl border bg-background/60 px-4 py-3 font-mono text-xs leading-relaxed whitespace-pre',
         className,
       )}
     >

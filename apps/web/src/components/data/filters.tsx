@@ -1,83 +1,182 @@
-import { Input } from '@/components/ui/input';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
-import { SearchIcon, XIcon } from 'lucide-react';
+import {
+  CheckIcon,
+  PlusCircleIcon,
+  SearchIcon,
+  XCircleIcon,
+} from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 
-/** One row of filter controls above a list. */
-export function FilterBar({ children }: { children: ReactNode }) {
-  return <div className="flex flex-wrap items-center gap-2">{children}</div>;
+/** The row above a table: dashed filter chips on the left, search on the right. */
+export function FilterBar({
+  children,
+  aside,
+}: {
+  children?: ReactNode;
+  aside?: ReactNode;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {children}
+      {aside ? <div className="ml-auto">{aside}</div> : null}
+    </div>
+  );
 }
 
-/** An active filter that can be cleared, e.g. `operation: GET /orders`. */
+const chip =
+  'inline-flex h-7 max-w-80 items-center gap-1.5 rounded-md border border-dashed border-foreground/25 px-2 text-[13px] font-semibold transition-colors hover:border-foreground/50';
+
+/**
+ * A dashed chip that opens a popover. Inactive it reads "⊕ Label"; with a value it
+ * reads "⊗ Label | value" in the accent color and the ⊗ clears it.
+ */
 export function FilterChip({
   label,
   value,
   onClear,
+  children,
 }: {
   label: string;
-  value: string;
+  /** Display text of the active value, or undefined when unset. */
+  value?: string;
   onClear: () => void;
+  /** Popover body. Receives `close` to dismiss after picking. */
+  children: (close: () => void) => ReactNode;
 }) {
+  const [open, setOpen] = useState(false);
+  const active = value !== undefined;
   return (
-    <span className="inline-flex h-7 max-w-80 items-center gap-1 rounded-md border bg-muted/50 pr-1 pl-2 text-xs">
-      <span className="text-muted-foreground">{label}:</span>
-      <span className="truncate font-mono">{value}</span>
-      <button
-        type="button"
-        onClick={onClear}
-        className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-        aria-label={`Clear ${label} filter`}
-      >
-        <XIcon className="size-3" />
-      </button>
-    </span>
+    <Popover open={open} onOpenChange={setOpen}>
+      <span className={cn(chip, active && 'border-primary/60')}>
+        {active ? (
+          <button
+            type="button"
+            onClick={onClear}
+            aria-label={`Clear ${label} filter`}
+            className="text-primary hover:text-foreground"
+          >
+            <XCircleIcon className="size-3.5" />
+          </button>
+        ) : (
+          <PlusCircleIcon className="size-3.5 text-muted-foreground" />
+        )}
+        <PopoverTrigger className="inline-flex min-w-0 items-center gap-1.5 outline-none">
+          {label}
+          {active ? (
+            <>
+              <span className="h-3 w-px bg-foreground/25" aria-hidden />
+              <span className="truncate font-medium text-primary">{value}</span>
+            </>
+          ) : null}
+        </PopoverTrigger>
+      </span>
+      <PopoverContent align="start" className="w-60 p-1.5">
+        {children(() => setOpen(false))}
+      </PopoverContent>
+    </Popover>
   );
 }
 
-const ANY = '__any__';
-
-/** A select whose "any" option maps to `undefined`. */
+/** A filter chip with a fixed list of options. */
 export function OptionFilter<T extends string>({
   label,
   value,
   options,
   onChange,
-  className,
 }: {
   label: string;
   value: T | undefined;
   options: ReadonlyArray<{ value: T; label: string }>;
   onChange: (value: T | undefined) => void;
-  className?: string;
+}) {
+  const current = options.find((option) => option.value === value);
+  return (
+    <FilterChip
+      label={label}
+      value={current?.label}
+      onClear={() => onChange(undefined)}
+    >
+      {(close) => (
+        <ul className="flex flex-col">
+          {options.map((option) => (
+            <li key={option.value}>
+              <button
+                type="button"
+                onClick={() => {
+                  onChange(option.value === value ? undefined : option.value);
+                  close();
+                }}
+                className="flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-sm hover:bg-accent"
+              >
+                <CheckIcon
+                  className={cn(
+                    'size-3.5',
+                    option.value === value ? 'opacity-100' : 'opacity-0',
+                  )}
+                />
+                {option.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </FilterChip>
+  );
+}
+
+/** A filter chip whose popover holds a single text/number input. */
+export function InputFilter({
+  label,
+  value,
+  format = (v) => v,
+  placeholder,
+  inputMode,
+  onChange,
+}: {
+  label: string;
+  value: string | undefined;
+  format?: (value: string) => string;
+  placeholder?: string;
+  inputMode?: 'numeric' | 'text';
+  onChange: (value: string | undefined) => void;
 }) {
   return (
-    <Select
-      value={value ?? ANY}
-      onValueChange={(next) => onChange(next === ANY ? undefined : (next as T))}
+    <FilterChip
+      label={label}
+      value={value === undefined ? undefined : format(value)}
+      onClear={() => onChange(undefined)}
     >
-      <SelectTrigger
-        size="sm"
-        className={cn('w-36', className)}
-        aria-label={label}
-      >
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value={ANY}>Any {label.toLowerCase()}</SelectItem>
-        {options.map((option) => (
-          <SelectItem key={option.value} value={option.value}>
-            {option.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+      {(close) => (
+        <form
+          className="p-1"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const raw = new FormData(event.currentTarget).get('value');
+            const next = typeof raw === 'string' ? raw.trim() : '';
+            onChange(next || undefined);
+            close();
+          }}
+        >
+          <input
+            name="value"
+            defaultValue={value ?? ''}
+            autoFocus
+            inputMode={inputMode}
+            placeholder={placeholder}
+            aria-label={label}
+            className="h-8 w-full rounded-md border bg-background px-2 font-mono text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+          />
+          <p className="mt-1.5 px-0.5 text-xs text-muted-foreground">
+            Press Enter to apply.
+          </p>
+        </form>
+      )}
+    </FilterChip>
   );
 }
 
@@ -89,11 +188,9 @@ export function OptionFilter<T extends string>({
 export function DebouncedInput({
   value,
   onCommit,
-  placeholder,
+  placeholder = 'Search...',
   delayMs = 400,
   className,
-  icon = true,
-  inputMode,
   'aria-label': ariaLabel,
 }: {
   value: string;
@@ -101,8 +198,6 @@ export function DebouncedInput({
   placeholder?: string;
   delayMs?: number;
   className?: string;
-  icon?: boolean;
-  inputMode?: 'numeric' | 'text';
   'aria-label': string;
 }) {
   const [draft, setDraft] = useState(value);
@@ -114,20 +209,45 @@ export function DebouncedInput({
   }, [draft, value, delayMs, onCommit]);
 
   return (
-    <div className={cn('relative', className)}>
-      {icon ? (
-        <SearchIcon className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-      ) : null}
-      <Input
-        value={draft}
-        inputMode={inputMode}
+    <SearchBox
+      value={draft}
+      onChange={setDraft}
+      onEnter={() => onCommit(draft)}
+      placeholder={placeholder}
+      aria-label={ariaLabel}
+      className={className}
+    />
+  );
+}
+
+/** The bordered search field on the right of a filter bar. */
+export function SearchBox({
+  value,
+  onChange,
+  onEnter,
+  placeholder = 'Search...',
+  className,
+  'aria-label': ariaLabel,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  onEnter?: () => void;
+  placeholder?: string;
+  className?: string;
+  'aria-label': string;
+}) {
+  return (
+    <div className={cn('relative w-full sm:w-64', className)}>
+      <SearchIcon className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" />
+      <input
+        value={value}
         aria-label={ariaLabel}
         placeholder={placeholder}
-        onChange={(event) => setDraft(event.target.value)}
+        onChange={(event) => onChange(event.target.value)}
         onKeyDown={(event) => {
-          if (event.key === 'Enter') onCommit(draft);
+          if (event.key === 'Enter') onEnter?.();
         }}
-        className={cn('h-7 text-xs', icon && 'pl-7')}
+        className="h-9 w-full rounded-md border bg-card/60 pr-3 pl-10 text-[13px] outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/40"
       />
     </div>
   );

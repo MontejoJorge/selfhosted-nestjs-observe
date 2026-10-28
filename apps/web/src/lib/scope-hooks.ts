@@ -1,7 +1,13 @@
 import { useCallback, useMemo } from 'react';
-import { useNavigate, useSearchParams } from 'react-router';
+import { useNavigate, useParams, useSearchParams } from 'react-router';
 import type { z } from 'zod';
-import { SCOPE_KEYS, scopeFromParams, type Scope } from './api/scope';
+import type { TimeRange } from './api/generated/api';
+import {
+  rangeFromParams,
+  SCOPE_KEYS,
+  scopeFromParams,
+  type Scope,
+} from './api/scope';
 import {
   applySearchPatch,
   parseSearch,
@@ -9,18 +15,41 @@ import {
   type SearchSchema,
 } from './search';
 
-/** The global service + time range from the URL. */
+/** The `:projectId` route param (a slug or id). Only use it under /projects/:projectId. */
+export function useProjectRef(): string {
+  const { projectId } = useParams();
+  if (!projectId)
+    throw new Error('useProjectRef must be used under /projects/:projectId');
+  return projectId;
+}
+
+/** The project from the path plus application + time range from the URL. */
 export function useScope(): Scope {
+  const project = useProjectRef();
   const [params] = useSearchParams();
-  const service = params.get('service');
+  const application = params.get('application');
   const range = params.get('range');
-  // Depend on the two raw strings so unrelated param changes keep the same object.
+  // Depend on the raw strings so unrelated param changes keep the same object.
   return useMemo(
     () =>
       scopeFromParams(
-        new URLSearchParams({ service: service ?? '', range: range ?? '' }),
+        project,
+        new URLSearchParams({
+          application: application ?? '',
+          range: range ?? '',
+        }),
       ),
-    [service, range],
+    [project, application, range],
+  );
+}
+
+/** The time range alone, for pages outside a project. */
+export function useRange(): TimeRange {
+  const [params] = useSearchParams();
+  const range = params.get('range');
+  return useMemo(
+    () => rangeFromParams(new URLSearchParams({ range: range ?? '' })),
+    [range],
   );
 }
 
@@ -38,15 +67,15 @@ export function useTypedSearch<S extends SearchSchema>(schema: S) {
   return [search, setSearch] as const;
 }
 
-/** Builds `path?…` keeping the current service and range, plus `search`. */
+/** Builds `path?…` keeping the current application and range, plus `search`. */
 export function useScopedHref() {
   const [params] = useSearchParams();
-  const service = params.get('service');
+  const application = params.get('application');
   const range = params.get('range');
   return useCallback(
     (path: string, search?: SearchPatch) => {
       const next = new URLSearchParams();
-      const scope = { service, range };
+      const scope = { application, range };
       for (const key of SCOPE_KEYS) {
         const value = scope[key];
         if (value) next.set(key, value);
@@ -55,11 +84,11 @@ export function useScopedHref() {
       const query = merged.toString();
       return query ? `${path}?${query}` : path;
     },
-    [service, range],
+    [application, range],
   );
 }
 
-/** `navigate()` that keeps the current service and range. */
+/** `navigate()` that keeps the current application and range. */
 export function useScopedNavigate() {
   const navigate = useNavigate();
   const href = useScopedHref();

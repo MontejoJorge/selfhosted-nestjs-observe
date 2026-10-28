@@ -25,9 +25,10 @@ export const requestListQueryOptions = (
     api.requests.listRequests({ ...scope, ...filters, ...page }, { signal }),
   );
 
-export const requestDetailQueryOptions = (id: string) =>
+export const requestDetailQueryOptions = (project: string, id: string) =>
   queryOptions({
-    queryKey: ['requests', 'detail', id],
-    queryFn: ({ signal }) => api.requests.getRequest({ id }, { signal }),
+    queryKey: ['requests', 'detail', project, id],
+    queryFn: ({ signal }) =>
+      api.requests.getRequest({ id, project }, { signal }),
     staleTime: Infinity,
   });

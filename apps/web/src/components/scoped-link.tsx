@@ -9,7 +9,7 @@ type ScopedProps = {
   search?: SearchPatch;
 };
 
-/** A <Link> that keeps the global service and time range in the URL. */
+/** A <Link> that keeps the global application and time range in the URL. */
 export function ScopedLink({
   to,
   search,
@@ -19,7 +19,7 @@ export function ScopedLink({
   return <Link to={href(to, search)} {...props} />;
 }
 
-/** A <NavLink> that keeps the global service and time range in the URL. */
+/** A <NavLink> that keeps the global application and time range in the URL. */
 export function ScopedNavLink({
   to,
   search,

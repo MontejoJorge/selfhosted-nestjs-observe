@@ -1,36 +1,40 @@
 import { InlineSpinner } from '@/components/states';
 import { Button } from '@/components/ui/button';
 
-/** Footer for cursor-paginated lists backed by useInfiniteQuery. */
+/** Footer for cursor-paginated lists backed by useInfiniteQuery (put it in TableFrame's `footer`). */
 export function LoadMore({
   hasNextPage,
   isFetchingNextPage,
   fetchNextPage,
   shown,
+  label = 'Load more',
 }: {
   hasNextPage: boolean;
   isFetchingNextPage: boolean;
   fetchNextPage: () => unknown;
   shown: number;
+  label?: string;
 }) {
   return (
-    <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-      <span>
-        {shown} {shown === 1 ? 'row' : 'rows'} shown
+    <>
+      <span className="font-mono text-xs text-muted-foreground">
+        {shown} {shown === 1 ? 'row' : 'rows'}
       </span>
       {hasNextPage ? (
         <Button
-          variant="outline"
+          variant="inverse"
           size="sm"
           disabled={isFetchingNextPage}
           onClick={() => fetchNextPage()}
         >
           {isFetchingNextPage ? <InlineSpinner /> : null}
-          Load more
+          {label}
         </Button>
       ) : (
-        <span>End of results</span>
+        <span className="font-mono text-xs text-muted-foreground uppercase">
+          End of results
+        </span>
       )}
-    </div>
+    </>
   );
 }

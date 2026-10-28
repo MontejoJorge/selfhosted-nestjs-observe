@@ -1,15 +1,17 @@
 import { SourceBadge } from '@/components/data/badges';
 import {
   LinkRow,
+  MessageRow,
   NumCell,
   stretchedLink,
   TableFrame,
 } from '@/components/data/data-table';
-import { FilterBar } from '@/components/data/filters';
+import { FilterBar, OptionFilter, SearchBox } from '@/components/data/filters';
 import { LoadMore } from '@/components/data/load-more';
-import { Page, PageHeader, PageTitle } from '@/components/page';
+import { ScopeControls } from '@/components/layout/scope-controls';
+import { Page, PageHeader } from '@/components/page';
 import { ScopedLink } from '@/components/scoped-link';
-import { EmptyState } from '@/components/states';
+import { EmptyState, NoTelemetryHint } from '@/components/states';
 import {
   Table,
   TableBody,
@@ -18,107 +20,161 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useApplicationNames } from '@/features/applications/use-application-names';
+import { ErrorsPanel } from '@/features/overview/overview-panels';
+import { overviewQueryOptions } from '@/features/overview/queries';
+import { usePreviousOverview } from '@/features/overview/use-previous-overview';
+import { ProjectTitle } from '@/features/projects/project-title';
 import { formatCount, formatRelative } from '@/lib/format';
 import { paths } from '@/lib/paths';
 import { useScope, useTypedSearch } from '@/lib/scope-hooks';
-import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { cn } from '@/lib/utils';
+import {
+  useSuspenseInfiniteQuery,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
+import { useDeferredValue, useState } from 'react';
 import { errorGroupsQueryOptions } from './queries';
 import { errorListSearch } from './search';
 
-const ALL = 'all';
+const SOURCE_OPTIONS = [
+  { value: 'request', label: 'Requests' },
+  { value: 'job', label: 'Jobs' },
+] as const;
 
 export function ErrorGroupsPage() {
   const scope = useScope();
   const [filters, setSearch] = useTypedSearch(errorListSearch);
+  const { data: overview } = useSuspenseQuery(overviewQueryOptions(scope));
+  const previous = usePreviousOverview(scope);
   const query = useSuspenseInfiniteQuery(
     errorGroupsQueryOptions(scope, filters),
   );
-  const groups = query.data.pages.flatMap((page) => page.items);
+  const names = useApplicationNames();
+  // The API has no text search for groups: filter the loaded pages.
+  const [q, setQ] = useState('');
+  const needle = useDeferredValue(q).trim().toLowerCase();
+  const groups = query.data.pages
+    .flatMap((page) => page.items)
+    .filter(
+      (group) =>
+        !needle ||
+        `${group.errorClass ?? ''} ${group.message}`
+          .toLowerCase()
+          .includes(needle),
+    );
+  const loaded = query.data.pages.reduce(
+    (sum, page) => sum + page.items.length,
+    0,
+  );
 
   return (
     <Page>
       <PageHeader>
-        <PageTitle>Errors</PageTitle>
+        <ProjectTitle subtitle="Analytics and insights on errors within your project.">
+          Errors
+        </ProjectTitle>
+        <ScopeControls />
       </PageHeader>
 
-      <FilterBar>
-        <Tabs
-          value={filters.source ?? ALL}
-          onValueChange={(value) =>
-            setSearch({ source: value === ALL ? undefined : value })
+      <ErrorsPanel overview={overview} previous={previous} layout="header" />
+
+      <div className="mt-4 flex flex-col gap-3">
+        <FilterBar
+          aside={
+            <SearchBox value={q} onChange={setQ} aria-label="Search errors" />
           }
         >
-          <TabsList>
-            <TabsTrigger value={ALL}>All</TabsTrigger>
-            <TabsTrigger value="request">Requests</TabsTrigger>
-            <TabsTrigger value="job">Jobs</TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </FilterBar>
+          <OptionFilter
+            label="Source"
+            value={filters.source}
+            options={SOURCE_OPTIONS}
+            onChange={(source) => setSearch({ source })}
+          />
+        </FilterBar>
 
-      {groups.length === 0 ? (
-        <EmptyState title="No errors in this time range">
-          Errors thrown by requests and jobs are grouped here by fingerprint.
-        </EmptyState>
-      ) : (
-        <>
-          <TableFrame>
+        {loaded === 0 ? (
+          <EmptyState
+            title={
+              filters.source
+                ? 'No errors match these filters'
+                : 'No errors in this time range'
+            }
+          >
+            {filters.source ? null : <NoTelemetryHint />}
+          </EmptyState>
+        ) : (
+          <TableFrame
+            footer={
+              <LoadMore
+                shown={loaded}
+                hasNextPage={query.hasNextPage}
+                isFetchingNextPage={query.isFetchingNextPage}
+                fetchNextPage={query.fetchNextPage}
+              />
+            }
+          >
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Error</TableHead>
-                  <TableHead>Culprit</TableHead>
+                  <TableHead className="text-right">Count</TableHead>
                   <TableHead>Source</TableHead>
-                  <TableHead>Service</TableHead>
-                  <TableHead className="text-right">Events</TableHead>
-                  <TableHead className="text-right">First seen</TableHead>
-                  <TableHead className="text-right">Last seen</TableHead>
+                  <TableHead>Application</TableHead>
+                  <TableHead>First seen</TableHead>
+                  <TableHead className="text-right">Last occurrence</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {groups.map((group) => (
                   <LinkRow key={group.id}>
-                    <TableCell className="max-w-lg">
+                    <TableCell className="h-[70px]! max-w-xl">
                       <ScopedLink
-                        to={paths.error(group.id)}
-                        className={stretchedLink}
+                        to={paths.error(scope.project, group.id)}
+                        className={cn(
+                          stretchedLink,
+                          'flex min-w-0 flex-col gap-1',
+                        )}
                       >
-                        <div className="truncate font-mono text-xs font-semibold text-status-error">
+                        <span className="truncate font-mono text-[13px]">
+                          {group.message}
+                        </span>
+                        <span className="truncate font-mono text-xs text-primary">
                           {group.errorClass ?? 'Error'}
-                        </div>
-                        <div className="truncate text-xs">{group.message}</div>
+                          {group.culprit ? (
+                            <span className="text-muted-foreground">
+                              {' '}
+                              · {group.culprit}
+                            </span>
+                          ) : null}
+                        </span>
                       </ScopedLink>
                     </TableCell>
-                    <TableCell className="max-w-xs truncate font-mono text-xs text-muted-foreground">
-                      {group.culprit ?? '–'}
-                    </TableCell>
+                    <NumCell>{formatCount(group.count)}</NumCell>
                     <TableCell>
                       <SourceBadge source={group.source} />
                     </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {group.serviceId}
+                    <TableCell className="text-sm">
+                      {names.get(group.applicationId) ?? group.serviceId}
                     </TableCell>
-                    <NumCell>{formatCount(group.count)}</NumCell>
-                    <NumCell className="text-muted-foreground">
+                    <TableCell className="text-sm whitespace-nowrap text-muted-foreground">
                       {formatRelative(group.firstSeenAt)}
-                    </NumCell>
-                    <NumCell className="text-muted-foreground">
+                    </TableCell>
+                    <TableCell className="text-right text-sm whitespace-nowrap text-muted-foreground">
                       {formatRelative(group.lastSeenAt)}
-                    </NumCell>
+                    </TableCell>
                   </LinkRow>
                 ))}
+                {groups.length === 0 ? (
+                  <MessageRow colSpan={6}>
+                    No loaded error matches “{q}”.
+                  </MessageRow>
+                ) : null}
               </TableBody>
             </Table>
           </TableFrame>
-          <LoadMore
-            shown={groups.length}
-            hasNextPage={query.hasNextPage}
-            isFetchingNextPage={query.isFetchingNextPage}
-            fetchNextPage={query.fetchNextPage}
-          />
-        </>
-      )}
+        )}
+      </div>
     </Page>
   );
 }

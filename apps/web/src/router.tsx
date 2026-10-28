@@ -2,6 +2,8 @@ import { AppShell } from '@/components/layout/app-shell';
 import { NotFound } from '@/components/not-found';
 import { RouteError } from '@/components/route-error';
 import { PageSkeleton } from '@/components/states';
+import { apiKeysQueryOptions } from '@/features/api-keys/queries';
+import { applicationsQueryOptions } from '@/features/applications/queries';
 import {
   errorGroupQueryOptions,
   errorGroupsQueryOptions,
@@ -12,26 +14,34 @@ import {
   jobListQueryOptions,
   jobStatsQueryOptions,
 } from '@/features/jobs/queries';
-import { jobListSearch } from '@/features/jobs/search';
+import { jobGroupSearch } from '@/features/jobs/search';
 import { logsQueryOptions } from '@/features/logs/queries';
 import { logsSearch } from '@/features/logs/search';
 import {
-  customMetricsQueryOptions,
-  runtimeMetricsQueryOptions,
-} from '@/features/metrics/queries';
-import { overviewQueryOptions } from '@/features/overview/queries';
+  overviewQueryOptions,
+  previousOverviewQueryOptions,
+} from '@/features/overview/queries';
+import {
+  projectQueryOptions,
+  projectsQueryOptions,
+} from '@/features/projects/queries';
 import {
   operationsQueryOptions,
   requestDetailQueryOptions,
   requestListQueryOptions,
 } from '@/features/requests/queries';
-import { requestListSearch } from '@/features/requests/search';
+import { operationSearch } from '@/features/requests/search';
 import { traceQueryOptions } from '@/features/traces/queries';
 import { errorStatus } from '@/lib/api/client';
-import { scopeFromParams } from '@/lib/api/scope';
+import { rangeFromParams, scopeFromParams } from '@/lib/api/scope';
+import { paths } from '@/lib/paths';
 import { parseRequestSearch } from '@/lib/search';
 import { QueryClient } from '@tanstack/react-query';
-import { createBrowserRouter, type LoaderFunctionArgs } from 'react-router';
+import {
+  createBrowserRouter,
+  redirect,
+  type LoaderFunctionArgs,
+} from 'react-router';
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -47,14 +57,21 @@ export const queryClient = new QueryClient({
   },
 });
 
-const scopeOf = (request: Request) =>
-  scopeFromParams(new URL(request.url).searchParams);
-
 function param(params: LoaderFunctionArgs['params'], name: string): string {
   const value = params[name];
   if (!value) throw new Response('Not found', { status: 404 });
   return value;
 }
+
+/** The project (from the path) + application and range (from the search params). */
+const scopeOf = ({ request, params }: LoaderFunctionArgs) =>
+  scopeFromParams(
+    param(params, 'projectId'),
+    new URL(request.url).searchParams,
+  );
+
+const projectOf = ({ params }: LoaderFunctionArgs) =>
+  param(params, 'projectId');
 
 /*
  * Loaders only warm the TanStack Query cache (they return nothing). Components
@@ -72,166 +89,293 @@ export const router = createBrowserRouter([
         // Pathless layout: page errors render inside the shell.
         ErrorBoundary: RouteError,
         children: [
+          { index: true, loader: () => redirect(paths.projects) },
           {
-            index: true,
+            path: 'projects',
             loader: async ({ request }) => {
               await queryClient.ensureQueryData(
-                overviewQueryOptions(scopeOf(request)),
-              );
-            },
-            lazy: async () => ({
-              Component: (await import('@/features/overview/overview-page'))
-                .OverviewPage,
-            }),
-          },
-          {
-            path: 'requests',
-            loader: async ({ request }) => {
-              await queryClient.ensureQueryData(
-                operationsQueryOptions(scopeOf(request)),
-              );
-            },
-            lazy: async () => ({
-              Component: (await import('@/features/requests/operations-page'))
-                .OperationsPage,
-            }),
-          },
-          {
-            path: 'requests/list',
-            loader: async ({ request }) => {
-              const filters = parseRequestSearch(requestListSearch, request);
-              await queryClient.ensureInfiniteQueryData(
-                requestListQueryOptions(scopeOf(request), filters),
-              );
-            },
-            lazy: async () => ({
-              Component: (await import('@/features/requests/request-list-page'))
-                .RequestListPage,
-            }),
-          },
-          {
-            path: 'requests/:requestId',
-            loader: async ({ params }) => {
-              await queryClient.ensureQueryData(
-                requestDetailQueryOptions(param(params, 'requestId')),
-              );
-            },
-            lazy: async () => ({
-              Component: (
-                await import('@/features/requests/request-detail-page')
-              ).RequestDetailPage,
-            }),
-          },
-          {
-            path: 'jobs',
-            loader: async ({ request }) => {
-              await queryClient.ensureQueryData(
-                jobStatsQueryOptions(scopeOf(request)),
-              );
-            },
-            lazy: async () => ({
-              Component: (await import('@/features/jobs/job-stats-page'))
-                .JobStatsPage,
-            }),
-          },
-          {
-            path: 'jobs/list',
-            loader: async ({ request }) => {
-              const filters = parseRequestSearch(jobListSearch, request);
-              await queryClient.ensureInfiniteQueryData(
-                jobListQueryOptions(scopeOf(request), filters),
-              );
-            },
-            lazy: async () => ({
-              Component: (await import('@/features/jobs/job-list-page'))
-                .JobListPage,
-            }),
-          },
-          {
-            path: 'jobs/:jobId',
-            loader: async ({ params }) => {
-              await queryClient.ensureQueryData(
-                jobDetailQueryOptions(param(params, 'jobId')),
-              );
-            },
-            lazy: async () => ({
-              Component: (await import('@/features/jobs/job-detail-page'))
-                .JobDetailPage,
-            }),
-          },
-          {
-            path: 'errors',
-            loader: async ({ request }) => {
-              const filters = parseRequestSearch(errorListSearch, request);
-              await queryClient.ensureInfiniteQueryData(
-                errorGroupsQueryOptions(scopeOf(request), filters),
-              );
-            },
-            lazy: async () => ({
-              Component: (await import('@/features/errors/error-groups-page'))
-                .ErrorGroupsPage,
-            }),
-          },
-          {
-            path: 'errors/:errorId',
-            loader: async ({ request, params }) => {
-              await queryClient.ensureQueryData(
-                errorGroupQueryOptions(
-                  param(params, 'errorId'),
-                  scopeOf(request),
+                projectsQueryOptions(
+                  rangeFromParams(new URL(request.url).searchParams),
                 ),
               );
             },
             lazy: async () => ({
-              Component: (await import('@/features/errors/error-group-page'))
-                .ErrorGroupPage,
+              Component: (await import('@/features/projects/projects-page'))
+                .ProjectsPage,
             }),
           },
           {
-            path: 'logs',
-            loader: async ({ request }) => {
-              const filters = parseRequestSearch(logsSearch, request);
-              await queryClient.ensureInfiniteQueryData(
-                logsQueryOptions(scopeOf(request), filters),
-              );
-            },
-            lazy: async () => ({
-              Component: (await import('@/features/logs/logs-page')).LogsPage,
-            }),
-          },
-          {
-            path: 'traces/:traceId',
-            loader: async ({ params }) => {
+            path: 'projects/:projectId',
+            // A missing project 404s here, before any child loader runs.
+            loader: async (args) => {
               await queryClient.ensureQueryData(
-                traceQueryOptions(param(params, 'traceId')),
+                projectQueryOptions(projectOf(args)),
               );
             },
-            lazy: async () => ({
-              Component: (await import('@/features/traces/trace-page'))
-                .TracePage,
-            }),
-          },
-          {
-            path: 'metrics',
-            loader: async ({ request }) => {
-              const scope = scopeOf(request);
-              await Promise.all([
-                queryClient.ensureQueryData(customMetricsQueryOptions(scope)),
-                // Runtime series are per service.
-                scope.service
-                  ? queryClient.ensureQueryData(
-                      runtimeMetricsQueryOptions({
-                        service: scope.service,
-                        range: scope.range,
+            children: [
+              {
+                index: true,
+                loader: async (args) => {
+                  const scope = scopeOf(args);
+                  await Promise.all([
+                    queryClient.ensureQueryData(overviewQueryOptions(scope)),
+                    queryClient.ensureQueryData(operationsQueryOptions(scope)),
+                    queryClient.ensureInfiniteQueryData(
+                      errorGroupsQueryOptions(scope, {}),
+                    ),
+                  ]);
+                  void queryClient.prefetchQuery(
+                    previousOverviewQueryOptions(scope),
+                  );
+                },
+                lazy: async () => ({
+                  Component: (
+                    await import('@/features/overview/dashboard-page')
+                  ).DashboardPage,
+                }),
+              },
+              {
+                path: 'applications',
+                loader: async (args) => {
+                  const scope = scopeOf(args);
+                  await queryClient.ensureQueryData(
+                    applicationsQueryOptions(scope.project, scope.range),
+                  );
+                },
+                lazy: async () => ({
+                  Component: (
+                    await import('@/features/applications/applications-page')
+                  ).ApplicationsPage,
+                }),
+              },
+              {
+                path: 'requests',
+                loader: async (args) => {
+                  const scope = scopeOf(args);
+                  await Promise.all([
+                    queryClient.ensureQueryData(overviewQueryOptions(scope)),
+                    queryClient.ensureQueryData(operationsQueryOptions(scope)),
+                  ]);
+                  void queryClient.prefetchQuery(
+                    previousOverviewQueryOptions(scope),
+                  );
+                },
+                lazy: async () => ({
+                  Component: (
+                    await import('@/features/requests/operations-page')
+                  ).OperationsPage,
+                }),
+              },
+              {
+                path: 'requests/details',
+                loader: async (args) => {
+                  const scope = scopeOf(args);
+                  const search = parseRequestSearch(
+                    operationSearch,
+                    args.request,
+                  );
+                  if (!search.operationId) {
+                    throw new Response('Not found', { status: 404 });
+                  }
+                  const filters = { operationId: search.operationId };
+                  await Promise.all([
+                    queryClient.ensureQueryData(
+                      overviewQueryOptions(scope, filters),
+                    ),
+                    queryClient.ensureQueryData(operationsQueryOptions(scope)),
+                    queryClient.ensureInfiniteQueryData(
+                      requestListQueryOptions(scope, {
+                        operationId: search.operationId,
+                        status: search.status,
+                        minDuration: search.minDuration,
                       }),
-                    )
-                  : undefined,
-              ]);
-            },
-            lazy: async () => ({
-              Component: (await import('@/features/metrics/metrics-page'))
-                .MetricsPage,
-            }),
+                    ),
+                  ]);
+                  void queryClient.prefetchQuery(
+                    previousOverviewQueryOptions(scope, filters),
+                  );
+                },
+                lazy: async () => ({
+                  Component: (
+                    await import('@/features/requests/operation-page')
+                  ).OperationPage,
+                }),
+              },
+              {
+                path: 'requests/:requestId',
+                loader: async (args) => {
+                  await queryClient.ensureQueryData(
+                    requestDetailQueryOptions(
+                      projectOf(args),
+                      param(args.params, 'requestId'),
+                    ),
+                  );
+                },
+                lazy: async () => ({
+                  Component: (
+                    await import('@/features/requests/request-detail-page')
+                  ).RequestDetailPage,
+                }),
+              },
+              {
+                path: 'jobs',
+                loader: async (args) => {
+                  const scope = scopeOf(args);
+                  await Promise.all([
+                    queryClient.ensureQueryData(overviewQueryOptions(scope)),
+                    queryClient.ensureQueryData(jobStatsQueryOptions(scope)),
+                  ]);
+                  void queryClient.prefetchQuery(
+                    previousOverviewQueryOptions(scope),
+                  );
+                },
+                lazy: async () => ({
+                  Component: (await import('@/features/jobs/job-stats-page'))
+                    .JobStatsPage,
+                }),
+              },
+              {
+                path: 'jobs/details',
+                loader: async (args) => {
+                  const scope = scopeOf(args);
+                  const search = parseRequestSearch(
+                    jobGroupSearch,
+                    args.request,
+                  );
+                  if (!search.queue || !search.name) {
+                    throw new Response('Not found', { status: 404 });
+                  }
+                  const filters = { queue: search.queue, name: search.name };
+                  await Promise.all([
+                    queryClient.ensureQueryData(
+                      overviewQueryOptions(scope, filters),
+                    ),
+                    queryClient.ensureQueryData(jobStatsQueryOptions(scope)),
+                    queryClient.ensureInfiniteQueryData(
+                      jobListQueryOptions(scope, {
+                        ...filters,
+                        status: search.status,
+                      }),
+                    ),
+                  ]);
+                  void queryClient.prefetchQuery(
+                    previousOverviewQueryOptions(scope, filters),
+                  );
+                },
+                lazy: async () => ({
+                  Component: (await import('@/features/jobs/job-group-page'))
+                    .JobGroupPage,
+                }),
+              },
+              {
+                path: 'jobs/:jobId',
+                loader: async (args) => {
+                  await queryClient.ensureQueryData(
+                    jobDetailQueryOptions(
+                      projectOf(args),
+                      param(args.params, 'jobId'),
+                    ),
+                  );
+                },
+                lazy: async () => ({
+                  Component: (await import('@/features/jobs/job-detail-page'))
+                    .JobDetailPage,
+                }),
+              },
+              {
+                path: 'errors',
+                loader: async (args) => {
+                  const scope = scopeOf(args);
+                  const filters = parseRequestSearch(
+                    errorListSearch,
+                    args.request,
+                  );
+                  await Promise.all([
+                    queryClient.ensureQueryData(overviewQueryOptions(scope)),
+                    queryClient.ensureInfiniteQueryData(
+                      errorGroupsQueryOptions(scope, filters),
+                    ),
+                  ]);
+                  void queryClient.prefetchQuery(
+                    previousOverviewQueryOptions(scope),
+                  );
+                },
+                lazy: async () => ({
+                  Component: (
+                    await import('@/features/errors/error-groups-page')
+                  ).ErrorGroupsPage,
+                }),
+              },
+              {
+                path: 'errors/:errorId',
+                loader: async (args) => {
+                  await queryClient.ensureQueryData(
+                    errorGroupQueryOptions(
+                      param(args.params, 'errorId'),
+                      scopeOf(args),
+                    ),
+                  );
+                },
+                lazy: async () => ({
+                  Component: (
+                    await import('@/features/errors/error-group-page')
+                  ).ErrorGroupPage,
+                }),
+              },
+              {
+                path: 'logs',
+                loader: async (args) => {
+                  const filters = parseRequestSearch(logsSearch, args.request);
+                  await queryClient.ensureInfiniteQueryData(
+                    logsQueryOptions(scopeOf(args), filters),
+                  );
+                },
+                lazy: async () => ({
+                  Component: (await import('@/features/logs/logs-page'))
+                    .LogsPage,
+                }),
+              },
+              {
+                path: 'traces/:traceId',
+                loader: async (args) => {
+                  await queryClient.ensureQueryData(
+                    traceQueryOptions(
+                      projectOf(args),
+                      param(args.params, 'traceId'),
+                    ),
+                  );
+                },
+                lazy: async () => ({
+                  Component: (await import('@/features/traces/trace-page'))
+                    .TracePage,
+                }),
+              },
+              {
+                path: 'keys',
+                loader: async (args) => {
+                  const project = projectOf(args);
+                  await Promise.all([
+                    queryClient.ensureInfiniteQueryData(
+                      apiKeysQueryOptions(project),
+                    ),
+                    queryClient.ensureQueryData(
+                      applicationsQueryOptions(project, scopeOf(args).range),
+                    ),
+                  ]);
+                },
+                lazy: async () => ({
+                  Component: (await import('@/features/api-keys/api-keys-page'))
+                    .ApiKeysPage,
+                }),
+              },
+              {
+                path: 'settings',
+                lazy: async () => ({
+                  Component: (await import('@/features/settings/settings-page'))
+                    .SettingsPage,
+                }),
+              },
+            ],
           },
           { path: '*', Component: NotFound },
         ],

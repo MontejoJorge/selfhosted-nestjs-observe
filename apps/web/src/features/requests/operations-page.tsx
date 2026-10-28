@@ -1,204 +1,246 @@
 import { MethodBadge } from '@/components/data/badges';
 import {
   LinkRow,
+  MessageRow,
   NumCell,
   stretchedLink,
   TableFrame,
 } from '@/components/data/data-table';
+import {
+  DebouncedInput,
+  FilterBar,
+  InputFilter,
+  OptionFilter,
+} from '@/components/data/filters';
+import {
+  DurationPill,
+  FailureRate,
+  RoutePath,
+} from '@/components/data/metric-cells';
 import { SortableHead } from '@/components/data/sort';
 import {
   useSortedRows,
   type SortAccessors,
 } from '@/components/data/use-sorted-rows';
-import { Page, PageActions, PageHeader, PageTitle } from '@/components/page';
+import { ScopeControls } from '@/components/layout/scope-controls';
+import { Page, PageHeader, PanelGrid } from '@/components/page';
 import { ScopedLink } from '@/components/scoped-link';
 import { EmptyState, NoTelemetryHint } from '@/components/states';
-import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import type { OperationStatsDto } from '@/lib/api/generated/api';
 import {
-  formatCount,
-  formatDuration,
-  formatRate,
-  formatRelative,
-} from '@/lib/format';
+  DurationPanel,
+  RequestsPanel,
+} from '@/features/overview/overview-panels';
+import { overviewQueryOptions } from '@/features/overview/queries';
+import { usePreviousOverview } from '@/features/overview/use-previous-overview';
+import { ProjectTitle } from '@/features/projects/project-title';
+import type { OperationStatsDto } from '@/lib/api/generated/api';
+import { formatCount } from '@/lib/format';
+import { paths } from '@/lib/paths';
 import { useScope } from '@/lib/scope-hooks';
 import { cn } from '@/lib/utils';
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { useDeferredValue, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { operationsQueryOptions } from './queries';
 
-type SortKey =
-  'operation' | 'count' | 'errorRate' | 'p50' | 'p95' | 'p99' | 'lastSeen';
+type SortKey = 'operation' | 'method' | 'duration' | 'failureRate' | 'count';
 
 const accessors: SortAccessors<OperationStatsDto, SortKey> = {
   operation: (row) => row.operationId,
+  method: (row) => row.method ?? '',
+  duration: (row) => row.latency.p95,
+  failureRate: (row) => row.errorRate,
   count: (row) => row.count,
-  errorRate: (row) => row.errorRate,
-  p50: (row) => row.latency.p50,
-  p95: (row) => row.latency.p95,
-  p99: (row) => row.latency.p99,
-  lastSeen: (row) => row.lastSeenAt,
 };
+
+/** Client-side filters over the aggregated operations (the table is small). */
+interface OperationFilters {
+  method?: string;
+  minP95?: string;
+  minFailureRate?: string;
+  q: string;
+}
+
+function applyFilters(rows: OperationStatsDto[], f: OperationFilters) {
+  const needle = f.q.trim().toLowerCase();
+  const minP95 = Number(f.minP95);
+  const minRate = Number(f.minFailureRate) / 100;
+  return rows.filter(
+    (op) =>
+      (!needle || op.operationId.toLowerCase().includes(needle)) &&
+      (!f.method || op.method?.toUpperCase() === f.method) &&
+      (!f.minP95 || op.latency.p95 >= minP95) &&
+      (!f.minFailureRate || op.errorRate >= minRate),
+  );
+}
 
 export function OperationsPage() {
   const scope = useScope();
+  const { data: overview } = useSuspenseQuery(overviewQueryOptions(scope));
+  const previous = usePreviousOverview(scope);
   const { data } = useSuspenseQuery(operationsQueryOptions(scope));
-  const [filter, setFilter] = useState('');
-  const deferredFilter = useDeferredValue(filter);
+  const [filters, setFilters] = useState<OperationFilters>({ q: '' });
 
-  const filtered = useMemo(() => {
-    const needle = deferredFilter.trim().toLowerCase();
-    return needle
-      ? data.filter((op) => op.operationId.toLowerCase().includes(needle))
-      : data;
-  }, [data, deferredFilter]);
-
+  const methods = useMemo(
+    () =>
+      [...new Set(data.map((op) => op.method?.toUpperCase()).filter(Boolean))]
+        .toSorted()
+        .map((m) => ({ value: m as string, label: m as string })),
+    [data],
+  );
+  const filtered = useMemo(() => applyFilters(data, filters), [data, filters]);
   const { sorted, sort, toggle } = useSortedRows(filtered, accessors, {
     key: 'count',
     direction: 'desc',
   });
+  const patch = (next: Partial<OperationFilters>) =>
+    setFilters((current) => ({ ...current, ...next }));
 
   return (
     <Page>
       <PageHeader>
-        <PageTitle eyebrow="Requests">Operations</PageTitle>
-        <PageActions>
-          <Input
-            value={filter}
-            onChange={(event) => setFilter(event.target.value)}
-            placeholder="Filter operations…"
-            aria-label="Filter operations"
-            className="h-7 w-64 text-xs"
-          />
-          <ScopedLink
-            to="/requests/list"
-            className="text-xs text-muted-foreground hover:text-foreground hover:underline"
-          >
-            All requests →
-          </ScopedLink>
-        </PageActions>
+        <ProjectTitle subtitle="View and analyze requests made to your applications.">
+          Requests
+        </ProjectTitle>
+        <ScopeControls />
       </PageHeader>
 
-      {data.length === 0 ? (
-        <EmptyState title="No requests in this time range">
-          <NoTelemetryHint />
-        </EmptyState>
-      ) : (
-        <TableFrame>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <SortableHead sortKey="operation" sort={sort} onToggle={toggle}>
-                  Operation
-                </SortableHead>
-                <TableHead className="text-xs">Protocol</TableHead>
-                <SortableHead
-                  sortKey="count"
-                  sort={sort}
-                  onToggle={toggle}
-                  className="text-right"
-                >
-                  Requests
-                </SortableHead>
-                <SortableHead
-                  sortKey="errorRate"
-                  sort={sort}
-                  onToggle={toggle}
-                  className="text-right"
-                >
-                  Error rate
-                </SortableHead>
-                <SortableHead
-                  sortKey="p50"
-                  sort={sort}
-                  onToggle={toggle}
-                  className="text-right"
-                >
-                  p50
-                </SortableHead>
-                <SortableHead
-                  sortKey="p95"
-                  sort={sort}
-                  onToggle={toggle}
-                  className="text-right"
-                >
-                  p95
-                </SortableHead>
-                <SortableHead
-                  sortKey="p99"
-                  sort={sort}
-                  onToggle={toggle}
-                  className="text-right"
-                >
-                  p99
-                </SortableHead>
-                <SortableHead
-                  sortKey="lastSeen"
-                  sort={sort}
-                  onToggle={toggle}
-                  className="text-right"
-                >
-                  Last seen
-                </SortableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sorted.map((op) => (
-                <LinkRow key={`${op.protocol}:${op.operationId}`}>
-                  <TableCell className="max-w-md">
-                    <div className="flex items-center gap-2">
-                      <MethodBadge method={op.method} />
-                      <ScopedLink
-                        to="/requests/list"
-                        search={{ operationId: op.operationId }}
-                        className={cn(
-                          stretchedLink,
-                          'truncate font-mono text-xs',
-                        )}
-                      >
-                        {op.operationId}
-                      </ScopedLink>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {op.protocol}
-                  </TableCell>
-                  <NumCell>{formatCount(op.count)}</NumCell>
-                  <NumCell
-                    className={cn(op.errorRate > 0 && 'text-status-error')}
-                  >
-                    {formatRate(op.errorRate)}
-                  </NumCell>
-                  <NumCell>{formatDuration(op.latency.p50)}</NumCell>
-                  <NumCell>{formatDuration(op.latency.p95)}</NumCell>
-                  <NumCell>{formatDuration(op.latency.p99)}</NumCell>
-                  <NumCell className="text-muted-foreground">
-                    {formatRelative(op.lastSeenAt)}
-                  </NumCell>
-                </LinkRow>
-              ))}
-              {sorted.length === 0 ? (
+      <PanelGrid>
+        <RequestsPanel
+          overview={overview}
+          previous={previous}
+          range={scope.range}
+          layout="header"
+        />
+        <DurationPanel
+          overview={overview}
+          previous={previous}
+          layout="header"
+        />
+      </PanelGrid>
+
+      <div className="mt-4 flex flex-col gap-3">
+        <FilterBar
+          aside={
+            <DebouncedInput
+              value={filters.q}
+              onCommit={(q) => patch({ q })}
+              aria-label="Search operations"
+            />
+          }
+        >
+          <OptionFilter
+            label="Method"
+            value={filters.method}
+            options={methods}
+            onChange={(method) => patch({ method })}
+          />
+          <InputFilter
+            label="P95"
+            value={filters.minP95}
+            format={(v) => `≥ ${v} ms`}
+            placeholder="Minimum p95 in ms"
+            inputMode="numeric"
+            onChange={(minP95) => patch({ minP95 })}
+          />
+          <InputFilter
+            label="Failure rate"
+            value={filters.minFailureRate}
+            format={(v) => `≥ ${v}%`}
+            placeholder="Minimum failure rate in %"
+            inputMode="numeric"
+            onChange={(minFailureRate) => patch({ minFailureRate })}
+          />
+        </FilterBar>
+
+        {data.length === 0 ? (
+          <EmptyState title="No requests in this time range">
+            <NoTelemetryHint />
+          </EmptyState>
+        ) : (
+          <TableFrame>
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell
-                    colSpan={8}
-                    className="py-6 text-center text-muted-foreground"
+                  <SortableHead
+                    sortKey="operation"
+                    sort={sort}
+                    onToggle={toggle}
                   >
-                    No operation matches “{deferredFilter}”.
-                  </TableCell>
+                    Operation ID
+                  </SortableHead>
+                  <SortableHead sortKey="method" sort={sort} onToggle={toggle}>
+                    Method
+                  </SortableHead>
+                  <SortableHead
+                    sortKey="duration"
+                    sort={sort}
+                    onToggle={toggle}
+                  >
+                    Duration
+                  </SortableHead>
+                  <SortableHead
+                    sortKey="failureRate"
+                    sort={sort}
+                    onToggle={toggle}
+                  >
+                    Failure rate
+                  </SortableHead>
+                  <SortableHead
+                    sortKey="count"
+                    sort={sort}
+                    onToggle={toggle}
+                    className="text-right"
+                  >
+                    Count
+                  </SortableHead>
                 </TableRow>
-              ) : null}
-            </TableBody>
-          </Table>
-        </TableFrame>
-      )}
+              </TableHeader>
+              <TableBody>
+                {sorted.map((op) => (
+                  <LinkRow
+                    key={`${op.protocol}:${op.method}:${op.operationId}`}
+                  >
+                    <TableCell className="max-w-md">
+                      <ScopedLink
+                        to={paths.operation(scope.project)}
+                        search={{
+                          operationId: op.operationId,
+                          method: op.method ?? undefined,
+                        }}
+                        className={cn(stretchedLink, 'block truncate')}
+                      >
+                        <RoutePath value={op.operationId} />
+                      </ScopedLink>
+                    </TableCell>
+                    <TableCell>
+                      <MethodBadge method={op.method ?? op.protocol} />
+                    </TableCell>
+                    <TableCell>
+                      <DurationPill avg={op.latency.avg} p95={op.latency.p95} />
+                    </TableCell>
+                    <TableCell>
+                      <FailureRate rate={op.errorRate} />
+                    </TableCell>
+                    <NumCell>{formatCount(op.count)}</NumCell>
+                  </LinkRow>
+                ))}
+                {sorted.length === 0 ? (
+                  <MessageRow colSpan={5}>
+                    No operation matches these filters.
+                  </MessageRow>
+                ) : null}
+              </TableBody>
+            </Table>
+          </TableFrame>
+        )}
+      </div>
     </Page>
   );
 }

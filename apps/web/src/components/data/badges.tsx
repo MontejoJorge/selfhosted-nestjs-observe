@@ -1,59 +1,82 @@
 import type { LogLevel } from '@/lib/api/generated/api';
 import { cn } from '@/lib/utils';
-import { CheckCircle2Icon, XCircleIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
 
 const pill =
-  'inline-flex h-5 shrink-0 items-center gap-1 rounded px-1.5 font-mono text-[11px] font-medium leading-none whitespace-nowrap';
+  'inline-flex h-6 shrink-0 items-center gap-1.5 rounded-md border px-2 font-mono text-xs font-semibold leading-none whitespace-nowrap';
 
-export function MethodBadge({ method }: { method: string | null }) {
+const methodTone: Record<string, string> = {
+  GET: 'text-teal',
+  POST: 'text-foreground',
+  PUT: 'text-chart-4',
+  PATCH: 'text-chart-4',
+  DELETE: 'text-primary',
+};
+
+/** HTTP method as colored monospace text (GET teal, POST bold, DELETE red…). */
+export function MethodBadge({
+  method,
+  variant = 'text',
+}: {
+  method: string | null;
+  /** `chip` adds a grey background, as in compact lists. */
+  variant?: 'text' | 'chip';
+}) {
   if (!method) return null;
+  const upper = method.toUpperCase();
   return (
-    <span className={cn(pill, 'bg-muted text-foreground')}>
-      {method.toUpperCase()}
+    <span
+      className={cn(
+        'shrink-0 font-mono text-xs font-bold',
+        methodTone[upper] ?? 'text-muted-foreground',
+        variant === 'chip' && 'rounded bg-secondary px-1.5 py-0.5',
+      )}
+    >
+      {upper}
+    </span>
+  );
+}
+
+/** A dot + label pill. `tone` picks the colors; the label always carries the meaning. */
+export function DotPill({
+  tone,
+  children,
+  className,
+}: {
+  tone: 'neutral' | 'error' | 'ok' | 'warn';
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <span
+      className={cn(
+        pill,
+        tone === 'error' && 'border-primary/50 bg-primary/10 text-primary',
+        tone === 'ok' && 'border-teal/40 bg-teal/10 text-foreground',
+        tone === 'warn' &&
+          'border-status-warn/40 bg-status-warn/10 text-status-warn',
+        tone === 'neutral' && 'border-border bg-secondary text-foreground',
+        className,
+      )}
+    >
+      <span
+        className={cn(
+          'size-1.5 rounded-full',
+          tone === 'error' && 'bg-primary',
+          tone === 'ok' && 'bg-teal',
+          tone === 'warn' && 'bg-status-warn',
+          tone === 'neutral' && 'bg-muted-foreground',
+        )}
+        aria-hidden
+      />
+      {children}
     </span>
   );
 }
 
 export function StatusCodeBadge({ code }: { code: number | null }) {
   if (code === null) return <span className="text-muted-foreground">–</span>;
-  const tone =
-    code >= 500
-      ? 'bg-status-error/15 text-status-error'
-      : code >= 400
-        ? 'bg-status-warn/15 text-status-warn'
-        : 'bg-status-ok/15 text-status-ok';
-  return <span className={cn(pill, tone)}>{code}</span>;
-}
-
-/** Outcome of an execution: always icon + label, so color is never the only signal. */
-export function OutcomeBadge({
-  failed,
-  label,
-}: {
-  failed: boolean;
-  label: string;
-}) {
-  return (
-    <span
-      className={cn(
-        pill,
-        failed
-          ? 'bg-status-error/15 text-status-error'
-          : 'bg-status-ok/15 text-status-ok',
-      )}
-    >
-      {failed ? (
-        <XCircleIcon className="size-3" aria-hidden />
-      ) : (
-        <CheckCircle2Icon className="size-3" aria-hidden />
-      )}
-      {label}
-    </span>
-  );
-}
-
-export function RequestOutcomeBadge({ hasError }: { hasError: boolean }) {
-  return <OutcomeBadge failed={hasError} label={hasError ? 'error' : 'ok'} />;
+  return <DotPill tone={code >= 400 ? 'error' : 'neutral'}>{code}</DotPill>;
 }
 
 export function JobStatusBadge({
@@ -61,32 +84,35 @@ export function JobStatusBadge({
 }: {
   status: 'completed' | 'failed' | null;
 }) {
-  if (status === null) {
-    return (
-      <span className={cn(pill, 'bg-muted text-muted-foreground')}>
-        unknown
-      </span>
-    );
-  }
-  return <OutcomeBadge failed={status === 'failed'} label={status} />;
+  if (status === null) return <DotPill tone="neutral">unknown</DotPill>;
+  return (
+    <DotPill tone={status === 'failed' ? 'error' : 'neutral'}>{status}</DotPill>
+  );
+}
+
+export function RequestOutcomeBadge({ hasError }: { hasError: boolean }) {
+  return (
+    <DotPill tone={hasError ? 'error' : 'neutral'}>
+      {hasError ? 'error' : 'ok'}
+    </DotPill>
+  );
 }
 
 const levelTone: Record<LogLevel, string> = {
-  fatal: 'bg-status-error text-white',
-  error: 'bg-status-error/15 text-status-error',
-  warn: 'bg-status-warn/15 text-status-warn',
-  log: 'bg-primary/10 text-primary',
-  debug: 'bg-muted text-muted-foreground',
-  verbose: 'bg-muted text-muted-foreground',
+  fatal: 'bg-primary text-primary-foreground',
+  error: 'bg-primary/15 text-primary',
+  warn: 'bg-secondary text-foreground',
+  log: 'bg-secondary text-foreground',
+  debug: 'bg-secondary/60 text-muted-foreground',
+  verbose: 'bg-secondary/60 text-muted-foreground',
 };
 
 export function LogLevelBadge({ level }: { level: LogLevel | null }) {
   return (
     <span
       className={cn(
-        pill,
-        'w-14 justify-center uppercase',
-        level ? levelTone[level] : 'bg-muted text-muted-foreground',
+        'inline-flex h-5 w-14 items-center justify-center rounded font-mono text-[9px] font-bold tracking-wider uppercase',
+        level ? levelTone[level] : 'bg-secondary text-muted-foreground',
       )}
     >
       {level ?? '–'}
@@ -96,6 +122,17 @@ export function LogLevelBadge({ level }: { level: LogLevel | null }) {
 
 export function SourceBadge({ source }: { source: 'request' | 'job' }) {
   return (
-    <span className={cn(pill, 'bg-muted text-muted-foreground')}>{source}</span>
+    <span className="rounded bg-secondary px-1.5 py-0.5 font-mono text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
+      {source}
+    </span>
+  );
+}
+
+/** Grey rounded tag, as in the applications table. */
+export function TagChip({ children }: { children: ReactNode }) {
+  return (
+    <span className="inline-flex h-6 items-center rounded-md border bg-secondary px-2 text-xs font-medium">
+      {children}
+    </span>
   );
 }
