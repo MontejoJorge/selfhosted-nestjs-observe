@@ -21,6 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import type { TimeBucketDto } from '@/lib/api/generated/api';
 import {
   formatCount,
   formatDateTime,
@@ -29,7 +30,6 @@ import {
 } from '@/lib/format';
 import { paths } from '@/lib/paths';
 import { useScope } from '@/lib/scope-hooks';
-import type { TimeBucket } from '@selfhosted-observe/contracts';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { useParams } from 'react-router';
@@ -39,7 +39,7 @@ const occurrenceSeries: SeriesSpec[] = [
   { key: 'count', label: 'Events', color: 'var(--status-error)', mark: 'bar' },
 ];
 
-function OccurrenceChart({ buckets }: { buckets: readonly TimeBucket[] }) {
+function OccurrenceChart({ buckets }: { buckets: readonly TimeBucketDto[] }) {
   const data = useMemo(
     () => buckets.map((b) => ({ t: b.t, count: b.count })),
     [buckets],

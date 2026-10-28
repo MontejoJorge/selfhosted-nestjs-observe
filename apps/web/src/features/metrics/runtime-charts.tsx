@@ -4,14 +4,13 @@ import {
   type SeriesSpec,
 } from '@/components/charts/time-series-chart';
 import { EmptyState } from '@/components/states';
-import type { Scope } from '@/lib/api/scope';
+import type { RuntimeSeriesPointDto, TimeRange } from '@/lib/api/generated/api';
 import {
   formatBytes,
   formatCount,
   formatDuration,
   formatPercent,
 } from '@/lib/format';
-import type { RuntimeSeriesPoint } from '@selfhosted-observe/contracts';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { runtimeMetricsQueryOptions } from './queries';
@@ -63,11 +62,19 @@ const gcDurationSeries: SeriesSpec[] = [
 ];
 
 /** Runtime charts for one service. Only rendered once a service is selected. */
-export function RuntimeCharts({ scope }: { scope: Scope }) {
-  const { data } = useSuspenseQuery(runtimeMetricsQueryOptions(scope));
+export function RuntimeCharts({
+  service,
+  range,
+}: {
+  service: string;
+  range: TimeRange;
+}) {
+  const { data } = useSuspenseQuery(
+    runtimeMetricsQueryOptions({ service, range }),
+  );
   const points = useMemo(
     () =>
-      data.map((point: RuntimeSeriesPoint) => ({
+      data.map((point: RuntimeSeriesPointDto) => ({
         ...point,
         elu:
           point.eventLoopUtilization === null

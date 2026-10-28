@@ -1,29 +1,22 @@
-import { apiGet } from '@/lib/api/client';
+import { api } from '@/lib/api/client';
+import type { ErrorSource } from '@/lib/api/generated/api';
 import { pagedQueryOptions } from '@/lib/api/pagination';
 import type { Scope } from '@/lib/api/scope';
-import type {
-  ErrorGroup,
-  ErrorGroupDetail,
-} from '@selfhosted-observe/contracts';
 import { queryOptions } from '@tanstack/react-query';
 
 export interface ErrorFilters {
-  source?: 'request' | 'job';
+  source?: ErrorSource;
 }
 
 export const errorGroupsQueryOptions = (scope: Scope, filters: ErrorFilters) =>
-  pagedQueryOptions<ErrorGroup>(['errors', 'list', scope, filters], '/errors', {
-    ...scope,
-    ...filters,
-  });
+  pagedQueryOptions(['errors', 'list', scope, filters], (page, signal) =>
+    api.errors.listErrorGroups({ ...scope, ...filters, ...page }, { signal }),
+  );
 
+/** The timeline and occurrences only cover `scope.range`; the count is all-time. */
 export const errorGroupQueryOptions = (id: string, scope: Scope) =>
   queryOptions({
     queryKey: ['errors', 'detail', id, scope],
     queryFn: ({ signal }) =>
-      apiGet<ErrorGroupDetail>(
-        `/errors/${encodeURIComponent(id)}`,
-        { ...scope },
-        signal,
-      ),
+      api.errors.getErrorGroup({ id, ...scope }, { signal }),
   });

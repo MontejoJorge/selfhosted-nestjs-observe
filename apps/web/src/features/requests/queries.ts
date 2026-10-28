@@ -1,16 +1,12 @@
-import { apiGet } from '@/lib/api/client';
+import { api } from '@/lib/api/client';
+import type { RequestStatus } from '@/lib/api/generated/api';
 import { pagedQueryOptions } from '@/lib/api/pagination';
 import type { Scope } from '@/lib/api/scope';
-import type {
-  OperationStats,
-  RequestDetail,
-  RequestListItem,
-} from '@selfhosted-observe/contracts';
 import { queryOptions } from '@tanstack/react-query';
 
 export interface RequestFilters {
   operationId?: string;
-  status?: 'ok' | 'error';
+  status?: RequestStatus;
   minDuration?: number;
   traceId?: string;
 }
@@ -18,28 +14,20 @@ export interface RequestFilters {
 export const operationsQueryOptions = (scope: Scope) =>
   queryOptions({
     queryKey: ['requests', 'operations', scope],
-    queryFn: ({ signal }) =>
-      apiGet<OperationStats[]>('/requests/operations', { ...scope }, signal),
+    queryFn: ({ signal }) => api.requests.listOperations(scope, { signal }),
   });
 
 export const requestListQueryOptions = (
   scope: Scope,
   filters: RequestFilters,
 ) =>
-  pagedQueryOptions<RequestListItem>(
-    ['requests', 'list', scope, filters],
-    '/requests',
-    { ...scope, ...filters },
+  pagedQueryOptions(['requests', 'list', scope, filters], (page, signal) =>
+    api.requests.listRequests({ ...scope, ...filters, ...page }, { signal }),
   );
 
 export const requestDetailQueryOptions = (id: string) =>
   queryOptions({
     queryKey: ['requests', 'detail', id],
-    queryFn: ({ signal }) =>
-      apiGet<RequestDetail>(
-        `/requests/${encodeURIComponent(id)}`,
-        undefined,
-        signal,
-      ),
+    queryFn: ({ signal }) => api.requests.getRequest({ id }, { signal }),
     staleTime: Infinity,
   });

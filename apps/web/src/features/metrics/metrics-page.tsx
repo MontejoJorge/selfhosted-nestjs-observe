@@ -30,7 +30,7 @@ export function MetricsPage() {
 
       <PageSection title="Runtime">
         {scope.service ? (
-          <RuntimeCharts scope={scope} />
+          <RuntimeCharts service={scope.service} range={scope.range} />
         ) : (
           <EmptyState title="Select a service">
             Runtime metrics (CPU, memory, event loop, GC) are per service. Pick

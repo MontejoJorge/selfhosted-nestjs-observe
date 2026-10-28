@@ -1,10 +1,10 @@
 import { LogLevelBadge } from '@/components/data/badges';
 import { RecordList } from '@/components/data/key-value';
 import { ScopedLink } from '@/components/scoped-link';
+import type { LogItemDto } from '@/lib/api/generated/api';
 import { formatPreciseTime, shortId } from '@/lib/format';
 import { paths } from '@/lib/paths';
 import { cn } from '@/lib/utils';
-import type { LogItem } from '@selfhosted-observe/contracts';
 import { ChevronDownIcon, ChevronRightIcon } from 'lucide-react';
 import { memo, useState } from 'react';
 
@@ -13,7 +13,7 @@ export function LogStream({
   logs,
   showTraceLinks = true,
 }: {
-  logs: readonly LogItem[];
+  logs: readonly LogItemDto[];
   showTraceLinks?: boolean;
 }) {
   return (
@@ -29,7 +29,7 @@ const LogLine = memo(function LogLine({
   log,
   showTraceLink,
 }: {
-  log: LogItem;
+  log: LogItemDto;
   showTraceLink: boolean;
 }) {
   const [open, setOpen] = useState(false);

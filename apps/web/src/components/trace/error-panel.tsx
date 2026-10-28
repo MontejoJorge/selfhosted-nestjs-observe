@@ -1,9 +1,9 @@
 import { CodeBlock } from '@/components/data/code-block';
 import { RecordList } from '@/components/data/key-value';
-import type { WireError } from '@selfhosted-observe/contracts';
+import type { WireErrorDto } from '@/lib/api/generated/api';
 
 /** Class, message, stack and tags of a captured error. */
-export function ErrorPanel({ error }: { error: WireError }) {
+export function ErrorPanel({ error }: { error: WireErrorDto }) {
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-status-error/30 bg-status-error/5 p-3">
       <div className="text-sm">

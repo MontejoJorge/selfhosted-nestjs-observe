@@ -22,6 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import type { OperationStatsDto } from '@/lib/api/generated/api';
 import {
   formatCount,
   formatDuration,
@@ -30,7 +31,6 @@ import {
 } from '@/lib/format';
 import { useScope } from '@/lib/scope-hooks';
 import { cn } from '@/lib/utils';
-import type { OperationStats } from '@selfhosted-observe/contracts';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { useDeferredValue, useMemo, useState } from 'react';
 import { operationsQueryOptions } from './queries';
@@ -38,7 +38,7 @@ import { operationsQueryOptions } from './queries';
 type SortKey =
   'operation' | 'count' | 'errorRate' | 'p50' | 'p95' | 'p99' | 'lastSeen';
 
-const accessors: SortAccessors<OperationStats, SortKey> = {
+const accessors: SortAccessors<OperationStatsDto, SortKey> = {
   operation: (row) => row.operationId,
   count: (row) => row.count,
   errorRate: (row) => row.errorRate,

@@ -1,37 +1,30 @@
-import { apiGet } from '@/lib/api/client';
+import { api } from '@/lib/api/client';
+import type { JobStatus } from '@/lib/api/generated/api';
 import { pagedQueryOptions } from '@/lib/api/pagination';
 import type { Scope } from '@/lib/api/scope';
-import type {
-  JobDetail,
-  JobListItem,
-  JobStats,
-} from '@selfhosted-observe/contracts';
 import { queryOptions } from '@tanstack/react-query';
 
 export interface JobFilters {
   queue?: string;
   name?: string;
-  status?: 'completed' | 'failed';
+  status?: JobStatus;
   traceId?: string;
 }
 
 export const jobStatsQueryOptions = (scope: Scope) =>
   queryOptions({
     queryKey: ['jobs', 'queues', scope],
-    queryFn: ({ signal }) =>
-      apiGet<JobStats[]>('/jobs/queues', { ...scope }, signal),
+    queryFn: ({ signal }) => api.jobs.listQueues(scope, { signal }),
   });
 
 export const jobListQueryOptions = (scope: Scope, filters: JobFilters) =>
-  pagedQueryOptions<JobListItem>(['jobs', 'list', scope, filters], '/jobs', {
-    ...scope,
-    ...filters,
-  });
+  pagedQueryOptions(['jobs', 'list', scope, filters], (page, signal) =>
+    api.jobs.listJobs({ ...scope, ...filters, ...page }, { signal }),
+  );
 
 export const jobDetailQueryOptions = (id: string) =>
   queryOptions({
     queryKey: ['jobs', 'detail', id],
-    queryFn: ({ signal }) =>
-      apiGet<JobDetail>(`/jobs/${encodeURIComponent(id)}`, undefined, signal),
+    queryFn: ({ signal }) => api.jobs.getJob({ id }, { signal }),
     staleTime: Infinity,
   });

@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { API_URL, ApiError } from '@/lib/api/client';
+import { API_URL, errorMessage, errorStatus } from '@/lib/api/client';
 import { cn } from '@/lib/utils';
 import { AlertTriangleIcon, InboxIcon, RefreshCwIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
@@ -34,22 +34,20 @@ export function InlineSpinner({ className }: { className?: string }) {
 }
 
 function describeError(error: unknown): { title: string; detail: string } {
-  if (error instanceof ApiError) {
-    if (error.status === 0) {
-      return {
-        title: 'API unreachable',
-        detail: `${error.message}. Check that the collector is running and VITE_API_URL is correct.`,
-      };
-    }
-    if (error.status === 404) {
-      return { title: 'Not found', detail: error.message };
-    }
-    return { title: `API error ${error.status}`, detail: error.message };
+  const status = errorStatus(error);
+  if (status === 0) {
+    return {
+      title: 'API unreachable',
+      detail: `Cannot reach the API at ${API_URL}. Check that the collector is running and VITE_API_URL is correct.`,
+    };
   }
-  return {
-    title: 'Something went wrong',
-    detail: error instanceof Error ? error.message : String(error),
-  };
+  if (status === 404) {
+    return { title: 'Not found', detail: errorMessage(error) };
+  }
+  if (status !== undefined) {
+    return { title: `API error ${status}`, detail: errorMessage(error) };
+  }
+  return { title: 'Something went wrong', detail: errorMessage(error) };
 }
 
 export function ErrorState({

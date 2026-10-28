@@ -14,12 +14,12 @@ import { ScopedLink } from '@/components/scoped-link';
 import { ErrorPanel } from '@/components/trace/error-panel';
 import { TraceWaterfall } from '@/components/trace/trace-waterfall';
 import { Card, CardContent } from '@/components/ui/card';
+import type { RequestDetailDto } from '@/lib/api/generated/api';
 import { formatDateTime, formatDuration } from '@/lib/format';
 import { paths } from '@/lib/paths';
-import type { RequestDetail } from '@selfhosted-observe/contracts';
 
 /** Headline of a request: method, operation, status and timing. */
-export function RequestSummary({ request }: { request: RequestDetail }) {
+export function RequestSummary({ request }: { request: RequestDetailDto }) {
   return (
     <div className="flex flex-wrap items-center gap-2 text-xs">
       <MethodBadge method={request.method} />
@@ -33,7 +33,7 @@ export function RequestSummary({ request }: { request: RequestDetail }) {
   );
 }
 
-export function RequestMetadata({ request }: { request: RequestDetail }) {
+export function RequestMetadata({ request }: { request: RequestDetailDto }) {
   return (
     <KeyValueList>
       <KeyValue label="Trace ID">
@@ -72,7 +72,7 @@ export function RequestMetadata({ request }: { request: RequestDetail }) {
 }
 
 /** The body of a request detail: error, waterfall, metadata, captured request and tags. */
-export function RequestDetailView({ request }: { request: RequestDetail }) {
+export function RequestDetailView({ request }: { request: RequestDetailDto }) {
   return (
     <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
       <div className="flex min-w-0 flex-col gap-4">

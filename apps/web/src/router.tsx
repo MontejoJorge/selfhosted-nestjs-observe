@@ -27,7 +27,7 @@ import {
 } from '@/features/requests/queries';
 import { requestListSearch } from '@/features/requests/search';
 import { traceQueryOptions } from '@/features/traces/queries';
-import { ApiError } from '@/lib/api/client';
+import { errorStatus } from '@/lib/api/client';
 import { scopeFromParams } from '@/lib/api/scope';
 import { parseRequestSearch } from '@/lib/search';
 import { QueryClient } from '@tanstack/react-query';
@@ -39,12 +39,10 @@ export const queryClient = new QueryClient({
       staleTime: 30_000,
       refetchOnWindowFocus: false,
       // Client errors (bad filter, not found) won't fix themselves on retry.
-      retry: (failureCount, error) =>
-        !(
-          error instanceof ApiError &&
-          error.status >= 400 &&
-          error.status < 500
-        ) && failureCount < 2,
+      retry: (failureCount, error) => {
+        const status = errorStatus(error) ?? 0;
+        return !(status >= 400 && status < 500) && failureCount < 2;
+      },
     },
   },
 });
@@ -222,7 +220,10 @@ export const router = createBrowserRouter([
                 // Runtime series are per service.
                 scope.service
                   ? queryClient.ensureQueryData(
-                      runtimeMetricsQueryOptions(scope),
+                      runtimeMetricsQueryOptions({
+                        service: scope.service,
+                        range: scope.range,
+                      }),
                     )
                   : undefined,
               ]);

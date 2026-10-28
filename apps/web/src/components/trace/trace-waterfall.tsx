@@ -9,9 +9,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import type { TraceSpanDto } from '@/lib/api/generated/api';
 import { formatDuration } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import type { TraceSpan } from '@selfhosted-observe/contracts';
 import {
   ChevronDownIcon,
   ChevronRightIcon,
@@ -62,7 +62,7 @@ interface TraceWaterfallProps {
   /** Duration of the root execution in ms. */
   durationMs: number;
   rootFailed: boolean;
-  spans: readonly TraceSpan[];
+  spans: readonly TraceSpanDto[];
 }
 
 /**

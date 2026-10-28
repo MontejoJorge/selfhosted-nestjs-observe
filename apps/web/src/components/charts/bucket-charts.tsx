@@ -1,5 +1,5 @@
+import type { TimeBucketDto } from '@/lib/api/generated/api';
 import { formatCount, formatDuration } from '@/lib/format';
-import type { TimeBucket } from '@selfhosted-observe/contracts';
 import { useMemo } from 'react';
 import { TimeSeriesChart, type SeriesSpec } from './time-series-chart';
 
@@ -28,7 +28,7 @@ const latencySeries: SeriesSpec[] = [
 export function ThroughputChart({
   buckets,
 }: {
-  buckets: readonly TimeBucket[];
+  buckets: readonly TimeBucketDto[];
 }) {
   const data = useMemo(
     () =>
@@ -49,7 +49,11 @@ export function ThroughputChart({
 }
 
 /** p95 latency per bucket. Kept separate from throughput: never a dual axis. */
-export function LatencyChart({ buckets }: { buckets: readonly TimeBucket[] }) {
+export function LatencyChart({
+  buckets,
+}: {
+  buckets: readonly TimeBucketDto[];
+}) {
   const data = useMemo(
     () => buckets.map((b) => ({ t: b.t, p95: b.count > 0 ? b.p95 : null })),
     [buckets],

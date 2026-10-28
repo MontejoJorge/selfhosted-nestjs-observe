@@ -9,11 +9,11 @@ import { ScopedLink } from '@/components/scoped-link';
 import { ErrorPanel } from '@/components/trace/error-panel';
 import { TraceWaterfall } from '@/components/trace/trace-waterfall';
 import { Card, CardContent } from '@/components/ui/card';
+import type { JobDetailDto } from '@/lib/api/generated/api';
 import { formatDateTime, formatDuration } from '@/lib/format';
 import { paths } from '@/lib/paths';
-import type { JobDetail } from '@selfhosted-observe/contracts';
 
-export function JobSummary({ job }: { job: JobDetail }) {
+export function JobSummary({ job }: { job: JobDetailDto }) {
   return (
     <div className="flex flex-wrap items-center gap-2 text-xs">
       <JobStatusBadge status={job.status} />
@@ -25,7 +25,7 @@ export function JobSummary({ job }: { job: JobDetail }) {
   );
 }
 
-export function JobMetadata({ job }: { job: JobDetail }) {
+export function JobMetadata({ job }: { job: JobDetailDto }) {
   return (
     <KeyValueList>
       <KeyValue label="Trace ID">
@@ -59,7 +59,7 @@ export function JobMetadata({ job }: { job: JobDetail }) {
   );
 }
 
-export function JobDetailView({ job }: { job: JobDetail }) {
+export function JobDetailView({ job }: { job: JobDetailDto }) {
   return (
     <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
       <div className="flex min-w-0 flex-col gap-4">

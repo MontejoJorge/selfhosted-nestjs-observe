@@ -1,4 +1,4 @@
-import type { TimeRange } from '@selfhosted-observe/contracts';
+import type { TimeRange } from '@/lib/api/generated/api';
 import { z } from 'zod';
 import { optionalEnum, optionalString } from '../search';
 

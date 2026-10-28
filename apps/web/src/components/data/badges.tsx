@@ -1,5 +1,5 @@
+import type { LogLevel } from '@/lib/api/generated/api';
 import { cn } from '@/lib/utils';
-import type { LogLevel } from '@selfhosted-observe/contracts';
 import { CheckCircle2Icon, XCircleIcon } from 'lucide-react';
 
 const pill =

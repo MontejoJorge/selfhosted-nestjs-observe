@@ -1,4 +1,4 @@
-import type { Primitive, TraceSpan } from '@selfhosted-observe/contracts';
+import type { TraceSpanDto } from '@/lib/api/generated/api';
 
 export type SpanKind = 'db' | 'http' | 'code';
 
@@ -17,21 +17,21 @@ const SUMMARY_KEYS = [
   'target',
 ];
 
-export function spanKind(span: TraceSpan): SpanKind {
+export function spanKind(span: TraceSpanDto): SpanKind {
   const keys = Object.keys(span.tags);
   if (keys.some((key) => DB_KEY.test(key))) return 'db';
   if (keys.some((key) => HTTP_KEY.test(key))) return 'http';
   return 'code';
 }
 
-export function spanLabel(span: TraceSpan): string {
+export function spanLabel(span: TraceSpanDto): string {
   if (span.name) return span.name;
   return span.methodName
     ? `${span.className}.${span.methodName}`
     : span.className;
 }
 
-export function spanSummary(tags: Record<string, Primitive>): string | null {
+export function spanSummary(tags: TraceSpanDto['tags']): string | null {
   for (const key of SUMMARY_KEYS) {
     const value = tags[key];
     if (value !== undefined && value !== '') return String(value);
@@ -39,14 +39,14 @@ export function spanSummary(tags: Record<string, Primitive>): string | null {
   return null;
 }
 
-export function spanFailed(span: TraceSpan): boolean {
+export function spanFailed(span: TraceSpanDto): boolean {
   return span.error !== null && span.error !== false;
 }
 
 export interface FlatSpan {
   /** Stable path id such as `0.2.1`. */
   id: string;
-  span: TraceSpan;
+  span: TraceSpanDto;
   depth: number;
   /** Absolute start offset in ms, inherited from the parent when missing. */
   start: number;
@@ -55,12 +55,12 @@ export interface FlatSpan {
 
 /** Flattens the span tree in display order, skipping children of collapsed rows. */
 export function flattenSpans(
-  spans: readonly TraceSpan[],
+  spans: readonly TraceSpanDto[],
   collapsed: ReadonlySet<string>,
 ): FlatSpan[] {
   const rows: FlatSpan[] = [];
   const visit = (
-    nodes: readonly TraceSpan[],
+    nodes: readonly TraceSpanDto[],
     depth: number,
     parentId: string,
     parentStart: number,
@@ -78,7 +78,7 @@ export function flattenSpans(
   return rows;
 }
 
-export function countSpans(spans: readonly TraceSpan[]): number {
+export function countSpans(spans: readonly TraceSpanDto[]): number {
   let count = 0;
   for (const span of spans) count += 1 + countSpans(span.children);
   return count;
@@ -86,7 +86,7 @@ export function countSpans(spans: readonly TraceSpan[]): number {
 
 /** The latest end time across the tree, used to size the time axis. */
 export function maxSpanEnd(
-  spans: readonly TraceSpan[],
+  spans: readonly TraceSpanDto[],
   parentStart = 0,
 ): number {
   let max = 0;
@@ -102,7 +102,7 @@ export function maxSpanEnd(
 }
 
 export function collectParentIds(
-  spans: readonly TraceSpan[],
+  spans: readonly TraceSpanDto[],
   parentId = '',
 ): string[] {
   const ids: string[] = [];

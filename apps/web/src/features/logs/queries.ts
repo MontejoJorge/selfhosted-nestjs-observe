@@ -1,6 +1,7 @@
+import { api } from '@/lib/api/client';
+import type { LogLevel } from '@/lib/api/generated/api';
 import { pagedQueryOptions } from '@/lib/api/pagination';
 import type { Scope } from '@/lib/api/scope';
-import type { LogItem, LogLevel } from '@selfhosted-observe/contracts';
 
 export interface LogFilters {
   level?: LogLevel;
@@ -10,10 +11,9 @@ export interface LogFilters {
 }
 
 export const logsQueryOptions = (scope: Scope, filters: LogFilters) =>
-  pagedQueryOptions<LogItem>(['logs', 'list', scope, filters], '/logs', {
-    ...scope,
-    ...filters,
-  });
+  pagedQueryOptions(['logs', 'list', scope, filters], (page, signal) =>
+    api.logs.listLogs({ ...scope, ...filters, ...page }, { signal }),
+  );
 
 export const LOG_LEVELS = [
   'fatal',

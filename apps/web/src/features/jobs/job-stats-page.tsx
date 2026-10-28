@@ -19,6 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import type { JobStatsDto } from '@/lib/api/generated/api';
 import {
   formatCount,
   formatDuration,
@@ -27,14 +28,13 @@ import {
 } from '@/lib/format';
 import { useScope } from '@/lib/scope-hooks';
 import { cn } from '@/lib/utils';
-import type { JobStats } from '@selfhosted-observe/contracts';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { jobStatsQueryOptions } from './queries';
 
 type SortKey =
   'job' | 'count' | 'failureRate' | 'p50' | 'p95' | 'wait' | 'lastSeen';
 
-const accessors: SortAccessors<JobStats, SortKey> = {
+const accessors: SortAccessors<JobStatsDto, SortKey> = {
   job: (row) => `${row.queue}/${row.name}`,
   count: (row) => row.count,
   failureRate: (row) => row.failureRate,
