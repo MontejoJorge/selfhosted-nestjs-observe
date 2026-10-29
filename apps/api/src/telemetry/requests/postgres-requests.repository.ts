@@ -85,6 +85,7 @@ export class PostgresRequestsRepository extends RequestsRepository {
     if (filter.operationId)
       q = q.where('operation_id', '=', filter.operationId);
     if (filter.traceId) q = q.where('trace_id', '=', filter.traceId);
+    if (filter.userId) q = q.where('user_id', '=', filter.userId);
     if (filter.status) q = q.where('has_error', '=', filter.status === 'error');
     if (filter.minDurationMs !== undefined)
       q = q.where('duration_ms', '>=', filter.minDurationMs);

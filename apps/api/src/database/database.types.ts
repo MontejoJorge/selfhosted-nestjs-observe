@@ -134,6 +134,62 @@ export interface JobsMinuteTable {
   last_called_at: Timestamp;
 }
 
+/**
+ * Requests per application, UTC hour and user id (see ADR 0004); `user_id` is `''` for
+ * the requests without one. No
+ * instance dimension: it would multiply the rows by the instances serving each user.
+ */
+export interface UsersHourTable {
+  application_id: string;
+  hour: Timestamp;
+  user_id: string;
+  count: number;
+  errors: number;
+  status_4xx: number;
+  status_5xx: number;
+  sum_ms: number;
+  min_ms: number;
+  max_ms: number;
+  histogram: number[];
+  first_called_at: Timestamp;
+  last_called_at: Timestamp;
+}
+
+/** Identified users active per application and 15-minute bucket (see ADR 0004). */
+export interface UserPresenceTable {
+  application_id: string;
+  bucket: Timestamp;
+  user_id: string;
+}
+
+/**
+ * Spans per application, 5-minute bucket, instance, operation (operationId or
+ * `queue/name`) and class method (see ADR 0004), with self time and a reference to the
+ * slowest span of the row (`max_*`).
+ */
+export interface SpanStatsTable {
+  application_id: string;
+  bucket: Timestamp;
+  service_id: string;
+  source: string;
+  operation: string;
+  origin: string;
+  class_name: string;
+  method_name: string;
+  calls: number;
+  errors: number;
+  total_ms: number;
+  self_ms: number;
+  min_ms: number;
+  max_ms: number;
+  histogram: number[];
+  max_execution_id: string;
+  max_trace_id: string;
+  max_called_at: Timestamp;
+  max_self_ms: number;
+  last_called_at: Timestamp;
+}
+
 export interface SpansTable {
   application_id: string;
   execution_id: string;
@@ -257,6 +313,9 @@ export interface Database {
   jobs: JobsTable;
   requests_1m: RequestsMinuteTable;
   jobs_1m: JobsMinuteTable;
+  users_1h: UsersHourTable;
+  user_presence_15m: UserPresenceTable;
+  span_stats_5m: SpanStatsTable;
   spans: SpansTable;
   error_groups: ErrorGroupsTable;
   error_group_culprits: ErrorGroupCulpritsTable;
@@ -278,6 +337,9 @@ export const APPLICATION_SCOPED_TABLES = [
   'jobs',
   'requests_1m',
   'jobs_1m',
+  'users_1h',
+  'user_presence_15m',
+  'span_stats_5m',
   'spans',
   'error_occurrences',
   'logs',
@@ -299,6 +361,9 @@ export const PARTITIONED_TABLES = {
   custom_metrics: 'recorded_at',
   requests_1m: 'minute',
   jobs_1m: 'minute',
+  users_1h: 'hour',
+  user_presence_15m: 'bucket',
+  span_stats_5m: 'bucket',
 } as const satisfies Partial<Record<keyof Database, string>>;
 
 export type PartitionedTable = keyof typeof PARTITIONED_TABLES;
@@ -307,4 +372,7 @@ export type PartitionedTable = keyof typeof PARTITIONED_TABLES;
 export const ROLLUP_TABLES = [
   'requests_1m',
   'jobs_1m',
+  'users_1h',
+  'user_presence_15m',
+  'span_stats_5m',
 ] as const satisfies readonly PartitionedTable[];

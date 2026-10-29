@@ -45,6 +45,21 @@ export function bucketSeconds(window: TimeWindow): number {
 /** Origin for `date_bin`; buckets align to multiples of the width since this instant. */
 export const BUCKET_ORIGIN = '2000-01-01T00:00:00Z';
 
+/** Start (epoch ms) of every `stepSeconds` bucket overlapping the window, in order. */
+export function bucketStarts(
+  window: TimeWindow,
+  stepSeconds: number,
+): number[] {
+  const stepMs = stepSeconds * 1000;
+  const origin = Date.parse(BUCKET_ORIGIN);
+  const starts: number[] = [];
+  const first =
+    origin + Math.floor((window.from.getTime() - origin) / stepMs) * stepMs;
+  for (let start = first; start < window.to.getTime(); start += stepMs)
+    starts.push(start);
+  return starts;
+}
+
 /** Fills a sparse timeline so every bucket in the window is present. */
 export function fillTimeline(
   window: TimeWindow,
@@ -59,15 +74,10 @@ export function fillTimeline(
     status5xx?: number;
   }>,
 ): TimeBucketDto[] {
-  const stepMs = stepSeconds * 1000;
-  const origin = Date.parse(BUCKET_ORIGIN);
   const byStart = new Map(rows.map((row) => [row.t.getTime(), row]));
-  const buckets: TimeBucketDto[] = [];
-  const first =
-    origin + Math.floor((window.from.getTime() - origin) / stepMs) * stepMs;
-  for (let start = first; start < window.to.getTime(); start += stepMs) {
+  return bucketStarts(window, stepSeconds).map((start) => {
     const row = byStart.get(start);
-    buckets.push({
+    return {
       t: new Date(start).toISOString(),
       count: row?.count ?? 0,
       errors: row?.errors ?? 0,
@@ -75,7 +85,6 @@ export function fillTimeline(
       avg: row?.avg ?? 0,
       status4xx: row?.status4xx ?? 0,
       status5xx: row?.status5xx ?? 0,
-    });
-  }
-  return buckets;
+    };
+  });
 }

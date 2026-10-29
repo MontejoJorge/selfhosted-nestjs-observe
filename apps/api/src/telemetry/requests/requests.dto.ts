@@ -45,6 +45,12 @@ export class RequestsQueryDto extends PageQueryDto {
   @IsString()
   @MaxLength(255)
   traceId?: string;
+
+  /** Exact user id (as reported by `http.getUserId`). */
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  userId?: string;
 }
 
 export class OperationStatsDto {

@@ -8,6 +8,8 @@ export interface ExecutionRef {
   source: ExecutionSource;
   serviceId: string;
   traceId: string;
+  /** operationId for requests, `queue/name` for jobs */
+  operation: string;
 }
 
 /** Hard cap so a pathological tree can't blow up one batch. */
@@ -48,6 +50,7 @@ export function flattenTrace(
       className: asString(node.c) ?? '',
       methodName: asString(node.m) ?? '',
       durationMs: asNumber(node.d),
+      selfMs: null,
       startOffsetMs: asNumber(node.so),
       hasError: error !== null,
       tags: asTags(node.t),
@@ -59,5 +62,22 @@ export function flattenTrace(
       stack.push({ node: children[i], depth: depth + 1, parent: span });
     }
   }
+  computeSelfTimes(spans);
   return spans;
+}
+
+/**
+ * Self time = duration minus the durations of the direct children, at least 0 (children
+ * running concurrently can add up to more than their parent). Null without a duration.
+ */
+function computeSelfTimes(spans: SpanRecord[]): void {
+  const childMs: number[] = Array.from({ length: spans.length }, () => 0);
+  for (const span of spans)
+    if (span.parentPosition !== null)
+      childMs[span.parentPosition] += span.durationMs ?? 0;
+  for (const span of spans)
+    span.selfMs =
+      span.durationMs === null
+        ? null
+        : Math.max(0, span.durationMs - childMs[span.position]);
 }

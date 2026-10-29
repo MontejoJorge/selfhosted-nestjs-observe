@@ -1,5 +1,11 @@
 import { errorFingerprint } from './error-fingerprint.js';
-import { rollUpJobs, rollUpRequests } from './rollups.js';
+import {
+  rollUpJobs,
+  rollUpRequests,
+  rollUpSpans,
+  rollUpUsers,
+  userPresence,
+} from './rollups.js';
 import type {
   CustomMetricSample,
   ErrorOccurrence,
@@ -31,6 +37,9 @@ import type {
   WireTelemetryBatch,
   WireTraceNode,
 } from './wire.js';
+
+/** Longer user ids are truncated, so they fit the btree indexes on `user_id`. */
+export const USER_ID_MAX_LENGTH = 255;
 
 /** Events outside this window are dropped (older than retention, or from a skewed clock). */
 export interface AcceptanceWindow {
@@ -81,6 +90,7 @@ export function mapTelemetryBatch(
           source: 'request',
           serviceId,
           traceId: request.traceId,
+          operation: request.operationId,
         },
         request.trace,
       ),
@@ -105,6 +115,7 @@ export function mapTelemetryBatch(
           source: 'job',
           serviceId,
           traceId: job.traceId,
+          operation: `${job.queue}/${job.name}`,
         },
         job.trace,
       ),
@@ -135,6 +146,9 @@ export function mapTelemetryBatch(
     jobs,
     requestRollups: rollUpRequests(requests),
     jobRollups: rollUpJobs(jobs),
+    userRollups: rollUpUsers(requests),
+    userPresence: userPresence(requests),
+    spanRollups: rollUpSpans(spans),
     spans,
     errors,
     logs,
@@ -195,7 +209,7 @@ function mapRequest(
     statusCode: statusCode === null ? null : Math.trunc(statusCode),
     url: asString(attributes.ou),
     durationMs: asNumber(snapshot.d) ?? 0,
-    userId: asString(snapshot.u),
+    userId: asString(snapshot.u)?.slice(0, USER_ID_MAX_LENGTH) ?? null,
     hasError: error !== null || (statusCode !== null && statusCode >= 500),
     error,
     tags: asTags(snapshot.tg),

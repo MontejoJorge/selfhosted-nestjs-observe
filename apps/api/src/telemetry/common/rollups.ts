@@ -1,5 +1,9 @@
 import { sql, type RawBuilder, type SqlBool } from 'kysely';
-import { histogramQuantiles } from '../../ingest/domain/latency-histogram.js';
+import {
+  BUCKETS_PER_DOUBLING,
+  LAST_BUCKET,
+  histogramQuantiles,
+} from '../../ingest/domain/latency-histogram.js';
 import type { PercentilesDto } from './common.dto.js';
 import { inApplications, type TelemetryScope } from './scope.js';
 import type { TimeWindow } from './time-window.js';
@@ -12,18 +16,33 @@ import type { TimeWindow } from './time-window.js';
  * than merging arrays row by row. The cells are put back together in TS.
  */
 
-const MINUTE_MS = 60_000;
+/** Time column of a rollup table and the width of its buckets. */
+export interface RollupGrain {
+  column: string;
+  ms: number;
+}
 
-/** Rollups cover whole minutes: the window starts at the minute containing `from`. */
-export function rollupWindow(window: TimeWindow): TimeWindow {
+/** `requests_1m` and `jobs_1m`. */
+export const MINUTE_GRAIN: RollupGrain = { column: 'minute', ms: 60_000 };
+/** `span_stats_5m`. */
+export const FIVE_MINUTE_GRAIN: RollupGrain = {
+  column: 'bucket',
+  ms: 5 * 60_000,
+};
+
+/** Rollups cover whole buckets: the window starts at the bucket containing `from`. */
+export function rollupWindow(
+  window: TimeWindow,
+  stepMs = MINUTE_GRAIN.ms,
+): TimeWindow {
   return {
-    from: new Date(Math.floor(window.from.getTime() / MINUTE_MS) * MINUTE_MS),
+    from: new Date(Math.floor(window.from.getTime() / stepMs) * stepMs),
     to: window.to,
   };
 }
 
 /**
- * Filter of a rollup query: the scope's applications (and instance), the minutes of the
+ * Filter of a rollup query: the scope's applications (and instance), the buckets of the
  * window, and equality on the optional `equals` columns. One expression, so it applies
  * to queries with and without the `histogramCells` from-item.
  */
@@ -31,12 +50,14 @@ export function inRollupScope(
   scope: TelemetryScope,
   window: TimeWindow,
   equals: Record<string, string | undefined> = {},
+  grain: RollupGrain = MINUTE_GRAIN,
 ): RawBuilder<SqlBool> {
-  const minutes = rollupWindow(window);
+  const buckets = rollupWindow(window, grain.ms);
+  const time = sql.ref(grain.column);
   const conditions: RawBuilder<unknown>[] = [
     inApplications('application_id', scope.applicationIds),
-    sql`minute >= ${minutes.from}`,
-    sql`minute < ${minutes.to}`,
+    sql`${time} >= ${buckets.from}`,
+    sql`${time} < ${buckets.to}`,
   ];
   if (scope.instance) conditions.push(sql`service_id = ${scope.instance}`);
   for (const [column, value] of Object.entries(equals))
@@ -54,6 +75,15 @@ export const histogramCells = sql<{
 export const nonEmptyCell = sql<boolean>`cell.n > 0`;
 export const cellBucket = sql<number>`(cell.i - 1)::int4`;
 export const cellCount = sql<number>`sum(cell.n)::int8`;
+
+/**
+ * Histogram bucket of a raw duration column, in SQL: the same index as `bucketIndex` in
+ * `ingest/domain/latency-histogram.ts`. For the few raw rows a rollup read adds at the
+ * edges of its window.
+ */
+export function histogramBucketOf(column: string): RawBuilder<number> {
+  return sql<number>`case when ${sql.ref(column)} < 1 then 0 else least(floor(${sql.lit(BUCKETS_PER_DOUBLING)} * ln(${sql.ref(column)}) / ln(2))::int + 1, ${sql.lit(LAST_BUCKET)}) end`;
+}
 
 export const sumOf = (column: string) =>
   sql<number>`coalesce(sum(${sql.ref(column)}), 0)::float8`;

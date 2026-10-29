@@ -1,4 +1,10 @@
-import type { JobRollup, RequestRollup } from './rollups.js';
+import type {
+  JobRollup,
+  RequestRollup,
+  SpanRollup,
+  UserPresence,
+  UserRollup,
+} from './rollups.js';
 import type { LogLevel, Tags, WireError, WireTraceNode } from './wire.js';
 
 /**
@@ -62,6 +68,8 @@ export interface SpanRecord {
   source: ExecutionSource;
   serviceId: string;
   traceId: string;
+  /** operationId for requests, `queue/name` for jobs */
+  operation: string;
   /** depth-first index within the execution, starting at 0 */
   position: number;
   parentPosition: number | null;
@@ -73,6 +81,8 @@ export interface SpanRecord {
   className: string;
   methodName: string;
   durationMs: number | null;
+  /** duration minus the direct children's durations, at least 0; null without a duration */
+  selfMs: number | null;
   startOffsetMs: number | null;
   hasError: boolean;
   tags: Tags | null;
@@ -152,6 +162,12 @@ export interface TelemetryBatchRecord {
   /** `requests` and `jobs` summed per minute, ordered by key */
   requestRollups: RequestRollup[];
   jobRollups: JobRollup[];
+  /** requests summed per hour and user (anonymous ones under `''`), ordered by key */
+  userRollups: UserRollup[];
+  /** identified users per 15-minute bucket, ordered by key */
+  userPresence: UserPresence[];
+  /** spans summed per 5 minutes, instance, operation and class method, ordered by key */
+  spanRollups: SpanRollup[];
   spans: SpanRecord[];
   errors: ErrorOccurrence[];
   logs: LogRecord[];

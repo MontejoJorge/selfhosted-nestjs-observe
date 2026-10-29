@@ -66,6 +66,7 @@ export class RequestsController {
         status: query.status,
         minDurationMs: query.minDuration,
         traceId: query.traceId,
+        userId: query.userId,
       },
       {
         limit: query.limit ?? DEFAULT_PAGE_SIZE,

@@ -4,6 +4,9 @@ import { projectsApplications } from './0002-projects-applications.js';
 import { dropApiKeyExpiryUsage } from './0003-drop-api-key-expiry-usage.js';
 import { dropObjectives } from './0004-drop-objectives.js';
 import { minuteRollups } from './0005-minute-rollups.js';
+import { usersRollup } from './0006-users-rollup.js';
+import { spanStats } from './0007-span-stats.js';
+import { userActivity } from './0008-user-activity.js';
 
 /**
  * All migrations, keyed by name. Names sort lexicographically, so keep the numeric
@@ -16,4 +19,7 @@ export const migrations: Record<string, Migration> = {
   '0003-drop-api-key-expiry-usage': dropApiKeyExpiryUsage,
   '0004-drop-objectives': dropObjectives,
   '0005-minute-rollups': minuteRollups,
+  '0006-users-rollup': usersRollup,
+  '0007-span-stats': spanStats,
+  '0008-user-activity': userActivity,
 };

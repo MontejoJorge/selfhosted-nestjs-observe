@@ -6,7 +6,9 @@ import { LogsModule } from './logs/logs.module.js';
 import { MetricsModule } from './metrics/metrics.module.js';
 import { OverviewModule } from './overview/overview.module.js';
 import { RequestsModule } from './requests/requests.module.js';
+import { TimeBreakdownModule } from './time-breakdown/time-breakdown.module.js';
 import { TracesModule } from './traces/traces.module.js';
+import { UsersModule } from './users/users.module.js';
 
 /** Read side: the query API consumed by the dashboard, served under /api. */
 @Module({
@@ -19,6 +21,8 @@ import { TracesModule } from './traces/traces.module.js';
     LogsModule,
     TracesModule,
     MetricsModule,
+    UsersModule,
+    TimeBreakdownModule,
   ],
 })
 export class TelemetryModule {}

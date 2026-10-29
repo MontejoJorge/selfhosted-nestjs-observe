@@ -1008,6 +1008,16 @@
             }
           },
           {
+            "name": "userId",
+            "required": false,
+            "in": "query",
+            "description": "Exact user id (as reported by `http.getUserId`).",
+            "schema": {
+              "maxLength": 255,
+              "type": "string"
+            }
+          },
+          {
             "name": "project",
             "required": true,
             "in": "query",
@@ -1958,6 +1968,497 @@
         "summary": "Instances of an application that sent runtime samples in the range, with their newest sample",
         "tags": [
           "metrics"
+        ]
+      }
+    },
+    "/api/users": {
+      "get": {
+        "description": "Users are the ids reported by `http.getUserId`; requests without one are the `userId: null` row. The `instance` filter is not supported (400).",
+        "operationId": "listUsers",
+        "parameters": [
+          {
+            "name": "application",
+            "required": false,
+            "in": "query",
+            "description": "Application id (must belong to the project). Omit for the whole project.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "range",
+            "required": false,
+            "in": "query",
+            "description": "Relative window ending now (default `1h`). Ignored when `from` is given.",
+            "schema": {
+              "$ref": "#/components/schemas/TimeRange"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Window start (ISO 8601).",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Window end (ISO 8601), defaults to now.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Max users returned (default 200, max 1000).",
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "default": 200,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Case-insensitive substring of the user id.",
+            "schema": {
+              "maxLength": 255,
+              "type": "string"
+            }
+          },
+          {
+            "name": "instance",
+            "required": false,
+            "in": "query",
+            "description": "Filter by instance: the `serviceId` an agent reports.",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "project",
+            "required": true,
+            "in": "query",
+            "description": "Project id or slug.",
+            "schema": {
+              "maxLength": 64,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsersDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": ""
+          }
+        },
+        "summary": "Users seen in the range, by request count, with an activity timeline",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/users/{userId}": {
+      "get": {
+        "description": "The `instance` filter is not supported (400).",
+        "operationId": "getUser",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "application",
+            "required": false,
+            "in": "query",
+            "description": "Application id (must belong to the project). Omit for the whole project.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "range",
+            "required": false,
+            "in": "query",
+            "description": "Relative window ending now (default `1h`). Ignored when `from` is given.",
+            "schema": {
+              "$ref": "#/components/schemas/TimeRange"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Window start (ISO 8601).",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Window end (ISO 8601), defaults to now.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "instance",
+            "required": false,
+            "in": "query",
+            "description": "Filter by instance: the `serviceId` an agent reports.",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "project",
+            "required": true,
+            "in": "query",
+            "description": "Project id or slug.",
+            "schema": {
+              "maxLength": 64,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDetailDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": ""
+          },
+          "404": {
+            "description": "No requests from this user in range"
+          }
+        },
+        "summary": "One user's stats and request timeline",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/time-breakdown": {
+      "get": {
+        "description": "Read from 5-minute rollups: the window starts at the 5-minute bucket containing `from`.",
+        "operationId": "getTimeBreakdown",
+        "parameters": [
+          {
+            "name": "application",
+            "required": false,
+            "in": "query",
+            "description": "Application id (must belong to the project). Omit for the whole project.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "range",
+            "required": false,
+            "in": "query",
+            "description": "Relative window ending now (default `1h`). Ignored when `from` is given.",
+            "schema": {
+              "$ref": "#/components/schemas/TimeRange"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Window start (ISO 8601).",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Window end (ISO 8601), defaults to now.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "source",
+            "required": false,
+            "in": "query",
+            "description": "Only spans of requests or only spans of jobs.",
+            "schema": {
+              "$ref": "#/components/schemas/ExecutionSource"
+            }
+          },
+          {
+            "name": "operationId",
+            "required": false,
+            "in": "query",
+            "description": "Only spans of requests to this operation.",
+            "schema": {
+              "maxLength": 1000,
+              "type": "string"
+            }
+          },
+          {
+            "name": "queue",
+            "required": false,
+            "in": "query",
+            "description": "Only spans of jobs of this queue.",
+            "schema": {
+              "maxLength": 255,
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "required": false,
+            "in": "query",
+            "description": "Only spans of jobs with this name (usually with `queue`).",
+            "schema": {
+              "maxLength": 255,
+              "type": "string"
+            }
+          },
+          {
+            "name": "instance",
+            "required": false,
+            "in": "query",
+            "description": "Filter by instance: the `serviceId` an agent reports.",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "project",
+            "required": true,
+            "in": "query",
+            "description": "Project id or slug.",
+            "schema": {
+              "maxLength": 64,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeBreakdownDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Time spent per span class and method, by self time",
+        "tags": [
+          "time-breakdown"
+        ]
+      }
+    },
+    "/api/time-breakdown/spans": {
+      "get": {
+        "description": "The slowest span of each 5-minute bucket, instance and operation, so one burst of slow calls shows up once per operation and instance.",
+        "operationId": "listSlowestSpans",
+        "parameters": [
+          {
+            "name": "application",
+            "required": false,
+            "in": "query",
+            "description": "Application id (must belong to the project). Omit for the whole project.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "range",
+            "required": false,
+            "in": "query",
+            "description": "Relative window ending now (default `1h`). Ignored when `from` is given.",
+            "schema": {
+              "$ref": "#/components/schemas/TimeRange"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Window start (ISO 8601).",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Window end (ISO 8601), defaults to now.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "source",
+            "required": false,
+            "in": "query",
+            "description": "Only spans of requests or only spans of jobs.",
+            "schema": {
+              "$ref": "#/components/schemas/ExecutionSource"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Max spans returned (default 50, max 100).",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "className",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "maxLength": 1000,
+              "type": "string"
+            }
+          },
+          {
+            "name": "methodName",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "maxLength": 1000,
+              "type": "string"
+            }
+          },
+          {
+            "name": "origin",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "operationId",
+            "required": false,
+            "in": "query",
+            "description": "Only spans of requests to this operation.",
+            "schema": {
+              "maxLength": 1000,
+              "type": "string"
+            }
+          },
+          {
+            "name": "queue",
+            "required": false,
+            "in": "query",
+            "description": "Only spans of jobs of this queue.",
+            "schema": {
+              "maxLength": 255,
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "required": false,
+            "in": "query",
+            "description": "Only spans of jobs with this name (usually with `queue`).",
+            "schema": {
+              "maxLength": 255,
+              "type": "string"
+            }
+          },
+          {
+            "name": "instance",
+            "required": false,
+            "in": "query",
+            "description": "Filter by instance: the `serviceId` an agent reports.",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "project",
+            "required": true,
+            "in": "query",
+            "description": "Project id or slug.",
+            "schema": {
+              "maxLength": 64,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SlowSpanDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Slowest spans of one class method, slowest first",
+        "tags": [
+          "time-breakdown"
         ]
       }
     }
@@ -3952,6 +4453,277 @@
           "serviceVersion",
           "serviceId",
           "lastSeenAt"
+        ]
+      },
+      "UserActivityBucketDto": {
+        "type": "object",
+        "properties": {
+          "t": {
+            "type": "string",
+            "description": "Bucket start (ISO)."
+          },
+          "users": {
+            "type": "number",
+            "description": "Distinct identified users with a request in the bucket."
+          },
+          "requests": {
+            "type": "number",
+            "description": "Requests in the bucket, with or without a user id."
+          }
+        },
+        "required": [
+          "t",
+          "users",
+          "requests"
+        ]
+      },
+      "UserStatsDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "nullable": true,
+            "description": "The id the agent reported (`http.getUserId`); null for the requests without one."
+          },
+          "requestCount": {
+            "type": "number"
+          },
+          "errorCount": {
+            "type": "number",
+            "description": "Failed requests (error captured or status >= 500)."
+          },
+          "errorRate": {
+            "type": "number",
+            "description": "Ratio 0..1."
+          },
+          "latency": {
+            "$ref": "#/components/schemas/PercentilesDto"
+          },
+          "firstSeenAt": {
+            "type": "string",
+            "description": "First request of the user within the range (ISO)."
+          },
+          "lastSeenAt": {
+            "type": "string",
+            "description": "Last request of the user within the range (ISO)."
+          }
+        },
+        "required": [
+          "userId",
+          "requestCount",
+          "errorCount",
+          "errorRate",
+          "latency",
+          "firstSeenAt",
+          "lastSeenAt"
+        ]
+      },
+      "UsersDto": {
+        "type": "object",
+        "properties": {
+          "timeline": {
+            "description": "Same buckets as the overview timeline, gap-filled (ignores `search`).",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserActivityBucketDto"
+            }
+          },
+          "items": {
+            "description": "By request count desc, at most `limit`. Includes one row with `userId: null` for\nthe requests without a user id, unless `search` is set.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserStatsDto"
+            }
+          },
+          "userCount": {
+            "type": "number",
+            "description": "Distinct identified users in the range (ignores `search`)."
+          }
+        },
+        "required": [
+          "timeline",
+          "items",
+          "userCount"
+        ]
+      },
+      "UserDetailDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "nullable": true,
+            "description": "The id the agent reported (`http.getUserId`); null for the requests without one."
+          },
+          "timeline": {
+            "description": "Same buckets as the overview timeline.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimeBucketDto"
+            }
+          },
+          "requestCount": {
+            "type": "number"
+          },
+          "errorCount": {
+            "type": "number",
+            "description": "Failed requests (error captured or status >= 500)."
+          },
+          "errorRate": {
+            "type": "number",
+            "description": "Ratio 0..1."
+          },
+          "latency": {
+            "$ref": "#/components/schemas/PercentilesDto"
+          },
+          "firstSeenAt": {
+            "type": "string",
+            "description": "First request of the user within the range (ISO)."
+          },
+          "lastSeenAt": {
+            "type": "string",
+            "description": "Last request of the user within the range (ISO)."
+          }
+        },
+        "required": [
+          "userId",
+          "timeline",
+          "requestCount",
+          "errorCount",
+          "errorRate",
+          "latency",
+          "firstSeenAt",
+          "lastSeenAt"
+        ]
+      },
+      "ExecutionSource": {
+        "type": "string",
+        "enum": [
+          "request",
+          "job"
+        ]
+      },
+      "TimeBreakdownItemDto": {
+        "type": "object",
+        "properties": {
+          "origin": {
+            "type": "string",
+            "description": "Span origin as reported by the agent (`auto`, `manual`, ...)."
+          },
+          "className": {
+            "type": "string",
+            "description": "Class, or the kind of outbound call (`http`, `pg`, ...)."
+          },
+          "methodName": {
+            "type": "string",
+            "description": "Method, or the outbound call's name (`GET host`, `SELECT table`, ...)."
+          },
+          "calls": {
+            "type": "number"
+          },
+          "errorCount": {
+            "type": "number",
+            "description": "Spans that recorded an error."
+          },
+          "totalMs": {
+            "type": "number",
+            "description": "Sum of the span durations (ms). Nested spans count in their parents too."
+          },
+          "selfMs": {
+            "type": "number",
+            "description": "Sum of the self times (ms): duration minus direct children, at least 0."
+          },
+          "share": {
+            "type": "number",
+            "description": "selfMs / totalSelfMs, ratio 0..1."
+          },
+          "avgMs": {
+            "type": "number",
+            "description": "Mean span duration (ms)."
+          },
+          "p95Ms": {
+            "type": "number",
+            "description": "95th percentile of the span duration (ms)."
+          }
+        },
+        "required": [
+          "origin",
+          "className",
+          "methodName",
+          "calls",
+          "errorCount",
+          "totalMs",
+          "selfMs",
+          "share",
+          "avgMs",
+          "p95Ms"
+        ]
+      },
+      "TimeBreakdownDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "By selfMs desc, at most 500.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimeBreakdownItemDto"
+            }
+          },
+          "totalSelfMs": {
+            "type": "number",
+            "description": "Self time of every matching span; the denominator of `share`."
+          }
+        },
+        "required": [
+          "items",
+          "totalSelfMs"
+        ]
+      },
+      "SlowSpanDto": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ExecutionSource"
+              }
+            ]
+          },
+          "selfMs": {
+            "type": "number",
+            "nullable": true,
+            "description": "Duration minus direct children (ms)."
+          },
+          "executionId": {
+            "type": "string",
+            "description": "Request or job id, links to its detail route."
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "operationId": {
+            "type": "string",
+            "description": "operationId for requests, `queue/name` for jobs."
+          },
+          "serviceId": {
+            "type": "string",
+            "description": "Instance (the agent's serviceId)."
+          },
+          "durationMs": {
+            "type": "number"
+          },
+          "calledAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "selfMs",
+          "executionId",
+          "traceId",
+          "operationId",
+          "serviceId",
+          "durationMs",
+          "calledAt"
         ]
       }
     }

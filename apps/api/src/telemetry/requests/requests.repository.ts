@@ -14,6 +14,7 @@ export interface RequestFilter {
   status?: 'ok' | 'error';
   minDurationMs?: number;
   traceId?: string;
+  userId?: string;
 }
 
 /** Read port for request executions. */

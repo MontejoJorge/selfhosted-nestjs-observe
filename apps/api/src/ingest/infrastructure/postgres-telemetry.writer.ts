@@ -32,10 +32,17 @@ function added(table: string, column: string) {
   return sql<number>`${sql.ref(`${table}.${column}`)} + ${sql.ref(`excluded.${column}`)}`;
 }
 
-function rollupMerge(table: 'requests_1m' | 'jobs_1m') {
+type LatencyRollupTable =
+  'requests_1m' | 'jobs_1m' | 'users_1h' | 'span_stats_5m';
+
+/** `excluded.<column>` when the incoming row holds the slower span, else the stored one. */
+function ofSlowest<T>(column: string) {
+  return sql<T>`case when excluded.max_ms > span_stats_5m.max_ms then ${sql.ref(`excluded.${column}`)} else ${sql.ref(`span_stats_5m.${column}`)} end`;
+}
+
+/** Merges min, max, histogram and last call time of a latency rollup row. */
+function latencyMerge(table: LatencyRollupTable) {
   return {
-    count: added(table, 'count'),
-    sum_ms: added(table, 'sum_ms'),
     min_ms: sql<number>`least(${sql.ref(`${table}.min_ms`)}, excluded.min_ms)`,
     max_ms: sql<number>`greatest(${sql.ref(`${table}.max_ms`)}, excluded.max_ms)`,
     histogram: sql<
@@ -235,7 +242,10 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
     );
   }
 
-  /** Adds the batch's per-minute rollups (already in key order) to `requests_1m` and `jobs_1m`. */
+  /**
+   * Adds the batch's rollups (already in key order) to `requests_1m`, `jobs_1m`,
+   * `users_1h`, `user_presence_15m` and `span_stats_5m`.
+   */
   private async upsertRollups(
     trx: Transaction<Database>,
     batch: TelemetryBatchRecord,
@@ -273,7 +283,9 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
               'method',
             ])
             .doUpdateSet({
-              ...rollupMerge('requests_1m'),
+              ...latencyMerge('requests_1m'),
+              count: added('requests_1m', 'count'),
+              sum_ms: added('requests_1m', 'sum_ms'),
               errors: added('requests_1m', 'errors'),
               status_4xx: added('requests_1m', 'status_4xx'),
               status_5xx: added('requests_1m', 'status_5xx'),
@@ -312,10 +324,113 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
               'name',
             ])
             .doUpdateSet({
-              ...rollupMerge('jobs_1m'),
+              ...latencyMerge('jobs_1m'),
+              count: added('jobs_1m', 'count'),
+              sum_ms: added('jobs_1m', 'sum_ms'),
               failed: added('jobs_1m', 'failed'),
               wait_sum_ms: added('jobs_1m', 'wait_sum_ms'),
               wait_count: added('jobs_1m', 'wait_count'),
+            }),
+        )
+        .execute();
+    }
+
+    const userRows = batch.userRollups.map((u) => ({
+      application_id,
+      hour: u.hour,
+      user_id: u.userId,
+      count: u.count,
+      errors: u.errors,
+      status_4xx: u.status4xx,
+      status_5xx: u.status5xx,
+      sum_ms: u.sumMs,
+      min_ms: u.minMs,
+      max_ms: u.maxMs,
+      histogram: u.histogram,
+      first_called_at: u.firstCalledAt,
+      last_called_at: u.lastCalledAt,
+    }));
+    for (const chunk of chunkRows(userRows, 13)) {
+      await trx
+        .insertInto('users_1h')
+        .values(chunk)
+        .onConflict((oc) =>
+          oc.columns(['application_id', 'hour', 'user_id']).doUpdateSet({
+            ...latencyMerge('users_1h'),
+            count: added('users_1h', 'count'),
+            sum_ms: added('users_1h', 'sum_ms'),
+            errors: added('users_1h', 'errors'),
+            status_4xx: added('users_1h', 'status_4xx'),
+            status_5xx: added('users_1h', 'status_5xx'),
+            first_called_at: sql<Date>`least(users_1h.first_called_at, excluded.first_called_at)`,
+          }),
+        )
+        .execute();
+    }
+
+    const presenceRows = batch.userPresence.map((p) => ({
+      application_id,
+      bucket: p.bucket,
+      user_id: p.userId,
+    }));
+    for (const chunk of chunkRows(presenceRows, 3)) {
+      await trx
+        .insertInto('user_presence_15m')
+        .values(chunk)
+        .onConflict((oc) => oc.doNothing())
+        .execute();
+    }
+
+    const spanRows = batch.spanRollups.map((s) => ({
+      application_id,
+      bucket: s.bucket,
+      service_id: s.serviceId,
+      source: s.source,
+      operation: s.operation,
+      origin: s.origin,
+      class_name: s.className,
+      method_name: s.methodName,
+      calls: s.count,
+      errors: s.errors,
+      total_ms: s.sumMs,
+      self_ms: s.selfSumMs,
+      min_ms: s.minMs,
+      max_ms: s.maxMs,
+      histogram: s.histogram,
+      max_execution_id: s.slowest.executionId,
+      max_trace_id: s.slowest.traceId,
+      max_called_at: s.slowest.calledAt,
+      max_self_ms: s.slowest.selfMs,
+      last_called_at: s.lastCalledAt,
+    }));
+    for (const chunk of chunkRows(spanRows, 20)) {
+      await trx
+        .insertInto('span_stats_5m')
+        .values(chunk)
+        .onConflict((oc) =>
+          oc
+            .columns([
+              'application_id',
+              'bucket',
+              'service_id',
+              'source',
+              'operation',
+              'origin',
+              'class_name',
+              'method_name',
+            ])
+            .doUpdateSet({
+              // every expression reads the stored row as it was, so the slowest-span
+              // columns compare against the old max_ms
+              max_execution_id: ofSlowest<string>('max_execution_id'),
+              max_trace_id: ofSlowest<string>('max_trace_id'),
+              max_called_at: ofSlowest<Date>('max_called_at'),
+              max_self_ms: ofSlowest<number>('max_self_ms'),
+              ...latencyMerge('span_stats_5m'),
+              calls: added('span_stats_5m', 'calls'),
+              errors: added('span_stats_5m', 'errors'),
+              total_ms: added('span_stats_5m', 'total_ms'),
+              self_ms: added('span_stats_5m', 'self_ms'),
             }),
         )
         .execute();
