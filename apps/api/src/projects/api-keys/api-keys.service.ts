@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { generateApiKey } from '../domain/api-key.js';
 import { ApiKeyAuthenticator } from './api-key-authenticator.js';
 import type {
@@ -24,9 +20,6 @@ export class ApiKeysService {
     projectId: string,
     input: CreateApiKeyDto,
   ): Promise<CreatedApiKeyDto> {
-    const expiresAt = input.expiresAt ? new Date(input.expiresAt) : null;
-    if (expiresAt && expiresAt <= new Date())
-      throw new BadRequestException('expiresAt must be in the future');
     const generated = generateApiKey();
     const key = await this.keys.insert({
       projectId,
@@ -34,7 +27,6 @@ export class ApiKeysService {
       name: input.name,
       keyId: generated.keyId,
       secretHash: generated.secretHash,
-      expiresAt,
     });
     if (!key)
       throw new NotFoundException(

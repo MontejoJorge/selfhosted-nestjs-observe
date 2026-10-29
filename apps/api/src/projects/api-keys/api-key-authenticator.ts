@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { KYSELY, type Db } from '../../database/database.types.js';
 import {
   apiKeyStatus,
@@ -8,8 +8,6 @@ import {
 
 /** How long a key lookup (hit or miss) is trusted before re-reading it. */
 const CACHE_TTL_MS = 60_000;
-/** `last_used_at` is written at most this often per key. */
-const LAST_USED_INTERVAL_MS = 60_000;
 /** Bound on cached entries, so random key ids cannot grow memory without limit. */
 const MAX_ENTRIES = 10_000;
 
@@ -19,7 +17,6 @@ interface CachedKey {
     id: string;
     applicationId: string;
     secretHash: Buffer;
-    expiresAt: Date | null;
     revokedAt: Date | null;
   } | null;
   fetchedAt: number;
@@ -34,9 +31,7 @@ interface CachedKey {
  */
 @Injectable()
 export class ApiKeyAuthenticator {
-  private readonly logger = new Logger(ApiKeyAuthenticator.name);
   private readonly cache = new Map<string, CachedKey>();
-  private readonly lastUsedWrites = new Map<string, number>();
 
   constructor(@Inject(KYSELY) private readonly db: Db) {}
 
@@ -49,7 +44,6 @@ export class ApiKeyAuthenticator {
     const { key } = await this.lookup(keyId);
     if (!key || !secretMatches(secret, key.secretHash)) return null;
     if (apiKeyStatus(key) !== 'active') return null;
-    this.recordUse(key.id);
     return key.applicationId;
   }
 
@@ -65,13 +59,7 @@ export class ApiKeyAuthenticator {
 
     const row = await this.db
       .selectFrom('api_keys')
-      .select([
-        'id',
-        'application_id',
-        'secret_hash',
-        'expires_at',
-        'revoked_at',
-      ])
+      .select(['id', 'application_id', 'secret_hash', 'revoked_at'])
       .where('key_id', '=', keyId)
       .executeTakeFirst();
     const entry: CachedKey = {
@@ -80,7 +68,6 @@ export class ApiKeyAuthenticator {
             id: row.id,
             applicationId: row.application_id,
             secretHash: row.secret_hash,
-            expiresAt: row.expires_at,
             revokedAt: row.revoked_at,
           }
         : null,
@@ -89,22 +76,5 @@ export class ApiKeyAuthenticator {
     if (this.cache.size >= MAX_ENTRIES) this.cache.clear();
     this.cache.set(keyId, entry);
     return entry;
-  }
-
-  /** Fire-and-forget `last_used_at` update, throttled per key. */
-  private recordUse(id: string): void {
-    const now = Date.now();
-    const last = this.lastUsedWrites.get(id);
-    if (last !== undefined && now - last < LAST_USED_INTERVAL_MS) return;
-    if (this.lastUsedWrites.size >= MAX_ENTRIES) this.lastUsedWrites.clear();
-    this.lastUsedWrites.set(id, now);
-    this.db
-      .updateTable('api_keys')
-      .set({ last_used_at: new Date(now) })
-      .where('id', '=', id)
-      .execute()
-      .catch((error: unknown) =>
-        this.logger.warn(`Could not update last_used_at: ${String(error)}`),
-      );
   }
 }

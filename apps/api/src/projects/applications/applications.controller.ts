@@ -82,7 +82,7 @@ export class ApplicationsController {
     summary:
       'Create an application (name unique in the project, up to 3 tags) with its first API key',
     description:
-      'Also creates an active API key without expiry named "<name> agent". Its secret is returned only in this response.',
+      'Also creates an active API key named "<name> agent". Its secret is returned only in this response.',
   })
   @ApiCreatedResponse({ type: CreatedApplicationDto })
   @ApiNotFoundResponse()

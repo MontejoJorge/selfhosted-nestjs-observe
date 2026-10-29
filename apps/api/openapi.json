@@ -313,7 +313,7 @@
         ]
       },
       "post": {
-        "description": "Also creates an active API key without expiry named \"<name> agent\". Its secret is returned only in this response.",
+        "description": "Also creates an active API key named \"<name> agent\". Its secret is returned only in this response.",
         "operationId": "createApplication",
         "parameters": [
           {
@@ -2332,7 +2332,6 @@
         "type": "string",
         "enum": [
           "active",
-          "expired",
           "revoked"
         ]
       },
@@ -2353,16 +2352,6 @@
                 "$ref": "#/components/schemas/ApiKeyStatus"
               }
             ]
-          },
-          "lastUsedAt": {
-            "type": "string",
-            "nullable": true,
-            "description": "Last authenticated ingest (updated at most once a minute)."
-          },
-          "expiresAt": {
-            "type": "string",
-            "nullable": true,
-            "description": "null means no expiry."
           },
           "revokedAt": {
             "type": "string",
@@ -2390,8 +2379,6 @@
           "id",
           "applicationId",
           "status",
-          "lastUsedAt",
-          "expiresAt",
           "revokedAt",
           "secret",
           "name",
@@ -2417,7 +2404,7 @@
             "description": "Last telemetry batch received (updated at most every 30 s)."
           },
           "apiKey": {
-            "description": "The application's first API key (active, no expiry). Its `secret` is returned only\nhere, once.",
+            "description": "The application's first API key (active). Its `secret` is returned only\nhere, once.",
             "allOf": [
               {
                 "$ref": "#/components/schemas/CreatedApiKeyDto"
@@ -2485,16 +2472,6 @@
               }
             ]
           },
-          "lastUsedAt": {
-            "type": "string",
-            "nullable": true,
-            "description": "Last authenticated ingest (updated at most once a minute)."
-          },
-          "expiresAt": {
-            "type": "string",
-            "nullable": true,
-            "description": "null means no expiry."
-          },
           "revokedAt": {
             "type": "string",
             "nullable": true
@@ -2517,8 +2494,6 @@
           "id",
           "applicationId",
           "status",
-          "lastUsedAt",
-          "expiresAt",
           "revokedAt",
           "name",
           "keyId",
@@ -2552,12 +2527,6 @@
             "type": "string",
             "description": "Application (of this project) the key sends telemetry for.",
             "format": "uuid"
-          },
-          "expiresAt": {
-            "type": "string",
-            "nullable": true,
-            "description": "Omit or null for no expiry. Must be in the future.",
-            "format": "date-time"
           },
           "name": {
             "type": "string",

@@ -7,7 +7,6 @@ export interface NewApiKey {
   name: string;
   keyId: string;
   secretHash: Buffer;
-  expiresAt: Date | null;
 }
 
 /** Port for the API keys of a project. Secrets are only ever stored as hashes. */

@@ -33,7 +33,7 @@ export class ApplicationsService {
   }
 
   /**
-   * Creates the application with a first API key (active, no expiry), so the agent can be
+   * Creates the application with a first, active API key, so the agent can be
    * configured right away. The key's plaintext secret is returned here once.
    */
   async create(
@@ -49,7 +49,6 @@ export class ApplicationsService {
           name: initialKeyName(input.name),
           keyId: generated.keyId,
           secretHash: generated.secretHash,
-          expiresAt: null,
         },
       ),
     );

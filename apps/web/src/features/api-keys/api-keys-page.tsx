@@ -27,7 +27,6 @@ import {
 import { applicationsQueryOptions } from '@/features/applications/queries';
 import { ProjectTitle } from '@/features/projects/project-title';
 import type { ApiKeyDto, ApiKeyStatus } from '@/lib/api/generated/api';
-import { formatRelative } from '@/lib/format';
 import { useScope } from '@/lib/scope-hooks';
 import {
   useMutation,
@@ -53,19 +52,18 @@ const dateFormat = new Intl.DateTimeFormat('en-US', {
 
 const STATUS_LABEL: Record<ApiKeyStatus, string> = {
   active: 'Active',
-  expired: 'Expired',
   revoked: 'Revoked',
 };
 
 const STATUS_TONE = {
   active: 'ok',
-  expired: 'warn',
   revoked: 'error',
 } as const satisfies Record<ApiKeyStatus, string>;
 
-const STATUS_OPTIONS = (['active', 'expired', 'revoked'] as const).map(
-  (value) => ({ value, label: STATUS_LABEL[value] }),
-);
+const STATUS_OPTIONS = (['active', 'revoked'] as const).map((value) => ({
+  value,
+  label: STATUS_LABEL[value],
+}));
 
 type Pending = { kind: 'revoke' | 'delete'; key: ApiKeyDto } | null;
 
@@ -178,8 +176,6 @@ export function ApiKeysPage() {
                 <TableHead>Name</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Key ID</TableHead>
-                <TableHead>Last used</TableHead>
-                <TableHead>Expires</TableHead>
                 <TableHead>Created</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -205,14 +201,6 @@ export function ApiKeysPage() {
                   </TableCell>
                   <TableCell className="font-mono text-xs text-muted-foreground">
                     {key.keyId}
-                  </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {key.lastUsedAt ? formatRelative(key.lastUsedAt) : 'Never'}
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    {key.expiresAt
-                      ? dateFormat.format(new Date(key.expiresAt))
-                      : 'No expiry'}
                   </TableCell>
                   <TableCell className="text-sm">
                     {dateFormat.format(new Date(key.createdAt))}
@@ -254,7 +242,7 @@ export function ApiKeysPage() {
                 </TableRow>
               ))}
               {keys.length === 0 ? (
-                <MessageRow colSpan={7}>
+                <MessageRow colSpan={5}>
                   No key matches these filters.
                 </MessageRow>
               ) : null}

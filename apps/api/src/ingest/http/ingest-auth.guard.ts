@@ -18,7 +18,7 @@ function header(request: Request, name: string): string | undefined {
 /**
  * Ingest requests must carry the `x-api-key` / `x-api-secret` of an active API key. The
  * key identifies the application the telemetry belongs to. Missing, unknown, wrong,
- * expired or revoked credentials are a 401, on which the agent backs off.
+ * revoked credentials are a 401, on which the agent backs off.
  */
 @Injectable()
 export class IngestAuthGuard implements CanActivate {

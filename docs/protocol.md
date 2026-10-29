@@ -66,7 +66,7 @@ A self-hosted collector normally answers `200 {}` or `200 { "degraded": false }`
   (for example a snapshot without `ti`/`op`) are skipped, not rejected.
 - Both ingest endpoints require the `x-api-key` / `x-api-secret` of an API key. The key belongs to one
   **application** of a project, and every row of the batch is stored under that application. Missing,
-  unknown, wrong, expired or revoked credentials give `401` (there is no default application), and the
+  unknown, wrong or revoked credentials give `401` (there is no default application), and the
   agent backs off. Key lookups are cached in memory for 60 s, so revoking a key takes effect at once on
   the API instance that revoked it and within 60 s on other instances.
 - `serviceId` is kept as an attribute of the rows (an _instance_ of the application). The same serviceId

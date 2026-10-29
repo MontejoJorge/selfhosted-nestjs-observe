@@ -154,22 +154,19 @@ export class PostgresApplicationsRepository extends ApplicationsRepository {
             name: initialKey.name,
             key_id: initialKey.keyId,
             secret_hash: initialKey.secretHash,
-            expires_at: initialKey.expiresAt,
           })
           .returning([
             'id',
             'name',
             'key_id',
             'application_id',
-            'expires_at',
             'revoked_at',
-            'last_used_at',
             'created_at',
           ])
           .executeTakeFirstOrThrow();
         return {
           application: toApplication(row),
-          apiKey: toApiKey({ ...key, application_name: row.name }, new Date()),
+          apiKey: toApiKey({ ...key, application_name: row.name }),
         };
       });
     } catch (error) {

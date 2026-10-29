@@ -1,6 +1,6 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 
-export const API_KEY_STATUSES = ['active', 'expired', 'revoked'] as const;
+export const API_KEY_STATUSES = ['active', 'revoked'] as const;
 export type ApiKeyStatus = (typeof API_KEY_STATUSES)[number];
 
 /** Public key id prefix (sent as `x-api-key`). */
@@ -37,13 +37,8 @@ export function secretMatches(secret: string, secretHash: Buffer): boolean {
   );
 }
 
-export function apiKeyStatus(
-  key: { revokedAt: Date | null; expiresAt: Date | null },
-  now = new Date(),
-): ApiKeyStatus {
-  if (key.revokedAt) return 'revoked';
-  if (key.expiresAt && key.expiresAt <= now) return 'expired';
-  return 'active';
+export function apiKeyStatus(key: { revokedAt: Date | null }): ApiKeyStatus {
+  return key.revokedAt ? 'revoked' : 'active';
 }
 
 /** Cheap shape check before touching the database: ids are `obs_` + 24 base64url chars. */

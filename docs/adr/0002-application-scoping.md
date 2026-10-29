@@ -20,8 +20,8 @@ The hosted product organizes telemetry as **projects** (often one per environmen
   `application_id`, followed by the partition key, so a scoped query is one index range per pruned
   partition.
 - Secrets are 32 random bytes, returned once and stored as SHA-256. Key lookups are cached in memory for
-  60 s, and `last_used_at` is written at most once a minute, so ingest does not hit the database per batch
-  for authentication.
+  60 s, so ingest does not hit the database per batch for authentication. Keys do not expire and do not
+  track their last use (dropped in migration `0003`): a key is active until revoked or deleted.
 - Telemetry rows have no foreign key to `applications`. Deleting an application or project records the
   application ids in `application_purges` in the same transaction, and a background purger deletes the
   rows table by table and partition by partition. Deletes return immediately and never hold long locks.

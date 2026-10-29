@@ -16,9 +16,7 @@ export interface ApiKeyRow {
   key_id: string;
   application_id: string;
   application_name: string;
-  expires_at: Date | null;
   revoked_at: Date | null;
-  last_used_at: Date | null;
   created_at: Date;
 }
 
@@ -38,9 +36,7 @@ export class PostgresApiKeysRepository extends ApiKeysRepository {
         'k.key_id',
         'k.application_id',
         'a.name as application_name',
-        'k.expires_at',
         'k.revoked_at',
-        'k.last_used_at',
         'k.created_at',
       ]);
   }
@@ -69,12 +65,11 @@ export class PostgresApiKeysRepository extends ApiKeysRepository {
       .orderBy('k.id', 'desc')
       .limit(page.limit + 1)
       .execute();
-    const now = new Date();
     return toPage(
       rows,
       page.limit,
       (row) => ({ t: row.created_at, id: row.id }),
-      (row) => toApiKey(row, now),
+      toApiKey,
     );
   }
 
@@ -82,16 +77,16 @@ export class PostgresApiKeysRepository extends ApiKeysRepository {
     // INSERT ... SELECT: no row (and no key) when the application is not in the project.
     const { rows } = await sql<ApiKeyRow>`
       with inserted as (
-        insert into api_keys (project_id, application_id, name, key_id, secret_hash, expires_at)
-        select a.project_id, a.id, ${key.name}, ${key.keyId}, ${key.secretHash}, ${key.expiresAt}
+        insert into api_keys (project_id, application_id, name, key_id, secret_hash)
+        select a.project_id, a.id, ${key.name}, ${key.keyId}, ${key.secretHash}
         from applications a
         where a.id = ${key.applicationId} and a.project_id = ${key.projectId}
-        returning id, name, key_id, application_id, expires_at, revoked_at, last_used_at, created_at
+        returning id, name, key_id, application_id, revoked_at, created_at
       )
       select i.*, a.name as application_name
       from inserted i join applications a on a.id = i.application_id
     `.execute(this.db);
-    return rows[0] ? toApiKey(rows[0], new Date()) : null;
+    return rows[0] ? toApiKey(rows[0]) : null;
   }
 
   async revoke(projectId: string, id: string): Promise<ApiKeyDto | null> {
@@ -105,7 +100,7 @@ export class PostgresApiKeysRepository extends ApiKeysRepository {
       .where('k.id', '=', id)
       .where('k.project_id', '=', projectId)
       .executeTakeFirst();
-    return row ? toApiKey(row, new Date()) : null;
+    return row ? toApiKey(row) : null;
   }
 
   async delete(projectId: string, id: string): Promise<string | null> {
@@ -119,19 +114,14 @@ export class PostgresApiKeysRepository extends ApiKeysRepository {
   }
 }
 
-export function toApiKey(row: ApiKeyRow, now: Date): ApiKeyDto {
+export function toApiKey(row: ApiKeyRow): ApiKeyDto {
   return {
     id: row.id,
     name: row.name,
     keyId: row.key_id,
     applicationId: row.application_id,
     applicationName: row.application_name,
-    status: apiKeyStatus(
-      { revokedAt: row.revoked_at, expiresAt: row.expires_at },
-      now,
-    ),
-    lastUsedAt: row.last_used_at ? row.last_used_at.toISOString() : null,
-    expiresAt: row.expires_at ? row.expires_at.toISOString() : null,
+    status: apiKeyStatus({ revokedAt: row.revoked_at }),
     revokedAt: row.revoked_at ? row.revoked_at.toISOString() : null,
     createdAt: row.created_at.toISOString(),
   };

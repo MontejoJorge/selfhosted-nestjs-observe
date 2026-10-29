@@ -25,18 +25,6 @@ import { useState } from 'react';
 import { ApiKeyCredentials } from './api-key-credentials';
 import { createApiKeyMutation } from './queries';
 
-/** Today as `yyyy-mm-dd` in local time, the minimum for the expiry picker. */
-function todayIso(): string {
-  const now = new Date();
-  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60_000);
-  return local.toISOString().slice(0, 10);
-}
-
-/** A picked date expires at the end of that local day. */
-function endOfDay(date: string): string {
-  return new Date(`${date}T23:59:59`).toISOString();
-}
-
 function KeyForm({
   project,
   applications,
@@ -66,11 +54,9 @@ function KeyForm({
       onSubmit={(event) => {
         event.preventDefault();
         const form = new FormData(event.currentTarget);
-        const expires = String(form.get('expiresAt') ?? '');
         mutation.mutate({
           name: String(form.get('name') ?? '').trim(),
           applicationId,
-          expiresAt: expires ? endOfDay(expires) : null,
         });
       }}
     >
@@ -104,13 +90,6 @@ function KeyForm({
             ))}
           </SelectContent>
         </Select>
-      </Field>
-      <Field
-        label="Expires"
-        htmlFor="key-expires"
-        hint="Optional. Leave empty for a key that never expires."
-      >
-        <Input id="key-expires" name="expiresAt" type="date" min={todayIso()} />
       </Field>
       <FormError error={mutation.error} />
       <DialogFooter>

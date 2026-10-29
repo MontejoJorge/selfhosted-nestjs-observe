@@ -1,13 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
-  IsISO8601,
   IsNotEmpty,
   IsOptional,
   IsString,
   IsUUID,
   MaxLength,
-  ValidateIf,
 } from 'class-validator';
 import { CursorQueryDto } from '../../telemetry/common/query.dto.js';
 import { API_KEY_STATUSES, type ApiKeyStatus } from '../domain/api-key.js';
@@ -34,12 +32,6 @@ export class ApiKeyDto {
   applicationName: string;
   @ApiProperty({ enum: API_KEY_STATUSES, enumName: 'ApiKeyStatus' })
   status: ApiKeyStatus;
-  /** Last authenticated ingest (updated at most once a minute). */
-  @ApiProperty({ type: String, nullable: true })
-  lastUsedAt: string | null;
-  /** null means no expiry. */
-  @ApiProperty({ type: String, nullable: true })
-  expiresAt: string | null;
   @ApiProperty({ type: String, nullable: true })
   revokedAt: string | null;
   createdAt: string;
@@ -68,10 +60,4 @@ export class CreateApiKeyDto {
   @ApiProperty({ format: 'uuid' })
   @IsUUID()
   applicationId: string;
-
-  /** Omit or null for no expiry. Must be in the future. */
-  @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
-  @ValidateIf((_, value) => value !== null && value !== undefined)
-  @IsISO8601()
-  expiresAt?: string | null;
 }

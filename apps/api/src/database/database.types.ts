@@ -33,9 +33,7 @@ export interface ApiKeysTable {
   name: string;
   key_id: string;
   secret_hash: Buffer;
-  expires_at: Timestamp | null;
   revoked_at: Timestamp | null;
-  last_used_at: Timestamp | null;
   created_at: ColumnType<Date, Date | string | undefined, Date | string>;
 }
 
