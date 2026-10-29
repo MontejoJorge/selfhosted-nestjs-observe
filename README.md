@@ -10,118 +10,64 @@
 </p>
 
 <p align="center">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT" /></a>
-  <img src="https://img.shields.io/badge/node-%3E%3D22-339933?logo=node.js&logoColor=white" alt="Node >= 22" />
-  <img src="https://img.shields.io/badge/pnpm-10-F69220?logo=pnpm&logoColor=white" alt="pnpm 10" />
-  <img src="https://img.shields.io/badge/PostgreSQL-18-4169E1?logo=postgresql&logoColor=white" alt="PostgreSQL 18" />
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0%20%2B%20Commons%20Clause-blue.svg" alt="License: AGPL-3.0 + Commons Clause" /></a>
 </p>
 
 > [!NOTE]
-> Early development: expect breaking changes. This is a community project, not affiliated with the NestJS team.
-
-## Contents
-
-- [Features](#features)
-- [How it works](#how-it-works)
-- [Quick start with Docker](#quick-start-with-docker)
-- [Connect your NestJS app](#connect-your-nestjs-app)
-- [Configuration](#configuration)
-- [Security](#security)
-- [Try it with the example app](#try-it-with-the-example-app)
-- [Development](#development)
-- [Project layout](#project-layout)
-- [Roadmap and docs](#roadmap-and-docs)
-- [License](#license)
+> Early development: expect breaking changes. This is a community project, not affiliated with the NestJS
+> team. It is built with AI: most of the code and docs were written by AI coding agents, reviewed and
+> directed by the maintainer.
 
 ## Features
 
-- **Drop-in collector.** Speaks the `@nestjs/observe` wire protocol, so you only change the agent's `endpoint`.
-- **Requests and jobs** with latency percentiles, error rates and a trace waterfall for each execution.
-- **Errors** grouped, with counts and first/last seen.
-- **Logs** forwarded by the agent, linked to their traces.
-- **Traces** with the full span tree.
-- **Runtime metrics per instance** (CPU, memory, GC, event loop) on the Profiler page.
-- **Projects, applications and API keys.** Projects (for example one per environment) contain
-  applications (one per Nest service), and each application authenticates with its own keys.
-- **Live mode** that refreshes the dashboard as new batches arrive.
-- **One PostgreSQL database**, with day-partitioned telemetry and retention by dropping partitions.
-
-## How it works
-
-```mermaid
-flowchart LR
-  subgraph app["Your NestJS app"]
-    agent["@nestjs/observe agent"]
-  end
-  agent -- "POST /applications/telemetry<br/>POST /applications/profiles<br/>(API key)" --> api["Collector API<br/>(NestJS)"]
-  api --> db[("PostgreSQL")]
-  web["Dashboard<br/>(React)"] -- "/api/*" --> api
-```
-
-The agent batches telemetry and posts it every few seconds. The API authenticates each batch with the
-application's API key, stores it in PostgreSQL, and serves the query API (`/api/*`) the dashboard reads.
+- **Drop-in collector** for the `@nestjs/observe` agent: you only change its `endpoint`.
+- **Requests and jobs** with latency percentiles, error rates and a trace waterfall per execution.
+- **Errors** grouped, **logs** linked to their traces, and **runtime metrics** (CPU, memory, GC, event
+  loop) per instance.
+- **Projects, applications and API keys**: one project per environment, one application per service.
+- **Live mode**, and a single PostgreSQL database with day-partitioned telemetry and retention.
 
 ## Quick start with Docker
 
-Requires Docker with Compose. The images are built from this repository, so run these from the root of
-a clone:
+The image is published to the GitHub Container Registry as
+`ghcr.io/montejojorge/selfhosted-nestjs-observe` (tags `latest` and each version). It runs the API and
+serves the dashboard from the same port.
 
 ```sh
-cp deploy/.env.example deploy/.env    # then set POSTGRES_PASSWORD (required)
-docker compose -f deploy/docker-compose.yml up -d --build
+mkdir observe && cd observe
+curl -fsSLO https://raw.githubusercontent.com/MontejoJorge/selfhosted-nestjs-observe/main/deploy/docker-compose.yml
+curl -fsSL -o .env https://raw.githubusercontent.com/MontejoJorge/selfhosted-nestjs-observe/main/deploy/.env.example
+# set POSTGRES_PASSWORD in .env, then:
+docker compose up -d
 ```
 
-Open the dashboard at **http://localhost:8080**.
+Open the dashboard at **http://localhost:3000**. Migrations run on start. `docker compose down` stops
+the stack and keeps the data (`down -v` deletes it).
 
-The stack in [`deploy/docker-compose.yml`](deploy/docker-compose.yml) runs three containers. Only `web`
-publishes ports.
-
-| Service    | What                                                                 | Published                                           |
-| ---------- | -------------------------------------------------------------------- | --------------------------------------------------- |
-| `postgres` | PostgreSQL 18, data in the `postgres-data` volume                    | no                                                  |
-| `api`      | Collector and query API. Applies pending migrations on start         | no                                                  |
-| `web`      | nginx: the dashboard SPA, with `/api` proxied to `api` (same origin) | `DASHBOARD_PORT` (default `8080`, container `8080`) |
-| `web`      | nginx: ingest only (`POST /applications/telemetry` and `/profiles`)  | `INGEST_PORT` (default `4000`, container `8081`)    |
-
-The ingest port answers only the two agent routes; anything else is a `404` (or `403` for a non-`POST`
-method). Both port variables accept `host_ip:port`, for example `DASHBOARD_PORT=127.0.0.1:8080`.
-
-To stop the stack:
-
-```sh
-docker compose -f deploy/docker-compose.yml down       # keeps the data
-docker compose -f deploy/docker-compose.yml down -v    # also deletes the database volume
-```
-
-To build the images on their own, run from the repository root:
-
-```sh
-docker build -f apps/api/Dockerfile -t selfhosted-nestjs-observe-api:0.0.1 .
-docker build -f apps/web/Dockerfile -t selfhosted-nestjs-observe-web:0.0.1 .
-```
+| Variable            | Default   | Description                                    |
+| ------------------- | --------- | ---------------------------------------------- |
+| `POSTGRES_PASSWORD` | (none)    | **Required.** Database password.               |
+| `OBSERVE_VERSION`   | `latest`  | Image tag, for example `0.1.0`.                |
+| `OBSERVE_PORT`      | `3000`    | `[host_ip:]port` for the dashboard and ingest. |
+| `RETENTION_DAYS`    | `14`      | Days of telemetry to keep.                     |
+| `POSTGRES_USER`     | `observe` | Database user.                                 |
+| `POSTGRES_DB`       | `observe` | Database name.                                 |
 
 ## Connect your NestJS app
 
-1. **Create a project** in the dashboard, for example one per environment (`Shop prod`, `Shop staging`).
-2. **Add an application** for each Nest service. Its first API key is created with it. Copy the
-   `appKey` and `appSecret` right away: **the secret is shown only once**. You can create more keys
-   later on the project's Keys page.
-3. **Set the agent's environment** in the instrumented app:
+1. In the dashboard, **create a project** and **add an application** for each Nest service. Its first API
+   key is created with it: copy it right away, **the secret is shown only once**.
+2. Set the agent's environment:
 
    ```sh
-   OBSERVE_ENDPOINT=http://<collector-host>:4000   # the ingest port
-   OBSERVE_APP_KEY=obs_...
-   OBSERVE_APP_SECRET=obss_...
+   OBSERVE_ENDPOINT=http://<collector-host>:3000
+   OBSERVE_APP_KEY=YOUR_APP_KEY
+   OBSERVE_APP_SECRET=YOUR_APP_SECRET
    ```
 
-4. **Register `ObserveModule`**, reading the options from `ConfigService` so `.env` is loaded first
-   (this mirrors the [example app](examples/nest-inventory-api)):
+3. Register `ObserveModule`, reading the options from `ConfigService` so `.env` is loaded first:
 
    ```ts
-   import { Module } from '@nestjs/common';
-   import { ConfigModule, ConfigService } from '@nestjs/config';
-   import { createObserveModule } from '@nestjs/observe';
-
    export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
    @Module({
@@ -130,10 +76,10 @@ docker build -f apps/web/Dockerfile -t selfhosted-nestjs-observe-web:0.0.1 .
        ObserveModule.forRootAsync({
          inject: [ConfigService],
          useFactory: (config: ConfigService) => ({
-           endpoint: config.get('OBSERVE_ENDPOINT'),
-           appKey: config.get('OBSERVE_APP_KEY'),
-           appSecret: config.get('OBSERVE_APP_SECRET'),
-           serviceId: 'orders-api', // the instance; shown as a filter in the dashboard
+           endpoint: config.getOrThrow('OBSERVE_ENDPOINT'),
+           appKey: config.getOrThrow('OBSERVE_APP_KEY'),
+           appSecret: config.getOrThrow('OBSERVE_APP_SECRET'),
+           serviceId: 'orders-api',
            forwardLogs: true,
          }),
        }),
@@ -142,125 +88,46 @@ docker build -f apps/web/Dockerfile -t selfhosted-nestjs-observe-web:0.0.1 .
    export class AppModule {}
    ```
 
-Batches without a valid, active key are rejected with `401`. Data appears in the dashboard within a few
-seconds of the first request.
-
-> [!TIP]
-> The credential snippet in the dashboard uses the dashboard's own origin as `OBSERVE_ENDPOINT`. That
-> works too, since nginx also proxies the two ingest routes on the dashboard port. If you put the
-> dashboard behind an authenticating proxy, point your services at the ingest port instead.
-
-## Configuration
-
-### Docker stack (`deploy/.env`)
-
-| Variable                    | Default   | Description                                                           |
-| --------------------------- | --------- | --------------------------------------------------------------------- |
-| `POSTGRES_PASSWORD`         | (none)    | **Required.** Database password, used by PostgreSQL and the API.      |
-| `POSTGRES_USER`             | `observe` | Database user.                                                        |
-| `POSTGRES_DB`               | `observe` | Database name.                                                        |
-| `DASHBOARD_PORT`            | `8080`    | `[host_ip:]port` for the dashboard and the query API.                 |
-| `INGEST_PORT`               | `4000`    | `[host_ip:]port` for the ingest routes. Use it as `OBSERVE_ENDPOINT`. |
-| `OBSERVE_VERSION`           | `0.0.1`   | Tag of the `api` and `web` images.                                    |
-| `DATABASE_POOL_MAX`         | `10`      | Max connections in the API's PostgreSQL pool.                         |
-| `DATABASE_MIGRATE_ON_START` | `true`    | Apply pending migrations when the API starts.                         |
-| `RETENTION_DAYS`            | `14`      | Days of telemetry to keep before partitions are dropped.              |
-
-### API (when running it yourself)
-
-The API reads these variables (validated in [`apps/api/src/config/env.ts`](apps/api/src/config/env.ts)).
-The Docker stack sets them for you.
-
-| Variable                    | Default     | Description                             |
-| --------------------------- | ----------- | --------------------------------------- |
-| `API_PORT`                  | `3000`      | Port the API listens on.                |
-| `DATABASE_HOST`             | `localhost` | PostgreSQL host.                        |
-| `DATABASE_PORT`             | `5432`      | PostgreSQL port.                        |
-| `DATABASE_USER`             | `observe`   | PostgreSQL user.                        |
-| `DATABASE_PASSWORD`         | `observe`   | PostgreSQL password.                    |
-| `DATABASE_NAME`             | `observe`   | PostgreSQL database.                    |
-| `DATABASE_POOL_MAX`         | `10`        | Max connections in the pool (1 to 200). |
-| `DATABASE_MIGRATE_ON_START` | `true`      | Apply pending migrations on start.      |
-| `RETENTION_DAYS`            | `14`        | Days of telemetry to keep (1 to 3650).  |
-
-The dashboard takes `VITE_API_URL` at build time (default `http://localhost:3000`). The Docker image
-builds it empty, so the dashboard calls its own origin.
+[`examples/nest-inventory-api`](examples/nest-inventory-api) is a complete instrumented app whose endpoints
+call public APIs, so it produces multi-span traces, logs and errors to try the dashboard with.
 
 ## Security
 
 > [!WARNING]
-> The dashboard and the query and management API (`/api/*`) have **no authentication yet**. Anyone who
-> can reach the dashboard port can read your telemetry and create or delete API keys.
+> The dashboard and its API (`/api/*`) have **no authentication yet**: anyone who reaches the port can
+> read telemetry and manage API keys.
 
-- Keep `DASHBOARD_PORT` on a private network or VPN, or put an authenticating reverse proxy in front of
-  it (oauth2-proxy, Authelia, basic auth on your ingress). Binding it to `127.0.0.1:8080` and proxying
-  from there is a simple start.
-- Expose only `INGEST_PORT` to the services you monitor. Ingest is protected by per-application API keys.
-- API key secrets are stored hashed (SHA-256) and shown only once. Revoke or delete a key from the
-  dashboard to cut off an agent.
-
-## Try it with the example app
-
-[`examples/nest-inventory-api`](examples/nest-inventory-api) is a small NestJS app already instrumented
-with `ObserveModule.forRootAsync`. Its endpoints (`GET /users/:id/summary`, `GET /pokemon/:name/matchups`,
-`GET /catalog/insights`) call public APIs, so they produce multi-span traces, logs and errors (404, 400
-and 500 on demand).
-
-Create an application in the dashboard, copy `examples/nest-inventory-api/.env.example` to `.env`, fill
-in `OBSERVE_APP_KEY`, `OBSERVE_APP_SECRET` and `OBSERVE_ENDPOINT`, and start it. See
-[its README](examples/nest-inventory-api/README.md) for the endpoints and sample `curl` calls.
+Keep the port on a private network or VPN, or put an authenticating reverse proxy in front of it
+(oauth2-proxy, Authelia, basic auth). Agents only need `POST /applications/telemetry` and
+`POST /applications/profiles`, which are protected by the application's API key, so those two paths can
+bypass the proxy's login. Secrets are stored hashed and can be revoked from the dashboard.
 
 ## Development
 
-Requires Node 22+, pnpm 10 and Docker. Always use pnpm.
+Requires Node 22+, pnpm 10 and Docker.
 
 ```sh
 cp .env.example .env
 pnpm install
-pnpm db:up     # PostgreSQL via docker compose, on localhost:5432
-pnpm dev       # api + web in watch mode
+pnpm db:up     # PostgreSQL on localhost:5432
+pnpm dev       # API on :3000 (Swagger at /api/docs), dashboard on :5173
 ```
 
-| App             | URL                                               |
-| --------------- | ------------------------------------------------- |
-| API / collector | http://localhost:3000 (Swagger UI at `/api/docs`) |
-| Dashboard       | http://localhost:5173                             |
+Other scripts: `pnpm build`, `pnpm lint`, `pnpm typecheck`, `pnpm format` and `pnpm api:generate`
+(regenerates `openapi.json` and the dashboard's client). Conventions for contributors and coding agents are
+in [AGENTS.md](AGENTS.md).
 
-In development, point agents at `OBSERVE_ENDPOINT=http://localhost:3000`.
+Pushing a `v*` tag (or running the **Docker image** workflow by hand) builds the image for amd64 and
+arm64 and publishes it with that version and `latest`.
 
-| Script              | What                                                            |
-| ------------------- | --------------------------------------------------------------- |
-| `pnpm dev`          | API and dashboard in watch mode (`dev:api` / `dev:web` for one) |
-| `pnpm build`        | Build both apps                                                 |
-| `pnpm lint`         | oxlint                                                          |
-| `pnpm typecheck`    | Type-check both apps                                            |
-| `pnpm format`       | Prettier (`format:check` to verify)                             |
-| `pnpm api:generate` | Regenerate `openapi.json` and the dashboard's API client        |
-| `pnpm db:down`      | Stop the development database                                   |
+## Docs
 
-Run a script in one app with `pnpm --filter api <script>` or `pnpm --filter web <script>`. Contributor
-and agent conventions are in [AGENTS.md](AGENTS.md).
-
-## Project layout
-
-| Path                                   | What                                                |
-| -------------------------------------- | --------------------------------------------------- |
-| [`apps/api`](apps/api)                 | NestJS collector and query API (Kysely, PostgreSQL) |
-| [`apps/web`](apps/web)                 | Vite + React dashboard                              |
-| [`deploy`](deploy)                     | Production Docker Compose stack                     |
-| [`examples`](examples)                 | Instrumented sample apps                            |
-| [`docs/protocol.md`](docs/protocol.md) | The `@nestjs/observe` wire protocol                 |
-| [`docs/adr`](docs/adr)                 | Architecture decision records                       |
-
-## Roadmap and docs
-
-- [TODO.md](TODO.md): telemetry the collector stores but does not show yet (custom metrics, CPU
-  profiles as flame graphs, a spans/dependencies view).
-- [docs/protocol.md](docs/protocol.md): the wire format, reverse-engineered from `@nestjs/observe`.
-- [ADR 0001](docs/adr/0001-storage.md): why PostgreSQL is the only store.
-- [ADR 0002](docs/adr/0002-application-scoping.md): how projects, applications and API keys scope telemetry.
-- [apps/api/README.md](apps/api/README.md) and [apps/web/README.md](apps/web/README.md): per-app details.
+- [docs/protocol.md](docs/protocol.md): the `@nestjs/observe` wire protocol.
+- [docs/adr](docs/adr): architecture decisions.
+- [TODO.md](TODO.md): telemetry that is stored but not shown yet.
 
 ## License
 
-[MIT](LICENSE)
+[AGPL-3.0 with the Commons Clause](LICENSE). You may use, modify and self-host it. If you distribute it or
+offer a modified version over a network, you must publish your source under the same terms. You may not
+sell it, or sell hosting or support whose value comes from it.
