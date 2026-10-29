@@ -33,12 +33,12 @@ function CreatedApplication({
         </DialogDescription>
       </DialogHeader>
       <ApiKeyCredentials
-        keyId={application.apiKey.keyId}
-        secret={application.apiKey.secret}
+        appKey={application.apiKey.appKey}
+        appSecret={application.apiKey.appSecret}
       />
       <DialogFooter>
         <Button variant="inverse" size="lg" onClick={onDone}>
-          I've saved the secret
+          I've saved the app secret
         </Button>
       </DialogFooter>
     </div>

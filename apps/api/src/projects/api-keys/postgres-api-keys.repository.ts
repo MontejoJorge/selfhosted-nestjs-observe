@@ -118,7 +118,7 @@ export function toApiKey(row: ApiKeyRow): ApiKeyDto {
   return {
     id: row.id,
     name: row.name,
-    keyId: row.key_id,
+    appKey: row.key_id,
     applicationId: row.application_id,
     applicationName: row.application_name,
     status: apiKeyStatus({ revokedAt: row.revoked_at }),

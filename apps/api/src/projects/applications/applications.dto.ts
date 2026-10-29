@@ -38,7 +38,7 @@ export class ApplicationDto {
 
 export class CreatedApplicationDto extends ApplicationDto {
   /**
-   * The application's first API key (active). Its `secret` is returned only
+   * The application's first API key (active). Its `appSecret` is returned only
    * here, once.
    */
   @ApiProperty({ type: CreatedApiKeyDto })

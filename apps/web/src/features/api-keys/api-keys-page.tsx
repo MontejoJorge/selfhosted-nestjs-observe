@@ -175,7 +175,7 @@ export function ApiKeysPage() {
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Key ID</TableHead>
+                <TableHead>App key</TableHead>
                 <TableHead>Created</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -200,7 +200,7 @@ export function ApiKeysPage() {
                     </DotPill>
                   </TableCell>
                   <TableCell className="font-mono text-xs text-muted-foreground">
-                    {key.keyId}
+                    {key.appKey}
                   </TableCell>
                   <TableCell className="text-sm">
                     {dateFormat.format(new Date(key.createdAt))}

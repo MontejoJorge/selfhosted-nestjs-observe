@@ -32,13 +32,13 @@ export class ApiKeysService {
       throw new NotFoundException(
         `Application ${input.applicationId} not found in this project`,
       );
-    return Object.assign(key, { secret: generated.secret });
+    return Object.assign(key, { appSecret: generated.secret });
   }
 
   async revoke(projectId: string, id: string): Promise<ApiKeyDto> {
     const key = await this.keys.revoke(projectId, id);
     if (!key) throw new NotFoundException(`API key ${id} not found`);
-    this.authenticator.evict(key.keyId);
+    this.authenticator.evict(key.appKey);
     return key;
   }
 

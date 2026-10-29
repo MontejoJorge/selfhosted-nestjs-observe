@@ -25,8 +25,8 @@ export class ApiKeyDto {
   @ApiProperty({ format: 'uuid' })
   id: string;
   name: string;
-  /** Public key id: the agent's `appKey`, sent as `x-api-key`. */
-  keyId: string;
+  /** Public part of the key: the agent's `appKey` (`OBSERVE_APP_KEY`), sent as `x-api-key`. */
+  appKey: string;
   @ApiProperty({ format: 'uuid' })
   applicationId: string;
   applicationName: string;
@@ -38,8 +38,8 @@ export class ApiKeyDto {
 }
 
 export class CreatedApiKeyDto extends ApiKeyDto {
-  /** The agent's `appSecret`, sent as `x-api-secret`. Returned only once, at creation. */
-  secret: string;
+  /** The agent's `appSecret` (`OBSERVE_APP_SECRET`), sent as `x-api-secret`. Returned only once, at creation. */
+  appSecret: string;
 }
 
 export class ApiKeyPageDto {

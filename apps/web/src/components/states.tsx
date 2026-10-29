@@ -135,8 +135,8 @@ export function NoTelemetryHint() {
         page (its API key is shown once), then start the agent with:
       </p>
       <pre className="mt-2 rounded-md bg-muted px-3 py-2 text-left text-xs text-foreground">
-        {`OBSERVE_APP_KEY=<key id>
-OBSERVE_APP_SECRET=<secret>
+        {`OBSERVE_APP_KEY=YOUR_APP_KEY
+OBSERVE_APP_SECRET=YOUR_APP_SECRET
 OBSERVE_ENDPOINT=${API_URL}`}
       </pre>
     </>

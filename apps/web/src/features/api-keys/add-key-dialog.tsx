@@ -125,10 +125,10 @@ function CreatedKey({
           Configure the agent of {apiKey.applicationName} with these values.
         </DialogDescription>
       </DialogHeader>
-      <ApiKeyCredentials keyId={apiKey.keyId} secret={apiKey.secret} />
+      <ApiKeyCredentials appKey={apiKey.appKey} appSecret={apiKey.appSecret} />
       <DialogFooter>
         <Button variant="inverse" size="lg" onClick={onDone}>
-          I've saved the secret
+          I've saved the app secret
         </Button>
       </DialogFooter>
     </div>

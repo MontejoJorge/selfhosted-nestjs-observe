@@ -21,19 +21,19 @@ function Secret({ label, value }: { label: string; value: string }) {
 
 /**
  * The one-time view of a new API key: the "won't be shown again" warning, the
- * key id and secret with copy buttons, and the agent's `.env` snippet. The
+ * app key and app secret with copy buttons, and the agent's `.env` snippet. The
  * caller frames it (dialog header and footer).
  */
 export function ApiKeyCredentials({
-  keyId,
-  secret,
+  appKey,
+  appSecret,
 }: {
-  keyId: string;
-  secret: string;
+  appKey: string;
+  appSecret: string;
 }) {
   const env = [
-    `OBSERVE_APP_KEY=${keyId}`,
-    `OBSERVE_APP_SECRET=${secret}`,
+    `OBSERVE_APP_KEY=${appKey}`,
+    `OBSERVE_APP_SECRET=${appSecret}`,
     `OBSERVE_ENDPOINT=${API_URL}`,
   ].join('\n');
 
@@ -45,12 +45,12 @@ export function ApiKeyCredentials({
       >
         <TriangleAlertIcon className="mt-0.5 size-4 shrink-0 text-primary" />
         <span>
-          Copy the secret now. <strong>It won't be shown again</strong>; if you
-          lose it, create a new key and revoke this one.
+          Copy the app secret now. <strong>It won't be shown again</strong>; if
+          you lose it, create a new key and revoke this one.
         </span>
       </p>
-      <Secret label="Key ID" value={keyId} />
-      <Secret label="Secret" value={secret} />
+      <Secret label="OBSERVE_APP_KEY" value={appKey} />
+      <Secret label="OBSERVE_APP_SECRET" value={appSecret} />
       <div className="flex min-w-0 flex-col gap-1.5">
         <div className="flex items-center justify-between">
           <span className="font-mono text-[11px] tracking-wider text-muted-foreground uppercase">

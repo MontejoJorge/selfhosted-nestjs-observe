@@ -53,7 +53,7 @@ export class ApplicationsService {
       ),
     );
     return Object.assign(application, {
-      apiKey: Object.assign(apiKey, { secret: generated.secret }),
+      apiKey: Object.assign(apiKey, { appSecret: generated.secret }),
     });
   }
 

@@ -34,7 +34,7 @@ import {
 import { ApiKeysRepository } from './api-keys.repository.js';
 import { ApiKeysService } from './api-keys.service.js';
 
-/** `:project` is the project id or slug; `:keyId` is the key's `id` (UUID), not its public key id. */
+/** `:project` is the project id or slug; `:keyId` is the key's `id` (UUID), not its `appKey`. */
 @ApiTags('api-keys')
 @Controller('projects/:project/keys')
 export class ApiKeysController {

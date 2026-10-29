@@ -33,8 +33,8 @@ Then point the instrumented app at the collector with that key:
 ObserveModule.forRoot({
   serviceId: 'orders-api',
   endpoint: 'http://localhost:3000',
-  appKey: process.env.OBSERVE_APP_KEY, // the key's keyId (obs_...)
-  appSecret: process.env.OBSERVE_APP_SECRET, // the key's secret (obss_...)
+  appKey: process.env.OBSERVE_APP_KEY, // the key's appKey (obs_...)
+  appSecret: process.env.OBSERVE_APP_SECRET, // the key's appSecret (obss_...)
 });
 ```
 

@@ -2357,16 +2357,16 @@
             "type": "string",
             "nullable": true
           },
-          "secret": {
+          "appSecret": {
             "type": "string",
-            "description": "The agent's `appSecret`, sent as `x-api-secret`. Returned only once, at creation."
+            "description": "The agent's `appSecret` (`OBSERVE_APP_SECRET`), sent as `x-api-secret`. Returned only once, at creation."
           },
           "name": {
             "type": "string"
           },
-          "keyId": {
+          "appKey": {
             "type": "string",
-            "description": "Public key id: the agent's `appKey`, sent as `x-api-key`."
+            "description": "Public part of the key: the agent's `appKey` (`OBSERVE_APP_KEY`), sent as `x-api-key`."
           },
           "applicationName": {
             "type": "string"
@@ -2380,9 +2380,9 @@
           "applicationId",
           "status",
           "revokedAt",
-          "secret",
+          "appSecret",
           "name",
-          "keyId",
+          "appKey",
           "applicationName",
           "createdAt"
         ]
@@ -2404,7 +2404,7 @@
             "description": "Last telemetry batch received (updated at most every 30 s)."
           },
           "apiKey": {
-            "description": "The application's first API key (active). Its `secret` is returned only\nhere, once.",
+            "description": "The application's first API key (active). Its `appSecret` is returned only\nhere, once.",
             "allOf": [
               {
                 "$ref": "#/components/schemas/CreatedApiKeyDto"
@@ -2479,9 +2479,9 @@
           "name": {
             "type": "string"
           },
-          "keyId": {
+          "appKey": {
             "type": "string",
-            "description": "Public key id: the agent's `appKey`, sent as `x-api-key`."
+            "description": "Public part of the key: the agent's `appKey` (`OBSERVE_APP_KEY`), sent as `x-api-key`."
           },
           "applicationName": {
             "type": "string"
@@ -2496,7 +2496,7 @@
           "status",
           "revokedAt",
           "name",
-          "keyId",
+          "appKey",
           "applicationName",
           "createdAt"
         ]
