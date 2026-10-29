@@ -1,10 +1,15 @@
 import { isAxiosError } from 'axios';
 import { Api } from './generated/api';
 
-/** Base URL of the collector. The generated paths already start with `/api`. */
-export const API_URL = (
-  import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
-).replace(/\/+$/, '');
+/**
+ * Base URL of the collector. The generated paths already start with `/api`.
+ * An empty `VITE_API_URL` means same origin (the Docker image proxies the API through nginx).
+ */
+export const API_URL =
+  (import.meta.env.VITE_API_URL ?? 'http://localhost:3000').replace(
+    /\/+$/,
+    '',
+  ) || window.location.origin;
 
 /** The single generated API client. Only queryOptions factories use it. */
 export const api = new Api({ baseURL: API_URL });

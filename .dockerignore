@@ -1,0 +1,22 @@
+# Build context for apps/api/Dockerfile and apps/web/Dockerfile (both use the repo root).
+**/node_modules
+**/dist
+**/coverage
+**/*.tsbuildinfo
+**/*.log
+**/.env
+**/.env.*
+!**/.env.example
+.git
+.github
+.claude
+.idea
+.vscode
+.playwright-mcp
+.DS_Store
+examples
+deploy
+docs
+apps/web/src/lib/api/generated
+**/Dockerfile
+.dockerignore
