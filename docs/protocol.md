@@ -103,7 +103,7 @@ Top level (`TELEMETRY_BATCH`):
 | `d`  | duration (ms)                                                                        | number                        |
 | `p`  | protocol: `http`, `rpc`, `grpc`, `graphql` or `ws`                                   | string                        |
 | `op` | operationId (e.g. `GET /orders/:id`)                                                 | string, required              |
-| `u`  | userId                                                                               | string                        |
+| `u`  | userId (empty = none; the collector keeps the first 255 characters)                  | string                        |
 | `tg` | tags                                                                                 | object                        |
 | `e`  | error `{ cls?, message, stack?, tags? }`                                             | object                        |
 | `rq` | captured request (headers/body, redacted)                                            | object                        |

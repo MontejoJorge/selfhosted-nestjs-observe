@@ -2,16 +2,19 @@
 
 Not scheduled.
 
-## Users
+## Users: filters on errors and traces
 
-The agent reports a user id per request (`http.getUserId` in `ObserveModule`, wire field `u`), and it is
-already stored in `requests.user_id` and returned as `userId` by the requests API.
+`GET /users`, `GET /users/:userId` and the `userId` filter on requests exist (ADR 0004). Not done: a
+`userId` filter on error groups and traces. `error_occurrences` has no user, so it needs either a
+`user_id` column written at ingest (and an index) or a join through `requests` per occurrence.
 
-- API: `GET /users` (users seen in the range with request count, error rate, p95 and last seen) and a
-  `userId` filter on requests, errors and traces. Add an index on `(application_id, user_id, called_at)`.
-- Web: a "Users" menu entry with that list; a user's page shows their requests and traces, so a
-  complaint from one user can be traced back. Link the user id from the request detail.
-- Example app: set `http.getUserId` (e.g. from an `x-user-id` header the load generator sends).
+## Users in the example app
+
+The seeded data has user ids, but the example app does not send any, so new traffic is anonymous.
+
+- Set `http.getUserId` in the example's `ObserveModule` from an `x-user-id` request header.
+- Have the load generator send `x-user-id` from a fixed pool of ~50 user ids, skewed (a few heavy
+  users), plus some requests without a user. Leave `load.config.ts` values alone.
 
 ## Compatibility tests against `@nestjs/observe` versions
 
@@ -69,21 +72,12 @@ samples)` instead of folding stacks on every query.
   deleting rows.
 - Web: a flame graph on the Profiler page, ideally linked per span from a request's detail.
 
-## Where the time goes
+## Drop `spans`?
 
-A map of the services, repositories, classes and outbound calls that take the most time, like the
-hosted dashboard's view. This is what the `spans` table is for: one row per span, with `class_name`,
-`method_name`, `origin` (controller, provider, database, outgoing HTTP...), `duration_ms`, `depth` and the
-parent link, while `requests.trace` / `jobs.trace` keep the tree for detail views.
-
-- API: `GET /time-breakdown?from&to&operation?` aggregating `spans` in the window by class and method
-  (and by `origin`): total and self time (duration minus children), share of the total, calls, p95.
-  Self time needs the children's durations, via `parent_position` within the same execution.
-- Index `spans` for it, e.g. `(application_id, called_at)` plus what the grouping needs; check the plan on
-  a busy day first, it is the biggest table.
-- Web: a treemap or ranked bars grouped by origin and class, filterable by operation; clicking a class
-  lists its slowest spans with links to their traces.
-- If this view is dropped, stop writing `spans` and drop the table: it is the most expensive one to write.
+The time breakdown reads `span_stats_5m`, including its slowest-span drill-down (ADR 0004), so no view
+reads `spans`. It is the most expensive table to write and store (~8 M rows and ~2.5 GB a day on the
+seed). Drop it, or stop writing it, unless a new view needs individual spans across executions (the
+detail views use `requests.trace` / `jobs.trace`).
 
 ## Versions and releases
 

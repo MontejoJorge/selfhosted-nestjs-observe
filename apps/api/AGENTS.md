@@ -22,18 +22,18 @@ Validated at boot by `src/config/env.ts` (class-validator). Loaded from `apps/ap
 real environment variables win. The migrate CLI (`src/database/migrate.ts`) uses the same schema.
 CORS allows every origin.
 
-| Variable                    | Default     | Notes                                                 |
-| --------------------------- | ----------- | ----------------------------------------------------- |
-| `API_PORT`                  | `3000`      |                                                       |
-| `DATABASE_HOST`             | `localhost` |                                                       |
-| `DATABASE_PORT`             | `5432`      |                                                       |
-| `DATABASE_USER`             | `observe`   |                                                       |
-| `DATABASE_PASSWORD`         | `observe`   |                                                       |
-| `DATABASE_NAME`             | `observe`   |                                                       |
-| `DATABASE_POOL_MAX`         | `10`        | pg pool size                                          |
-| `DATABASE_MIGRATE_ON_START` | `true`      | run pending migrations when the app boots             |
-| `RETENTION_DAYS`            | `14`        | daily partitions older than this are dropped          |
-| `AGGREGATE_RETENTION_DAYS`  | `90`        | same for the per-minute rollups (min: RETENTION_DAYS) |
+| Variable                    | Default     | Notes                                        |
+| --------------------------- | ----------- | -------------------------------------------- |
+| `API_PORT`                  | `3000`      |                                              |
+| `DATABASE_HOST`             | `localhost` |                                              |
+| `DATABASE_PORT`             | `5432`      |                                              |
+| `DATABASE_USER`             | `observe`   |                                              |
+| `DATABASE_PASSWORD`         | `observe`   |                                              |
+| `DATABASE_NAME`             | `observe`   |                                              |
+| `DATABASE_POOL_MAX`         | `10`        | pg pool size                                 |
+| `DATABASE_MIGRATE_ON_START` | `true`      | run pending migrations when the app boots    |
+| `RETENTION_DAYS`            | `14`        | daily partitions older than this are dropped |
+| `AGGREGATE_RETENTION_DAYS`  | `90`        | same for the rollups (min: RETENTION_DAYS)   |
 
 ## Layout
 
@@ -76,7 +76,7 @@ The read side deliberately has no use-case layer: controllers call the read port
 
 Day-partitioned (range on the time column, UTC days, partitions named `<table>_pYYYYMMDD`):
 `requests`, `jobs`, `spans`, `error_occurrences`, `logs`, `runtime_metrics`, `custom_metrics`, and the
-per-minute rollups `requests_1m` and `jobs_1m`.
+rollups `requests_1m`, `jobs_1m`, `users_1h`, `user_presence_15m` and `span_stats_5m`.
 Plain tables: `services`, `error_groups`, `error_group_culprits`, `profiles`, and the
 management tables `projects`, `applications`, `api_keys`, `application_purges`.
 
@@ -95,12 +95,21 @@ management tables `projects`, `applications`, `api_keys`, `application_purges`.
 - Execution and log ids are **UUIDv7 stamped with the event time**, so a lookup by id also filters on the
   partition key (`windowFromId`) and touches one partition.
 - Each execution keeps its original span tree as `jsonb` (`trace`), so detail views need one read. `spans` holds
-  the flattened tree (depth-first `position`, `parent_position`, `parent_span_id`, `depth`) for future analytics.
+  the flattened tree (depth-first `position`, `parent_position`, `parent_span_id`, `depth`) for future
+  analytics; no view reads it.
 - **Per-minute rollups** ([ADR 0003](../../docs/adr/0003-minute-rollups.md)): `requests_1m` and `jobs_1m`
   hold counts, duration sum/min/max and a log-scale latency histogram (`int4[]`,
   `ingest/domain/latency-histogram.ts`) per application, minute, instance and operation or job. Ingest
   upserts them in the batch's transaction (`histogram_add` merges histograms); they are kept for
   `AGGREGATE_RETENTION_DAYS`. `method` is `''` when the request has none (it is in the primary key).
+- **Users and time breakdown rollups** ([ADR 0004](../../docs/adr/0004-users-and-time-breakdown.md)):
+  `users_1h` per application, UTC hour and user id (no instance; `''` for requests without a user id,
+  returned as `userId: null`; ids are truncated to 255 characters at ingest); `user_presence_15m`
+  (application, 15-minute bucket, identified user; no payload) for distinct users per bucket; `span_stats_5m` per application, 5-minute bucket, instance,
+  source, operation (operationId or `queue/name`), origin, class and method, with total and self time
+  (duration minus direct children, at least 0, computed by the trace flattener) and the slowest span
+  of the row (`max_execution_id`, `max_trace_id`, `max_called_at`, `max_self_ms`). The user tables
+  were backfilled; `span_stats_5m` only covers spans ingested after migration 0007.
 - Error fingerprint = sha1(source, class, normalized message, top stack frame without line/column), per
   application. `error_groups.service_id` is the instance of the most recent occurrence.
   `error_groups.count` is all-time; `error_group_culprits` counts per operationId or `queue/name`.
@@ -130,16 +139,27 @@ hourly, and on demand for any day an ingest batch touches (advisory-locked). Ret
   opaque base64url `[iso, id]`, validated before use.
 - Indexes lead with `application_id` (equality) then the time column (range):
   `(application_id, called_at desc, id desc)`, `(application_id, operation_id, ...)`,
-  `(application_id, queue, name, ...)`, `(application_id, sampled_at desc)`, ... The plain
+  `(application_id, queue, name, ...)`, `(application_id, user_id, called_at desc, id desc)` (partial,
+  `user_id is not null`), `(application_id, sampled_at desc)`, ... The plain
   `(time desc, id desc)` indexes serve keyset lists across several applications of a project, and
-  `trace_id` the trace lookups. `spans` is only BRIN-indexed (nothing reads it yet).
+  `trace_id` the trace lookups. `spans` is only BRIN-indexed (nothing reads it).
 - Management lists use keyset pagination too: projects by `(name, id)`, applications by `name` (unique
   per project), API keys by `(created_at desc, id desc)`. Card stats are computed for the whole page in
   one aggregate (`activity.ts`) plus one lateral per row for the latest runtime sample.
-- **Stats and timelines read the rollups, never the raw rows**: overview, operations, queues and the
-  project/application cards (`telemetry/common/rollups.ts`). One grouped query for sums/min/max, one that
-  unnests the histograms into `(bucket, count)` cells per group; percentiles are computed in TS. Raw
-  tables serve lists, details and traces. `percentile_cont` is only left for error group timelines.
+- **Stats and timelines read the rollups, never the raw rows**: overview, operations, queues, users,
+  time breakdown and the project/application cards (`telemetry/common/rollups.ts`). One grouped query
+  for sums/min/max, one that unnests the histograms into `(bucket, count)` cells per group; percentiles
+  are computed in TS. When there are many groups and a limit (users), fetch the cells of the returned
+  groups only. Raw tables serve lists, details and traces. `percentile_cont` is only left for error
+  group timelines.
+- `users_1h` reads are exact for any window: whole hours from the rollup, the partial hours at both
+  ends from `requests` (`histogramBucketOf` buckets raw durations in SQL). A user's timeline with
+  buckets under 1 h reads their raw requests through the user index. Distinct users per timeline
+  bucket read the grain that divides the bucket (`users_1h`, `user_presence_15m`, or raw for 1-minute
+  buckets) and group by `(bucket, user)` before counting (never `count(distinct)` on large inputs).
+  The users routes reject
+  `instance` (400). The time breakdown starts at the 5-minute bucket containing `from`, and its
+  slowest spans are the `max_*` columns of the rollup rows, not a scan of `spans`.
 - Timeline buckets use `date_bin` with a literal width from `bucketSeconds` (~100 buckets max). TimeBucket
   series are gap-filled in TS.
 - Select explicit columns, never `*`. Compose related data in one query (lateral join for top culprit) or
