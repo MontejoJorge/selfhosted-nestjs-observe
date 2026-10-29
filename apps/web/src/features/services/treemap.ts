@@ -67,3 +67,21 @@ export function squarify(values: readonly number[], bounds: Rect): Rect[] {
   if (strip.length > 0) layStrip(strip, rect, out);
   return out;
 }
+
+/**
+ * Squarified layout of the longest prefix of `values` (at most `max`) whose tiles are all
+ * at least `minSide` wide and tall once `gap` is taken off each: the values that would
+ * get a sliver are left out, for the caller to group. Always lays out at least one.
+ */
+export function fitTreemap(
+  values: readonly number[],
+  bounds: Rect,
+  { max, minSide, gap }: { max: number; minSide: number; gap: number },
+): Rect[] {
+  for (let count = Math.min(max, values.length); count > 1; count--) {
+    const rects = squarify(values.slice(0, count), bounds);
+    if (rects.every((r) => r.w - gap >= minSide && r.h - gap >= minSide))
+      return rects;
+  }
+  return values.length > 0 ? [bounds] : [];
+}
