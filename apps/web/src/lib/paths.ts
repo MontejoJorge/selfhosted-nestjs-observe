@@ -18,6 +18,11 @@ export const paths = {
   /** One job name; pass `{ queue, name }` as search. */
   jobGroup: (p: string) => `${project(p)}/jobs/details`,
   job: (p: string, id: string) => `${project(p)}/jobs/${enc(id)}`,
+  /** Users seen in the range (`http.getUserId`). */
+  users: (p: string) => `${project(p)}/users`,
+  user: (p: string, userId: string) => `${project(p)}/users/${enc(userId)}`,
+  /** Self time per class and method ("Where the time goes"). */
+  timeBreakdown: (p: string) => `${project(p)}/time-breakdown`,
   errors: (p: string) => `${project(p)}/errors`,
   error: (p: string, id: string) => `${project(p)}/errors/${enc(id)}`,
   logs: (p: string) => `${project(p)}/logs`,

@@ -1,35 +1,14 @@
-import { MethodBadge, StatusCodeBadge } from '@/components/data/badges';
-import { IdChip } from '@/components/data/copy';
-import {
-  LinkRow,
-  stretchedLink,
-  TableFrame,
-} from '@/components/data/data-table';
+import { MethodBadge } from '@/components/data/badges';
 import {
   FilterBar,
   InputFilter,
   OptionFilter,
 } from '@/components/data/filters';
 import { KeyValue, KeyValueList } from '@/components/data/key-value';
-import { LoadMore } from '@/components/data/load-more';
-import {
-  Duration,
-  FailureRate,
-  RoutePath,
-} from '@/components/data/metric-cells';
+import { FailureRate, RoutePath } from '@/components/data/metric-cells';
 import { ScopeControls } from '@/components/layout/scope-controls';
 import { Page, PageHeader, PageSection } from '@/components/page';
 import { Panel, PanelBody, PanelHeader } from '@/components/panel';
-import { ScopedLink } from '@/components/scoped-link';
-import { EmptyState } from '@/components/states';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import {
   DurationPanel,
   RequestsPanel,
@@ -38,14 +17,10 @@ import { overviewQueryOptions } from '@/features/overview/queries';
 import { usePreviousOverview } from '@/features/overview/use-previous-overview';
 import { ProjectTitle } from '@/features/projects/project-title';
 import { formatCount, formatDuration, formatRelative } from '@/lib/format';
-import { paths } from '@/lib/paths';
 import { useScope, useTypedSearch } from '@/lib/scope-hooks';
-import { cn } from '@/lib/utils';
-import {
-  useSuspenseInfiniteQuery,
-  useSuspenseQuery,
-} from '@tanstack/react-query';
-import { operationsQueryOptions, requestListQueryOptions } from './queries';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { operationsQueryOptions } from './queries';
+import { RequestTable } from './request-table';
 import { operationSearch } from './search';
 
 const STATUS_OPTIONS = [
@@ -164,88 +139,13 @@ export function OperationPage() {
         }
       >
         <RequestTable
-          operationId={operationId}
-          status={search.status}
-          minDuration={search.minDuration}
+          filters={{
+            operationId,
+            status: search.status,
+            minDuration: search.minDuration,
+          }}
         />
       </PageSection>
     </Page>
-  );
-}
-
-function RequestTable({
-  operationId,
-  status,
-  minDuration,
-}: {
-  operationId: string;
-  status: 'ok' | 'error' | undefined;
-  minDuration: number | undefined;
-}) {
-  const scope = useScope();
-  const query = useSuspenseInfiniteQuery(
-    requestListQueryOptions(scope, { operationId, status, minDuration }),
-  );
-  const rows = query.data.pages.flatMap((page) => page.items);
-
-  if (rows.length === 0) {
-    return <EmptyState title="No requests match these filters" />;
-  }
-
-  return (
-    <TableFrame
-      footer={
-        <LoadMore
-          shown={rows.length}
-          hasNextPage={query.hasNextPage}
-          isFetchingNextPage={query.isFetchingNextPage}
-          fetchNextPage={query.fetchNextPage}
-        />
-      }
-    >
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Trace ID</TableHead>
-            <TableHead>URL</TableHead>
-            <TableHead>Status code</TableHead>
-            <TableHead>Duration</TableHead>
-            <TableHead>User</TableHead>
-            <TableHead className="text-right">Called at</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {rows.map((request) => (
-            <LinkRow key={request.id}>
-              <TableCell className="w-40">
-                <IdChip value={request.traceId} />
-              </TableCell>
-              <TableCell className="max-w-md">
-                <ScopedLink
-                  to={paths.request(scope.project, request.id)}
-                  className={cn(stretchedLink, 'block truncate')}
-                >
-                  <RoutePath value={request.url ?? request.operationId} />
-                </ScopedLink>
-              </TableCell>
-              <TableCell>
-                <StatusCodeBadge code={request.statusCode} />
-              </TableCell>
-              <TableCell>
-                <Duration ms={request.durationMs} />
-              </TableCell>
-              <TableCell className="max-w-48 truncate text-sm">
-                {request.userId ?? (
-                  <span className="text-muted-foreground">-</span>
-                )}
-              </TableCell>
-              <TableCell className="text-right text-sm whitespace-nowrap text-muted-foreground">
-                {formatRelative(request.calledAt)}
-              </TableCell>
-            </LinkRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableFrame>
   );
 }

@@ -40,11 +40,14 @@ export function FilterChip({
   value,
   onClear,
   children,
+  contentClassName,
 }: {
   label: string;
   /** Display text of the active value, or undefined when unset. */
   value?: string;
   onClear: () => void;
+  /** Popover width and the like (default `w-60`). */
+  contentClassName?: string;
   /** Popover body. Receives `close` to dismiss after picking. */
   children: (close: () => void) => ReactNode;
 }) {
@@ -75,7 +78,10 @@ export function FilterChip({
           ) : null}
         </PopoverTrigger>
       </span>
-      <PopoverContent align="start" className="w-60 p-1.5">
+      <PopoverContent
+        align="start"
+        className={cn('w-60 p-1.5', contentClassName)}
+      >
         {children(() => setOpen(false))}
       </PopoverContent>
     </Popover>
@@ -126,6 +132,103 @@ export function OptionFilter<T extends string>({
         </ul>
       )}
     </FilterChip>
+  );
+}
+
+/**
+ * A filter chip for long option lists (operations, jobs): a search field over a
+ * scrollable list. `value` is the selected option's value.
+ */
+export function SearchableOptionFilter({
+  label,
+  value,
+  options,
+  onChange,
+  emptyText = 'No match.',
+}: {
+  label: string;
+  value: string | undefined;
+  options: ReadonlyArray<{ value: string; label: string }>;
+  onChange: (value: string | undefined) => void;
+  emptyText?: string;
+}) {
+  const current = options.find((option) => option.value === value);
+  return (
+    <FilterChip
+      label={label}
+      value={value === undefined ? undefined : (current?.label ?? value)}
+      onClear={() => onChange(undefined)}
+      contentClassName="w-80"
+    >
+      {(close) => (
+        <OptionSearchList
+          options={options}
+          selected={value}
+          emptyText={emptyText}
+          onPick={(next) => {
+            onChange(next === value ? undefined : next);
+            close();
+          }}
+        />
+      )}
+    </FilterChip>
+  );
+}
+
+function OptionSearchList({
+  options,
+  selected,
+  emptyText,
+  onPick,
+}: {
+  options: ReadonlyArray<{ value: string; label: string }>;
+  selected: string | undefined;
+  emptyText: string;
+  onPick: (value: string) => void;
+}) {
+  const [query, setQuery] = useState('');
+  const needle = query.trim().toLowerCase();
+  const visible = needle
+    ? options.filter((option) => option.label.toLowerCase().includes(needle))
+    : options;
+  return (
+    <div className="flex flex-col gap-1.5">
+      <input
+        value={query}
+        onChange={(event) => setQuery(event.target.value)}
+        autoFocus
+        placeholder="Search..."
+        aria-label="Search options"
+        className="h-8 w-full rounded-md border bg-background px-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+      />
+      <ul className="flex max-h-72 flex-col overflow-y-auto">
+        {visible.map((option) => (
+          <li key={option.value}>
+            <button
+              type="button"
+              onClick={() => onPick(option.value)}
+              title={option.label}
+              className="flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-sm hover:bg-accent"
+            >
+              <CheckIcon
+                className={cn(
+                  'size-3.5 shrink-0',
+                  option.value === selected ? 'opacity-100' : 'opacity-0',
+                )}
+              />
+              <span className="truncate font-mono text-[13px]">
+                {option.label}
+              </span>
+            </button>
+          </li>
+        ))}
+        {visible.length === 0 ? (
+          <li className="px-2 py-3 text-center text-sm text-muted-foreground">
+            {emptyText}
+          </li>
+        ) : null}
+      </ul>
+    </div>
   );
 }
 

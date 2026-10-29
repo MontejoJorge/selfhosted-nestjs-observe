@@ -92,6 +92,13 @@ function peakCaption(
   );
 }
 
+/** Request counts by status class, as in `OverviewDto.requests`. */
+export interface RequestCounts {
+  count: number;
+  status4xx: number;
+  status5xx: number;
+}
+
 export function RequestsPanel({
   overview,
   previous,
@@ -103,13 +110,37 @@ export function RequestsPanel({
   range: Scope['range'];
   layout: PanelLayout;
 }) {
-  const { requests, timeline } = overview;
+  return (
+    <RequestsPanelView
+      requests={overview.requests}
+      previousCount={previous?.requests.count}
+      timeline={overview.timeline}
+      range={range}
+      layout={layout}
+    />
+  );
+}
+
+/** The requests chart panel for any timeline (an operation, a user...). */
+export function RequestsPanelView({
+  requests,
+  previousCount,
+  timeline,
+  range,
+  layout,
+}: {
+  requests: RequestCounts;
+  previousCount: number | undefined;
+  timeline: readonly TimeBucketDto[];
+  range: Scope['range'];
+  layout: PanelLayout;
+}) {
   const okCount = requests.count - requests.status4xx - requests.status5xx;
   const trend = (
     <Trend
       change={
-        previous
-          ? relativeChange(requests.count, previous.requests.count)
+        previousCount !== undefined
+          ? relativeChange(requests.count, previousCount)
           : null
       }
       suffix={layout === 'figure' ? 'since last period' : undefined}
@@ -178,7 +209,8 @@ export function RequestsPanel({
   );
 }
 
-function DurationPanelView({
+/** The duration chart panel for any timeline (an operation, a user...). */
+export function DurationPanelView({
   title,
   avg,
   p95,

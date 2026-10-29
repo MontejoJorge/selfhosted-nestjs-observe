@@ -36,7 +36,18 @@ import {
   requestListQueryOptions,
 } from '@/features/requests/queries';
 import { operationSearch } from '@/features/requests/search';
+import {
+  slowestSpansQueryOptions,
+  timeBreakdownQueryOptions,
+} from '@/features/time-breakdown/queries';
+import {
+  breakdownFilters,
+  spanTarget,
+  timeBreakdownSearch,
+} from '@/features/time-breakdown/search';
 import { traceQueryOptions } from '@/features/traces/queries';
+import { userQueryOptions, usersQueryOptions } from '@/features/users/queries';
+import { userSearch, usersSearch } from '@/features/users/search';
 import { errorStatus } from '@/lib/api/client';
 import { rangeFromParams, scopeFromParams } from '@/lib/api/scope';
 import { paths } from '@/lib/paths';
@@ -319,6 +330,70 @@ export const router = createBrowserRouter([
                 lazy: async () => ({
                   Component: (await import('@/features/jobs/job-detail-page'))
                     .JobDetailPage,
+                }),
+              },
+              {
+                path: 'users',
+                loader: async (args) => {
+                  const { q } = parseRequestSearch(usersSearch, args.request);
+                  await queryClient.ensureQueryData(
+                    usersQueryOptions(scopeOf(args), { search: q }),
+                  );
+                },
+                lazy: async () => ({
+                  Component: (await import('@/features/users/users-page'))
+                    .UsersPage,
+                }),
+              },
+              {
+                path: 'users/:userId',
+                loader: async (args) => {
+                  const scope = scopeOf(args);
+                  const userId = param(args.params, 'userId');
+                  const { status } = parseRequestSearch(
+                    userSearch,
+                    args.request,
+                  );
+                  await Promise.all([
+                    queryClient.ensureQueryData(
+                      userQueryOptions(scope, userId),
+                    ),
+                    queryClient.ensureInfiniteQueryData(
+                      requestListQueryOptions(scope, { userId, status }),
+                    ),
+                  ]);
+                },
+                lazy: async () => ({
+                  Component: (await import('@/features/users/user-page'))
+                    .UserPage,
+                }),
+              },
+              {
+                path: 'time-breakdown',
+                loader: async (args) => {
+                  const scope = scopeOf(args);
+                  const search = parseRequestSearch(
+                    timeBreakdownSearch,
+                    args.request,
+                  );
+                  const filters = breakdownFilters(search);
+                  const target = spanTarget(search);
+                  // Filter options and the open drill-down load without blocking.
+                  void queryClient.prefetchQuery(operationsQueryOptions(scope));
+                  void queryClient.prefetchQuery(jobStatsQueryOptions(scope));
+                  if (target) {
+                    void queryClient.prefetchQuery(
+                      slowestSpansQueryOptions(scope, filters, target),
+                    );
+                  }
+                  await queryClient.ensureQueryData(
+                    timeBreakdownQueryOptions(scope, filters),
+                  );
+                },
+                lazy: async () => ({
+                  Component: (
+                    await import('@/features/time-breakdown/time-breakdown-page')
+                  ).TimeBreakdownPage,
                 }),
               },
               {

@@ -53,7 +53,8 @@ export function formatDuration(ms: number | null | undefined): string {
   if (ms < 100) return `${ms.toFixed(1)} ms`;
   if (ms < 1000) return `${Math.round(ms)} ms`;
   if (ms < 60_000) return `${(ms / 1000).toFixed(2)} s`;
-  return `${(ms / 60_000).toFixed(1)} min`;
+  if (ms < 3_600_000) return `${(ms / 60_000).toFixed(1)} min`;
+  return `${(ms / 3_600_000).toFixed(1)} h`;
 }
 
 /** Formats a value already expressed in megabytes (the agent reports memory in MB). */

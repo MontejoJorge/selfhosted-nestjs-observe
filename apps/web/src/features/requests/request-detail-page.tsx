@@ -86,7 +86,18 @@ export function RequestDetailPage() {
                 {request.error.message}
               </KeyValue>
             ) : null}
-            <KeyValue label="User">{request.userId ?? '-'}</KeyValue>
+            <KeyValue label="User">
+              {request.userId ? (
+                <ScopedLink
+                  to={paths.user(scope.project, request.userId)}
+                  className="hover:underline"
+                >
+                  {request.userId}
+                </ScopedLink>
+              ) : (
+                '-'
+              )}
+            </KeyValue>
             <KeyValue label="Protocol">
               {request.protocol.toUpperCase()}
             </KeyValue>

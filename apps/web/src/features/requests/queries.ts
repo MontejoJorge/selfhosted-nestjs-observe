@@ -9,6 +9,8 @@ export interface RequestFilters {
   status?: RequestStatus;
   minDuration?: number;
   traceId?: string;
+  /** Exact user id (`http.getUserId`). */
+  userId?: string;
 }
 
 export const operationsQueryOptions = (scope: Scope) =>
