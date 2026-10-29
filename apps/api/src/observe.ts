@@ -1,6 +1,6 @@
-import { RequestMethod } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createObserveModule } from '@nestjs/observe';
+import type { Request } from 'express';
 import type { Env } from './config/env.js';
 
 /**
@@ -10,8 +10,10 @@ import type { Env } from './config/env.js';
  */
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
-/** The agent's own batches are not traced, or every flush would produce the next one. */
-const INGEST_ROUTES = ['/applications/telemetry', '/applications/profiles'];
+const INGEST_ROUTES = new Set([
+  '/applications/telemetry',
+  '/applications/profiles',
+]);
 
 export const SelfObserveModule = ObserveModule.forRootAsync({
   inject: [ConfigService],
@@ -26,10 +28,12 @@ export const SelfObserveModule = ObserveModule.forRootAsync({
       serviceId: 'observe-api',
       forwardLogs: true,
       http: {
-        ignore: INGEST_ROUTES.map((path) => ({
-          method: RequestMethod[RequestMethod.POST],
-          path,
-        })),
+        // Ingest from other applications is traced; only the collector's own batches
+        // (sent with its own key) are not, or every flush would produce the next one.
+        ignore: (req: Request) =>
+          req.method === 'POST' &&
+          INGEST_ROUTES.has(req.path) &&
+          req.headers['x-api-key'] === appKey,
       },
     };
   },
