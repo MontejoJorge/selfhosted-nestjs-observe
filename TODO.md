@@ -1,6 +1,31 @@
 # TODO
 
-Data the collector already stores but nothing reads yet. Not scheduled.
+Not scheduled.
+
+## Users
+
+The agent reports a user id per request (`http.getUserId` in `ObserveModule`, wire field `u`), and it is
+already stored in `requests.user_id` and returned as `userId` by the requests API.
+
+- API: `GET /users` (users seen in the range with request count, error rate, p95 and last seen) and a
+  `userId` filter on requests, errors and traces. Add an index on `(application_id, user_id, called_at)`.
+- Web: a "Users" menu entry with that list; a user's page shows their requests and traces, so a
+  complaint from one user can be traced back. Link the user id from the request detail.
+- Example app: set `http.getUserId` (e.g. from an `x-user-id` header the load generator sends).
+
+## Compatibility tests against `@nestjs/observe` versions
+
+The wire protocol is reverse-engineered (`docs/protocol.md`), so a new agent release can break ingest
+without notice.
+
+- A script or CI job that installs a given `@nestjs/observe` version (`latest` by default) in the example
+  app, starts the collector and the example against a throwaway PostgreSQL, drives traffic and a job run,
+  and checks that ingest answers `200` and that requests, jobs, errors, logs, traces and runtime metrics
+  show up in the query API.
+- Diff the agent's contract (`TELEMETRY_BATCH` / `validateTelemetryPayload` in its `dist/`) against
+  `apps/api/src/ingest/domain/wire.ts` to flag new or renamed fields.
+- Run it on a schedule against `latest` and record which versions are known to work in the README.
+- Needs the maintainer's go-ahead: the repo has no tests yet.
 
 ## Custom metrics
 
