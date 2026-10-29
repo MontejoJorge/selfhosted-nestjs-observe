@@ -139,7 +139,10 @@ const incidents: Incident[] = Array.from(
     const day = Math.floor(
       ((i + 0.5) / Math.max(1, Math.round(config.days / 2))) * config.days,
     );
-    const from = start + day * 24 * 60 * MINUTE + between(9, 18) * 60 * MINUTE;
+    // From UTC midnight of that day, so 9:00-18:00 local (UTC+1) really is daytime.
+    const midnight = Math.floor(start / (24 * 60 * MINUTE)) * 24 * 60 * MINUTE;
+    const from =
+      midnight + day * 24 * 60 * MINUTE + between(8, 17) * 60 * MINUTE;
     return {
       from,
       to: from + between(20, 40) * MINUTE,
