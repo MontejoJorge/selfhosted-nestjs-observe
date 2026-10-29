@@ -47,15 +47,13 @@ Prefer to copy them by hand? Save [`deploy/docker-compose.yml`](deploy/docker-co
 Open the dashboard at **http://localhost:3000**. Migrations run on start. `docker compose down` stops
 the stack and keeps the data (`down -v` deletes it).
 
-| Variable                   | Default   | Description                                            |
-| -------------------------- | --------- | ------------------------------------------------------ |
-| `POSTGRES_PASSWORD`        | (none)    | **Required.** Database password.                       |
-| `OBSERVE_VERSION`          | `latest`  | Image tag, for example `v0.1.0`.                       |
-| `OBSERVE_PORT`             | `3000`    | `[host_ip:]port` for the dashboard and ingest.         |
-| `RETENTION_DAYS`           | `14`      | Days of telemetry to keep.                             |
-| `AGGREGATE_RETENTION_DAYS` | `90`      | Days of charts and stats to keep (per-minute rollups). |
-| `POSTGRES_USER`            | `observe` | Database user.                                         |
-| `POSTGRES_DB`              | `observe` | Database name.                                         |
+| Variable                   | Default  | Description                                            |
+| -------------------------- | -------- | ------------------------------------------------------ |
+| `POSTGRES_PASSWORD`        | (none)   | **Required.** Database password.                       |
+| `OBSERVE_VERSION`          | `latest` | Image tag, for example `v0.1.0`.                       |
+| `OBSERVE_PORT`             | `3000`   | `[host_ip:]port` for the dashboard and ingest.         |
+| `RETENTION_DAYS`           | `14`     | Days of telemetry to keep.                             |
+| `AGGREGATE_RETENTION_DAYS` | `90`     | Days of charts and stats to keep (per-minute rollups). |
 
 ## Connect your NestJS app
 
