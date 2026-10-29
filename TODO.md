@@ -48,11 +48,31 @@ samples)` instead of folding stacks on every query.
   deleting rows.
 - Web: a flame graph on the Profiler page, ideally linked per span from a request's detail.
 
-## `spans` table
+## Where the time goes
 
-Duplicates the span tree already stored in `requests.trace` / `jobs.trace` and is the most expensive
-table to write (one row per span).
+A map of the services, repositories, classes and outbound calls that take the most time, like the
+hosted dashboard's view. This is what the `spans` table is for: one row per span, with `class_name`,
+`method_name`, `origin` (controller, provider, database, outgoing HTTP...), `duration_ms`, `depth` and the
+parent link, while `requests.trace` / `jobs.trace` keep the tree for detail views.
 
-- Either use it: a "Spans / Dependencies" view with time per `class_name.method_name` or `origin`
-  (database, outgoing HTTP...), p95 and the slowest spans.
-- Or stop writing it and drop it, if no such view is planned.
+- API: `GET /time-breakdown?from&to&operation?` aggregating `spans` in the window by class and method
+  (and by `origin`): total and self time (duration minus children), share of the total, calls, p95.
+  Self time needs the children's durations, via `parent_position` within the same execution.
+- Index `spans` for it, e.g. `(application_id, called_at)` plus what the grouping needs; check the plan on
+  a busy day first, it is the biggest table.
+- Web: a treemap or ranked bars grouped by origin and class, filterable by operation; clicking a class
+  lists its slowest spans with links to their traces.
+- If this view is dropped, stop writing `spans` and drop the table: it is the most expensive one to write.
+
+## Versions and releases
+
+Every request, job and instance already carries `service_version` (`OBSERVE_SERVICE_VERSION`, the
+commit the platform exposes, or `serviceVersion`).
+
+- API: `GET /releases` listing each version per application with first and last seen, instances running
+  it, and request count, error rate and p95 since it appeared.
+- Mark deploys on the request/job charts (a vertical line where the version changes) and compare a release
+  with the previous one: new error groups, error rate and latency before and after.
+- Web: a "Releases" page, and the version shown on the instance list and in request details.
+- Record version changes per instance in `services` (or a small `service_versions` table), so "when did
+  this instance switch" does not need a scan of `requests`.
