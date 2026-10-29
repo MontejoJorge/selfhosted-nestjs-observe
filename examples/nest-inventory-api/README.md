@@ -76,6 +76,31 @@ $ curl "http://localhost:34240/catalog/insights?categories=laptops,tablets"
 $ curl "http://localhost:34240/catalog/insights?fail=true"   # 500
 ```
 
+Upstream responses are cached in memory for 60 s (`src/common/http/get-json.ts`), so the generated load does not hammer the public APIs.
+
+## Scheduled jobs
+
+`src/jobs` has two `@nestjs/schedule` cron jobs, traced as jobs:
+
+- `featured-pokemon` (every minute): fetches 3 to 5 random pokemon in parallel and ranks them by base stats.
+- `inventory-reconcile` (every minute, at second 30): fetches a page of products, finds low stock and "saves" a report to a slow warehouse API that fails 20% of the time.
+
+## Generated load
+
+On startup the app calls its own endpoints (`src/load`) so the dashboard fills up: a base rate that drifts along a slow wave, random bursts, and a share of failing requests (404, 400 and 500). It logs its counters every 30 s. Tune or disable it in `src/load/load.config.ts`:
+
+| Setting              | Default      | What                                         |
+| -------------------- | ------------ | -------------------------------------------- |
+| `enabled`            | `true`       | Turn the generator off.                      |
+| `durationMinutes`    | `0`          | Stop after N minutes; `0` runs forever.      |
+| `baseRps`            | `3`          | Average requests per second outside bursts.  |
+| `wave`               | `6 min, 0.7` | Period and amplitude of the slow drift.      |
+| `burst.everySeconds` | `45–150`     | Time between bursts.                         |
+| `burst.lastsSeconds` | `5–25`       | Length of a burst.                           |
+| `burst.rps`          | `15–40`      | Requests per second during a burst.          |
+| `errorRate`          | `0.12`       | Share of requests meant to fail.             |
+| `maxInFlight`        | `60`         | Concurrent requests; extra ones are skipped. |
+
 ## Deployment
 
 When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.

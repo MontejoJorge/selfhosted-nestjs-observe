@@ -3,8 +3,10 @@ import { createObserveModule } from '@nestjs/observe';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { Env, validateEnv } from './config/env.js';
 import { CatalogModule } from './catalog/catalog.module.js';
+import { JobsModule } from './jobs/jobs.module.js';
 import { PokemonModule } from './pokemon/pokemon.module.js';
 import { UsersModule } from './users/users.module.js';
 
@@ -30,9 +32,11 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
         forwardLogs: true,
       }),
     }),
+    ScheduleModule.forRoot(),
     UsersModule,
     PokemonModule,
     CatalogModule,
+    JobsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

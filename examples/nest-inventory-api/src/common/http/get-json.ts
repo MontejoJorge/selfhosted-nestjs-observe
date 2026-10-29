@@ -1,5 +1,12 @@
 import { BadGatewayException } from '@nestjs/common';
 
+/**
+ * Upstream responses are reused for this long, so the self-generated load
+ * (see load/) does not hammer the public APIs. Cache hits make no HTTP span.
+ */
+const CACHE_TTL_MS = 60_000;
+const cache = new Map<string, { value: unknown; expiresAt: number }>();
+
 /** Thrown by `getJson` when the upstream answers 404. */
 export class UpstreamNotFoundError extends Error {}
 
@@ -11,6 +18,9 @@ export class UpstreamNotFoundError extends Error {}
  * redundant span between each service step and its outbound HTTP span.
  */
 export async function getJson<T>(url: string): Promise<T> {
+  const cached = cache.get(url);
+  if (cached && cached.expiresAt > Date.now()) return cached.value as T;
+
   const response = await fetch(url, { signal: AbortSignal.timeout(10_000) });
   if (response.status === 404) {
     throw new UpstreamNotFoundError(`Upstream 404 for ${url}`);
@@ -20,5 +30,7 @@ export async function getJson<T>(url: string): Promise<T> {
       `Upstream ${url} answered ${response.status}`,
     );
   }
-  return (await response.json()) as T;
+  const value = (await response.json()) as T;
+  cache.set(url, { value, expiresAt: Date.now() + CACHE_TTL_MS });
+  return value;
 }
