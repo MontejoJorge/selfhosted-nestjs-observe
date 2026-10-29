@@ -27,6 +27,27 @@ without notice.
 - Run it on a schedule against `latest` and record which versions are known to work in the README.
 - Needs the maintainer's go-ahead: the repo has no tests yet.
 
+## Storage usage and trimming old data
+
+See how much each project and application takes in the database, and free space without losing recent
+data: with 14 days stored, "delete 7 days" removes the **oldest** 7 (days 8 to 14 ago) and keeps the
+last 7.
+
+- Size per application: tables are shared and partitioned by day, not by application, so PostgreSQL has
+  no per-application size. Either count it at ingest (rows and payload bytes per application per day in
+  a small `application_usage` table, cheap and exact enough), or estimate it with `pg_column_size` over a
+  sample. Show the total per project, the split by table (requests, spans, logs...) and the daily trend.
+- Whole database: `pg_total_relation_size` per table and per day partition, for an overview of what the
+  retention keeps.
+- Trim: "delete data older than N days" for a project or application (N below the global retention).
+  Run it in the background like `ApplicationPurger`: per table and per partition, in batches, only on the
+  partitions older than the cut-off.
+- For everything at once, lowering `RETENTION_DAYS` already drops whole partitions, which frees disk right
+  away. Row deletes only free space for reuse until autovacuum (or `VACUUM FULL`/`pg_repack`) runs; say so
+  in the UI.
+- Maybe a retention per project or application (override of `RETENTION_DAYS`) applied by the maintenance
+  job, so trimming does not have to be manual.
+
 ## Custom metrics
 
 `custom_metrics` holds every counter, gauge and summary the agents send (with tags and p50/p95/p99).
