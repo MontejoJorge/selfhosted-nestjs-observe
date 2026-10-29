@@ -21,8 +21,8 @@ export const paths = {
   /** Users seen in the range (`http.getUserId`). */
   users: (p: string) => `${project(p)}/users`,
   user: (p: string, userId: string) => `${project(p)}/users/${enc(userId)}`,
-  /** Self time per class and method ("Where the time goes"). */
-  timeBreakdown: (p: string) => `${project(p)}/time-breakdown`,
+  /** Own and total time per class; pass `{ className }` as search for one class. */
+  services: (p: string) => `${project(p)}/services`,
   errors: (p: string) => `${project(p)}/errors`,
   error: (p: string, id: string) => `${project(p)}/errors/${enc(id)}`,
   logs: (p: string) => `${project(p)}/logs`,

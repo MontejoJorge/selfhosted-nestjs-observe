@@ -6,6 +6,8 @@ import { EmptyState, NoTelemetryHint } from '@/components/states';
 import { errorGroupsQueryOptions } from '@/features/errors/queries';
 import { ProjectTitle } from '@/features/projects/project-title';
 import { operationsQueryOptions } from '@/features/requests/queries';
+import { servicesQueryOptions } from '@/features/services/queries';
+import { TimeMapPanel } from '@/features/services/time-map-panel';
 import { formatCount, formatDuration, formatRelative } from '@/lib/format';
 import { paths } from '@/lib/paths';
 import { useScope } from '@/lib/scope-hooks';
@@ -107,6 +109,7 @@ export function DashboardPage() {
   const { data } = useSuspenseQuery(overviewQueryOptions(scope));
   const previous = usePreviousOverview(scope);
   const { outliers, throughput } = useRankings();
+  const { data: services } = useSuspenseQuery(servicesQueryOptions(scope));
   const isEmpty =
     data.requests.count === 0 &&
     data.jobs.count === 0 &&
@@ -137,7 +140,7 @@ export function DashboardPage() {
         <DurationPanel overview={data} previous={previous} layout="figure" />
       </PanelGrid>
 
-      <PanelGrid>
+      <PanelGrid className="xl:grid-cols-3">
         <RankedList
           title="Performance outliers"
           measure="P95"
@@ -149,6 +152,10 @@ export function DashboardPage() {
           measure="COUNT"
           items={throughput}
           empty="No requests in this time range."
+        />
+        <TimeMapPanel
+          services={services.services}
+          totalSelfMs={services.totalSelfMs}
         />
       </PanelGrid>
 

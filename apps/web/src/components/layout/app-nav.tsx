@@ -13,7 +13,6 @@ import {
   LayoutGridIcon,
   SettingsIcon,
   SquareTerminalIcon,
-  TimerIcon,
   type LucideIcon,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -122,14 +121,19 @@ function ProjectNav({
     },
     { to: paths.jobs(project), label: 'Jobs', prefixes: [paths.jobs(project)] },
     {
+      to: paths.errors(project),
+      label: 'Errors',
+      prefixes: [paths.errors(project)],
+    },
+    {
       to: paths.users(project),
       label: 'Users',
       prefixes: [paths.users(project)],
     },
     {
-      to: paths.errors(project),
-      label: 'Errors',
-      prefixes: [paths.errors(project)],
+      to: paths.services(project),
+      label: 'Services',
+      prefixes: [paths.services(project)],
     },
   ];
   const activityActive = activity.some((item) =>
@@ -185,13 +189,6 @@ function ProjectNav({
           ))}
         </div>
       ) : null}
-      <NavItem
-        to={paths.timeBreakdown(project)}
-        label="Time breakdown"
-        icon={TimerIcon}
-        active={isUnder(pathname, paths.timeBreakdown(project))}
-        onNavigate={onNavigate}
-      />
       <NavItem
         to={paths.logs(project)}
         label="Logs"

@@ -41,6 +41,17 @@ export function formatRate(ratio: number): string {
   return `${percent.toFixed(percent < 10 ? 1 : 0)}%`;
 }
 
+/**
+ * A 0..1 share as a whole percent without the sign: "<1" for a non-zero share that
+ * would round to 0, and "99" rather than a rounded-up 100.
+ */
+export function formatShare(share: number): string {
+  const value = Math.round(share * 100);
+  if (value === 0 && share > 0) return '<1';
+  if (value === 100 && share < 1) return '99';
+  return String(value);
+}
+
 export function formatPercent(value: number | null | undefined): string {
   if (value === null || value === undefined) return '–';
   return `${value.toFixed(1)}%`;

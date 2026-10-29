@@ -36,15 +36,7 @@ import {
   requestListQueryOptions,
 } from '@/features/requests/queries';
 import { operationSearch } from '@/features/requests/search';
-import {
-  slowestSpansQueryOptions,
-  timeBreakdownQueryOptions,
-} from '@/features/time-breakdown/queries';
-import {
-  breakdownFilters,
-  spanTarget,
-  timeBreakdownSearch,
-} from '@/features/time-breakdown/search';
+import { servicesQueryOptions } from '@/features/services/queries';
 import { traceQueryOptions } from '@/features/traces/queries';
 import { userQueryOptions, usersQueryOptions } from '@/features/users/queries';
 import { userSearch, usersSearch } from '@/features/users/search';
@@ -139,6 +131,7 @@ export const router = createBrowserRouter([
                     queryClient.ensureInfiniteQueryData(
                       errorGroupsQueryOptions(scope, {}),
                     ),
+                    queryClient.ensureQueryData(servicesQueryOptions(scope)),
                   ]);
                   void queryClient.prefetchQuery(
                     previousOverviewQueryOptions(scope),
@@ -369,31 +362,15 @@ export const router = createBrowserRouter([
                 }),
               },
               {
-                path: 'time-breakdown',
+                path: 'services',
                 loader: async (args) => {
-                  const scope = scopeOf(args);
-                  const search = parseRequestSearch(
-                    timeBreakdownSearch,
-                    args.request,
-                  );
-                  const filters = breakdownFilters(search);
-                  const target = spanTarget(search);
-                  // Filter options and the open drill-down load without blocking.
-                  void queryClient.prefetchQuery(operationsQueryOptions(scope));
-                  void queryClient.prefetchQuery(jobStatsQueryOptions(scope));
-                  if (target) {
-                    void queryClient.prefetchQuery(
-                      slowestSpansQueryOptions(scope, filters, target),
-                    );
-                  }
                   await queryClient.ensureQueryData(
-                    timeBreakdownQueryOptions(scope, filters),
+                    servicesQueryOptions(scopeOf(args)),
                   );
                 },
                 lazy: async () => ({
-                  Component: (
-                    await import('@/features/time-breakdown/time-breakdown-page')
-                  ).TimeBreakdownPage,
+                  Component: (await import('@/features/services/services-page'))
+                    .ServicesPage,
                 }),
               },
               {
