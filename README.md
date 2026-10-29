@@ -65,23 +65,19 @@ the stack and keeps the data (`down -v` deletes it).
    OBSERVE_APP_SECRET=YOUR_APP_SECRET
    ```
 
-3. Register `ObserveModule`, reading the options from `ConfigService` so `.env` is loaded first:
+3. Register `ObserveModule` (the variables must be set before the app starts, e.g. `node --env-file=.env`):
 
    ```ts
    export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
    @Module({
      imports: [
-       ConfigModule.forRoot({ isGlobal: true }),
-       ObserveModule.forRootAsync({
-         inject: [ConfigService],
-         useFactory: (config: ConfigService) => ({
-           endpoint: config.getOrThrow('OBSERVE_ENDPOINT'),
-           appKey: config.getOrThrow('OBSERVE_APP_KEY'),
-           appSecret: config.getOrThrow('OBSERVE_APP_SECRET'),
-           serviceId: 'orders-api',
-           forwardLogs: true,
-         }),
+       ObserveModule.forRoot({
+         endpoint: process.env.OBSERVE_ENDPOINT,
+         appKey: process.env.OBSERVE_APP_KEY,
+         appSecret: process.env.OBSERVE_APP_SECRET,
+         serviceId: 'orders-api',
+         forwardLogs: true,
        }),
      ],
    })

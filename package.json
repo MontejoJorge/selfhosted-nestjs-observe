@@ -17,7 +17,7 @@
     "typecheck": "pnpm -r typecheck",
     "db:up": "docker compose up -d postgres",
     "db:down": "docker compose down",
-    "format": "prettier --write .",
+    "format": "prettier --cache --write .",
     "format:check": "prettier --check .",
     "api:generate": "pnpm --filter api openapi:generate && pnpm --filter web api:client"
   },
