@@ -41,6 +41,9 @@ curl -fsSL -o .env https://raw.githubusercontent.com/MontejoJorge/selfhosted-nes
 docker compose up -d
 ```
 
+Prefer to copy them by hand? Save [`deploy/docker-compose.yml`](deploy/docker-compose.yml) as
+`docker-compose.yml` and [`deploy/.env.example`](deploy/.env.example) as `.env` in an empty folder.
+
 Open the dashboard at **http://localhost:3000**. Migrations run on start. `docker compose down` stops
 the stack and keeps the data (`down -v` deletes it).
 
