@@ -22,17 +22,18 @@ Validated at boot by `src/config/env.ts` (class-validator). Loaded from `apps/ap
 real environment variables win. The migrate CLI (`src/database/migrate.ts`) uses the same schema.
 CORS allows every origin.
 
-| Variable                    | Default     | Notes                                        |
-| --------------------------- | ----------- | -------------------------------------------- |
-| `API_PORT`                  | `3000`      |                                              |
-| `DATABASE_HOST`             | `localhost` |                                              |
-| `DATABASE_PORT`             | `5432`      |                                              |
-| `DATABASE_USER`             | `observe`   |                                              |
-| `DATABASE_PASSWORD`         | `observe`   |                                              |
-| `DATABASE_NAME`             | `observe`   |                                              |
-| `DATABASE_POOL_MAX`         | `10`        | pg pool size                                 |
-| `DATABASE_MIGRATE_ON_START` | `true`      | run pending migrations when the app boots    |
-| `RETENTION_DAYS`            | `14`        | daily partitions older than this are dropped |
+| Variable                    | Default     | Notes                                                 |
+| --------------------------- | ----------- | ----------------------------------------------------- |
+| `API_PORT`                  | `3000`      |                                                       |
+| `DATABASE_HOST`             | `localhost` |                                                       |
+| `DATABASE_PORT`             | `5432`      |                                                       |
+| `DATABASE_USER`             | `observe`   |                                                       |
+| `DATABASE_PASSWORD`         | `observe`   |                                                       |
+| `DATABASE_NAME`             | `observe`   |                                                       |
+| `DATABASE_POOL_MAX`         | `10`        | pg pool size                                          |
+| `DATABASE_MIGRATE_ON_START` | `true`      | run pending migrations when the app boots             |
+| `RETENTION_DAYS`            | `14`        | daily partitions older than this are dropped          |
+| `AGGREGATE_RETENTION_DAYS`  | `90`        | same for the per-minute rollups (min: RETENTION_DAYS) |
 
 ## Layout
 
@@ -74,7 +75,8 @@ The read side deliberately has no use-case layer: controllers call the read port
 ## Data model
 
 Day-partitioned (range on the time column, UTC days, partitions named `<table>_pYYYYMMDD`):
-`requests`, `jobs`, `spans`, `error_occurrences`, `logs`, `runtime_metrics`, `custom_metrics`.
+`requests`, `jobs`, `spans`, `error_occurrences`, `logs`, `runtime_metrics`, `custom_metrics`, and the
+per-minute rollups `requests_1m` and `jobs_1m`.
 Plain tables: `services`, `error_groups`, `error_group_culprits`, `profiles`, and the
 management tables `projects`, `applications`, `api_keys`, `application_purges`.
 
@@ -94,6 +96,11 @@ management tables `projects`, `applications`, `api_keys`, `application_purges`.
   partition key (`windowFromId`) and touches one partition.
 - Each execution keeps its original span tree as `jsonb` (`trace`), so detail views need one read. `spans` holds
   the flattened tree (depth-first `position`, `parent_position`, `parent_span_id`, `depth`) for future analytics.
+- **Per-minute rollups** ([ADR 0003](../../docs/adr/0003-minute-rollups.md)): `requests_1m` and `jobs_1m`
+  hold counts, duration sum/min/max and a log-scale latency histogram (`int4[]`,
+  `ingest/domain/latency-histogram.ts`) per application, minute, instance and operation or job. Ingest
+  upserts them in the batch's transaction (`histogram_add` merges histograms); they are kept for
+  `AGGREGATE_RETENTION_DAYS`. `method` is `''` when the request has none (it is in the primary key).
 - Error fingerprint = sha1(source, class, normalized message, top stack frame without line/column), per
   application. `error_groups.service_id` is the instance of the most recent occurrence.
   `error_groups.count` is all-time; `error_group_culprits` counts per operationId or `queue/name`.
@@ -129,7 +136,10 @@ hourly, and on demand for any day an ingest batch touches (advisory-locked). Ret
 - Management lists use keyset pagination too: projects by `(name, id)`, applications by `name` (unique
   per project), API keys by `(created_at desc, id desc)`. Card stats are computed for the whole page in
   one aggregate (`activity.ts`) plus one lateral per row for the latest runtime sample.
-- Percentiles use one `percentile_cont(array[...])` per group, only over a pruned window.
+- **Stats and timelines read the rollups, never the raw rows**: overview, operations, queues and the
+  project/application cards (`telemetry/common/rollups.ts`). One grouped query for sums/min/max, one that
+  unnests the histograms into `(bucket, count)` cells per group; percentiles are computed in TS. Raw
+  tables serve lists, details and traces. `percentile_cont` is only left for error group timelines.
 - Timeline buckets use `date_bin` with a literal width from `bucketSeconds` (~100 buckets max). TimeBucket
   series are gap-filled in TS.
 - Select explicit columns, never `*`. Compose related data in one query (lateral join for top culprit) or
