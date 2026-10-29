@@ -57,6 +57,25 @@ $ pnpm run test:e2e
 $ pnpm run test:cov
 ```
 
+## Telemetry endpoints
+
+These endpoints exist to generate interesting telemetry. They call free public APIs ([DummyJSON](https://dummyjson.com) and [PokéAPI](https://pokeapi.co)) with `fetch`, so each trace shows a span per service method plus one per outbound HTTP call. Each lives in its own feature module: `src/users`, `src/pokemon` and `src/catalog`. Replace `34240` with your `API_PORT`.
+
+| Method | Path                      | What it does                                                                                                                                                                                                                |
+| ------ | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET`  | `/users/:id/summary`      | Fetches a DummyJSON user, then their posts, todos and carts in parallel, and aggregates them. An unknown id returns 404.                                                                                                    |
+| `GET`  | `/pokemon/:name/matchups` | Fetches a pokemon, then each of its types in parallel, and computes weaknesses, resistances and immunities. An unknown name returns 404.                                                                                    |
+| `GET`  | `/catalog/insights`       | Validates `?categories=` (default `smartphones,laptops,tablets`; unknown ones return 400), fetches each category's products in parallel, ranks them and runs a slow pricing step. `?fail=true` makes that step throw (500). |
+
+```bash
+$ curl http://localhost:34240/users/5/summary
+$ curl http://localhost:34240/users/99999/summary            # 404
+$ curl http://localhost:34240/pokemon/charizard/matchups
+$ curl http://localhost:34240/pokemon/notapokemon/matchups   # 404
+$ curl "http://localhost:34240/catalog/insights?categories=laptops,tablets"
+$ curl "http://localhost:34240/catalog/insights?fail=true"   # 500
+```
+
 ## Deployment
 
 When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
