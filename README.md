@@ -50,7 +50,7 @@ the stack and keeps the data (`down -v` deletes it).
 | Variable                   | Default   | Description                                            |
 | -------------------------- | --------- | ------------------------------------------------------ |
 | `POSTGRES_PASSWORD`        | (none)    | **Required.** Database password.                       |
-| `OBSERVE_VERSION`          | `latest`  | Image tag, for example `0.1.0`.                        |
+| `OBSERVE_VERSION`          | `latest`  | Image tag, for example `v0.1.0`.                       |
 | `OBSERVE_PORT`             | `3000`    | `[host_ip:]port` for the dashboard and ingest.         |
 | `RETENTION_DAYS`           | `14`      | Days of telemetry to keep.                             |
 | `AGGREGATE_RETENTION_DAYS` | `90`      | Days of charts and stats to keep (per-minute rollups). |
@@ -117,8 +117,8 @@ Other scripts: `pnpm build`, `pnpm lint`, `pnpm typecheck`, `pnpm format` and `p
 (regenerates `openapi.json` and the dashboard's client). Conventions for contributors and coding agents are
 in [AGENTS.md](AGENTS.md).
 
-Pushing a `v*` tag (or running the **Docker image** workflow by hand) builds the image for amd64 and
-arm64 and publishes it with that version and `latest`.
+Pushing a `v*` tag such as `v0.1.0` (or running the **Docker image** workflow by hand) builds the image
+for amd64 and arm64 and publishes it as that tag, `v` included, and as `latest`.
 
 ## Docs
 
