@@ -7,11 +7,13 @@ import { AppModule } from './app.module.js';
 import { API_PREFIX, applyGlobalPrefix } from './app.setup.js';
 import type { Env } from './config/env.js';
 import { serveDashboard } from './dashboard.js';
+import { ObserveInstrument } from './observe.js';
 import { createOpenApiDocument } from './openapi/openapi.js';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bodyParser: false,
+    instrument: ObserveInstrument,
   });
   const config = app.get<ConfigService<Env, true>>(ConfigService);
 

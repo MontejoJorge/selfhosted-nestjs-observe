@@ -6,6 +6,7 @@ import { DatabaseModule } from './database/database.module.js';
 import { HealthController } from './health/health.controller.js';
 import { IngestModule } from './ingest/ingest.module.js';
 import { MaintenanceModule } from './maintenance/maintenance.module.js';
+import { SelfObserveModule } from './observe.js';
 import { ProjectsModule } from './projects/projects.module.js';
 import { TelemetryModule } from './telemetry/telemetry.module.js';
 
@@ -18,6 +19,9 @@ import { TelemetryModule } from './telemetry/telemetry.module.js';
       envFilePath: ['.env', '../../.env'],
       validate: validateEnv,
     }),
+    // Before ScheduleModule: global modules shut down in reverse order, so the agent
+    // still sends what cron jobs finish during shutdown.
+    SelfObserveModule,
     ScheduleModule.forRoot(),
     DatabaseModule,
     IngestModule,

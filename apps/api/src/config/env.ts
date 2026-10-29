@@ -76,6 +76,20 @@ export class Env {
   @IsString()
   @MinLength(1)
   DASHBOARD_DIR?: string;
+
+  /** Self-observation: the collector's own agent credentials. Unset: disabled. */
+  @IsOptional()
+  @IsString()
+  OBSERVE_APP_KEY?: string;
+
+  @IsOptional()
+  @IsString()
+  OBSERVE_APP_SECRET?: string;
+
+  /** Where the collector sends its own telemetry, usually itself. */
+  @IsOptional()
+  @IsString()
+  OBSERVE_ENDPOINT?: string;
 }
 
 export function validateEnv(config: Record<string, unknown>): Env {
