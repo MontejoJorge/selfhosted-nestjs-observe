@@ -4,34 +4,34 @@ import { ScopeResolver } from '../common/scope.js';
 import { resolveWindow } from '../common/time-window.js';
 import {
   DEFAULT_SLOW_SPANS,
+  ServicesDto,
+  ServicesQueryDto,
   SlowSpanDto,
   SlowSpansQueryDto,
-  TimeBreakdownDto,
-  TimeBreakdownQueryDto,
-} from './time-breakdown.dto.js';
+} from './services.dto.js';
 import {
-  TimeBreakdownRepository,
-  type TimeBreakdownFilter,
-} from './time-breakdown.repository.js';
+  ServicesRepository,
+  type ServicesFilter,
+} from './services.repository.js';
 
-@ApiTags('time-breakdown')
-@Controller('time-breakdown')
-export class TimeBreakdownController {
+@ApiTags('services')
+@Controller('services')
+export class ServicesController {
   constructor(
-    private readonly breakdown: TimeBreakdownRepository,
+    private readonly services: ServicesRepository,
     private readonly scopes: ScopeResolver,
   ) {}
 
   @Get()
   @ApiOperation({
-    operationId: 'getTimeBreakdown',
-    summary: 'Time spent per span class and method, by self time',
+    operationId: 'listServices',
+    summary: 'Own and total time per span class, with its methods',
     description:
       'Read from 5-minute rollups: the window starts at the 5-minute bucket containing `from`.',
   })
-  @ApiOkResponse({ type: TimeBreakdownDto })
-  async get(@Query() query: TimeBreakdownQueryDto): Promise<TimeBreakdownDto> {
-    return this.breakdown.breakdown(await this.filter(query));
+  @ApiOkResponse({ type: ServicesDto })
+  async list(@Query() query: ServicesQueryDto): Promise<ServicesDto> {
+    return this.services.services(await this.filter(query));
   }
 
   @Get('spans')
@@ -44,18 +44,15 @@ export class TimeBreakdownController {
   })
   @ApiOkResponse({ type: [SlowSpanDto] })
   async spans(@Query() query: SlowSpansQueryDto): Promise<SlowSpanDto[]> {
-    return this.breakdown.slowestSpans({
+    return this.services.slowestSpans({
       ...(await this.filter(query)),
       className: query.className,
       methodName: query.methodName,
-      origin: query.origin,
       limit: query.limit ?? DEFAULT_SLOW_SPANS,
     });
   }
 
-  private async filter(
-    query: TimeBreakdownQueryDto,
-  ): Promise<TimeBreakdownFilter> {
+  private async filter(query: ServicesQueryDto): Promise<ServicesFilter> {
     return {
       scope: await this.scopes.resolve(query),
       window: resolveWindow(query),

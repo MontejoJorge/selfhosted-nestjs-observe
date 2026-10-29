@@ -2,11 +2,11 @@ import type { TelemetryScope } from '../common/scope.js';
 import type { TimeWindow } from '../common/time-window.js';
 import type {
   ExecutionSource,
+  ServicesDto,
   SlowSpanDto,
-  TimeBreakdownDto,
-} from './time-breakdown.dto.js';
+} from './services.dto.js';
 
-export interface TimeBreakdownFilter {
+export interface ServicesFilter {
   scope: TelemetryScope;
   window: TimeWindow;
   source?: ExecutionSource;
@@ -15,15 +15,14 @@ export interface TimeBreakdownFilter {
   name?: string;
 }
 
-export interface SlowSpansFilter extends TimeBreakdownFilter {
+export interface SlowSpansFilter extends ServicesFilter {
   className: string;
   methodName: string;
-  origin?: string;
   limit: number;
 }
 
 /** Read port for where execution time is spent, by span class and method. */
-export abstract class TimeBreakdownRepository {
-  abstract breakdown(filter: TimeBreakdownFilter): Promise<TimeBreakdownDto>;
+export abstract class ServicesRepository {
+  abstract services(filter: ServicesFilter): Promise<ServicesDto>;
   abstract slowestSpans(filter: SlowSpansFilter): Promise<SlowSpanDto[]>;
 }

@@ -6,7 +6,7 @@ import { LogsModule } from './logs/logs.module.js';
 import { MetricsModule } from './metrics/metrics.module.js';
 import { OverviewModule } from './overview/overview.module.js';
 import { RequestsModule } from './requests/requests.module.js';
-import { TimeBreakdownModule } from './time-breakdown/time-breakdown.module.js';
+import { ServicesModule } from './services/services.module.js';
 import { TracesModule } from './traces/traces.module.js';
 import { UsersModule } from './users/users.module.js';
 
@@ -22,7 +22,7 @@ import { UsersModule } from './users/users.module.js';
     TracesModule,
     MetricsModule,
     UsersModule,
-    TimeBreakdownModule,
+    ServicesModule,
   ],
 })
 export class TelemetryModule {}

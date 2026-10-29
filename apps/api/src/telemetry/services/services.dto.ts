@@ -15,11 +15,10 @@ import { TimeRangeQueryDto } from '../common/query.dto.js';
 export const EXECUTION_SOURCES = ['request', 'job'] as const;
 export type ExecutionSource = (typeof EXECUTION_SOURCES)[number];
 
-export const MAX_BREAKDOWN_ITEMS = 500;
 export const DEFAULT_SLOW_SPANS = 50;
 export const MAX_SLOW_SPANS = 100;
 
-export class TimeBreakdownQueryDto extends TimeRangeQueryDto {
+export class ServicesQueryDto extends TimeRangeQueryDto {
   /** Only spans of requests or only spans of jobs. */
   @ApiPropertyOptional({ enum: EXECUTION_SOURCES, enumName: 'ExecutionSource' })
   @IsOptional()
@@ -45,7 +44,7 @@ export class TimeBreakdownQueryDto extends TimeRangeQueryDto {
   name?: string;
 }
 
-export class SlowSpansQueryDto extends TimeBreakdownQueryDto {
+export class SlowSpansQueryDto extends ServicesQueryDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(1000)
@@ -55,11 +54,6 @@ export class SlowSpansQueryDto extends TimeBreakdownQueryDto {
   @IsNotEmpty()
   @MaxLength(1000)
   methodName: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(100)
-  origin?: string;
 
   /** Max spans returned (default 50, max 100). */
   @ApiPropertyOptional({ type: 'integer', default: DEFAULT_SLOW_SPANS })
@@ -71,35 +65,41 @@ export class SlowSpansQueryDto extends TimeBreakdownQueryDto {
   limit?: number;
 }
 
-/** Time spent in one class method (or outbound call) across the matching executions. */
-export class TimeBreakdownItemDto {
-  /** Span origin as reported by the agent (`auto`, `manual`, ...). */
-  origin: string;
-  /** Class, or the kind of outbound call (`http`, `pg`, ...). */
-  className: string;
-  /** Method, or the outbound call's name (`GET host`, `SELECT table`, ...). */
+/** Time spent in one method of a class across the matching executions. */
+export class ServiceMethodDto {
   methodName: string;
   calls: number;
   /** Spans that recorded an error. */
   errorCount: number;
-  /** Sum of the span durations (ms). Nested spans count in their parents too. */
+  /** Sum of the span durations (ms): everything awaited further down included. */
   totalMs: number;
-  /** Sum of the self times (ms): duration minus direct children, at least 0. */
+  /** Sum of the own times (ms): duration minus direct children, at least 0. */
+  selfMs: number;
+}
+
+/**
+ * Time spent in one class across the matching executions. Outbound calls (`http`,
+ * `pg`, ...) are left out.
+ */
+export class ServiceDto {
+  className: string;
+  calls: number;
+  errorCount: number;
+  totalMs: number;
   selfMs: number;
   /** selfMs / totalSelfMs, ratio 0..1. */
   share: number;
-  /** Mean span duration (ms). */
-  avgMs: number;
-  /** 95th percentile of the span duration (ms). */
-  p95Ms: number;
+  /** By selfMs desc. */
+  @ApiProperty({ type: [ServiceMethodDto] })
+  methods: ServiceMethodDto[];
 }
 
-export class TimeBreakdownDto {
-  /** Self time of every matching span; the denominator of `share`. */
+export class ServicesDto {
+  /** Own time of every listed class; the denominator of `share`. */
   totalSelfMs: number;
-  /** By selfMs desc, at most 500. */
-  @ApiProperty({ type: [TimeBreakdownItemDto] })
-  items: TimeBreakdownItemDto[];
+  /** By selfMs desc. */
+  @ApiProperty({ type: [ServiceDto] })
+  services: ServiceDto[];
 }
 
 export class SlowSpanDto {

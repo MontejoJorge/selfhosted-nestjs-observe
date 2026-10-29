@@ -2176,10 +2176,10 @@
         ]
       }
     },
-    "/api/time-breakdown": {
+    "/api/services": {
       "get": {
         "description": "Read from 5-minute rollups: the window starts at the 5-minute bucket containing `from`.",
-        "operationId": "getTimeBreakdown",
+        "operationId": "listServices",
         "parameters": [
           {
             "name": "application",
@@ -2286,19 +2286,19 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TimeBreakdownDto"
+                  "$ref": "#/components/schemas/ServicesDto"
                 }
               }
             }
           }
         },
-        "summary": "Time spent per span class and method, by self time",
+        "summary": "Own and total time per span class, with its methods",
         "tags": [
-          "time-breakdown"
+          "services"
         ]
       }
     },
-    "/api/time-breakdown/spans": {
+    "/api/services/spans": {
       "get": {
         "description": "The slowest span of each 5-minute bucket, instance and operation, so one burst of slow calls shows up once per operation and instance.",
         "operationId": "listSlowestSpans",
@@ -2382,15 +2382,6 @@
             }
           },
           {
-            "name": "origin",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "maxLength": 100,
-              "type": "string"
-            }
-          },
-          {
             "name": "operationId",
             "required": false,
             "in": "query",
@@ -2458,7 +2449,7 @@
         },
         "summary": "Slowest spans of one class method, slowest first",
         "tags": [
-          "time-breakdown"
+          "services"
         ]
       }
     }
@@ -4602,20 +4593,11 @@
           "job"
         ]
       },
-      "TimeBreakdownItemDto": {
+      "ServiceMethodDto": {
         "type": "object",
         "properties": {
-          "origin": {
-            "type": "string",
-            "description": "Span origin as reported by the agent (`auto`, `manual`, ...)."
-          },
-          "className": {
-            "type": "string",
-            "description": "Class, or the kind of outbound call (`http`, `pg`, ...)."
-          },
           "methodName": {
-            "type": "string",
-            "description": "Method, or the outbound call's name (`GET host`, `SELECT table`, ...)."
+            "type": "string"
           },
           "calls": {
             "type": "number"
@@ -4626,55 +4608,78 @@
           },
           "totalMs": {
             "type": "number",
-            "description": "Sum of the span durations (ms). Nested spans count in their parents too."
+            "description": "Sum of the span durations (ms): everything awaited further down included."
           },
           "selfMs": {
             "type": "number",
-            "description": "Sum of the self times (ms): duration minus direct children, at least 0."
-          },
-          "share": {
-            "type": "number",
-            "description": "selfMs / totalSelfMs, ratio 0..1."
-          },
-          "avgMs": {
-            "type": "number",
-            "description": "Mean span duration (ms)."
-          },
-          "p95Ms": {
-            "type": "number",
-            "description": "95th percentile of the span duration (ms)."
+            "description": "Sum of the own times (ms): duration minus direct children, at least 0."
           }
         },
         "required": [
-          "origin",
-          "className",
           "methodName",
           "calls",
           "errorCount",
           "totalMs",
-          "selfMs",
-          "share",
-          "avgMs",
-          "p95Ms"
+          "selfMs"
         ]
       },
-      "TimeBreakdownDto": {
+      "ServiceDto": {
         "type": "object",
         "properties": {
-          "items": {
-            "description": "By selfMs desc, at most 500.",
+          "methods": {
+            "description": "By selfMs desc.",
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/TimeBreakdownItemDto"
+              "$ref": "#/components/schemas/ServiceMethodDto"
+            }
+          },
+          "className": {
+            "type": "string"
+          },
+          "calls": {
+            "type": "number"
+          },
+          "errorCount": {
+            "type": "number"
+          },
+          "totalMs": {
+            "type": "number"
+          },
+          "selfMs": {
+            "type": "number"
+          },
+          "share": {
+            "type": "number",
+            "description": "selfMs / totalSelfMs, ratio 0..1."
+          }
+        },
+        "required": [
+          "methods",
+          "className",
+          "calls",
+          "errorCount",
+          "totalMs",
+          "selfMs",
+          "share"
+        ]
+      },
+      "ServicesDto": {
+        "type": "object",
+        "properties": {
+          "services": {
+            "description": "By selfMs desc.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ServiceDto"
             }
           },
           "totalSelfMs": {
             "type": "number",
-            "description": "Self time of every matching span; the denominator of `share`."
+            "description": "Own time of every listed class; the denominator of `share`."
           }
         },
         "required": [
-          "items",
+          "services",
           "totalSelfMs"
         ]
       },
