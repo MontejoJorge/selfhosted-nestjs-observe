@@ -3,15 +3,15 @@ services:
     image: postgres:18-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-observe}
+      POSTGRES_USER: observe
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-observe}
-      POSTGRES_DB: ${POSTGRES_DB:-observe}
+      POSTGRES_DB: observe
     ports:
       - '${POSTGRES_PORT:-5432}:5432'
     volumes:
       - postgres-data:/var/lib/postgresql
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      test: ['CMD-SHELL', 'pg_isready -U observe -d observe']
       interval: 5s
       timeout: 5s
       retries: 10
