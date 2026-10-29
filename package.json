@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "description": "Self-hosted collector and dashboard for @nestjs/observe telemetry",
-  "license": "MIT",
+  "license": "SEE LICENSE IN LICENSE",
   "packageManager": "pnpm@10.24.0",
   "engines": {
     "node": ">=22"
