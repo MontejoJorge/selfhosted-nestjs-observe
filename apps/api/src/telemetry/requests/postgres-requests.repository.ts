@@ -8,15 +8,20 @@ import {
 } from '../../database/database.types.js';
 import { toPage, type KeysetCursor, type Page } from '../common/cursor.js';
 import { windowFromId } from '../common/id-window.js';
-import { inApplications, type TelemetryScope } from '../common/scope.js';
 import {
-  avgOf,
-  countAll,
-  countWhere,
-  latencyPercentiles,
-  ratio,
-  toPercentiles,
-} from '../common/sql.js';
+  cellBucket,
+  cellCount,
+  histogramCells,
+  histogramsByKey,
+  inRollupScope,
+  maxOf,
+  minOf,
+  nonEmptyCell,
+  rollupPercentiles,
+  sumOf,
+} from '../common/rollups.js';
+import { inApplications, type TelemetryScope } from '../common/scope.js';
+import { ratio } from '../common/sql.js';
 import { asTags, asWireError, decodeTrace } from '../common/trace-decoder.js';
 import type {
   OperationStatsDto,
@@ -86,30 +91,49 @@ export class PostgresRequestsRepository extends RequestsRepository {
     return q;
   }
 
+  /** Per-operation stats from the per-minute rollups (see `common/rollups.ts`). */
   async operations(filter: RequestFilter): Promise<OperationStatsDto[]> {
-    const rows = await this.filtered(this.db.selectFrom('requests'), filter)
-      .select((eb) => [
-        'operation_id',
-        'protocol',
-        'method',
-        countAll.as('count'),
-        countWhere('has_error').as('error_count'),
-        latencyPercentiles('duration_ms').as('latency'),
-        avgOf('duration_ms').as('avg_ms'),
-        eb.fn.max('called_at').as('last_seen_at'),
-      ])
-      .groupBy(['operation_id', 'protocol', 'method'])
-      .orderBy('count', 'desc')
-      .limit(1000)
-      .execute();
+    const inScope = inRollupScope(filter.scope, filter.window);
+    const keys = ['operation_id', 'protocol', 'method'] as const;
+    const [rows, cells] = await Promise.all([
+      this.db
+        .selectFrom('requests_1m')
+        .where(inScope)
+        .select((eb) => [
+          ...keys,
+          sumOf('count').as('count'),
+          sumOf('errors').as('error_count'),
+          sumOf('sum_ms').as('sum_ms'),
+          minOf.as('min_ms'),
+          maxOf.as('max_ms'),
+          eb.fn.max('last_called_at').as('last_seen_at'),
+        ])
+        .groupBy([...keys])
+        .orderBy('count', 'desc')
+        .limit(1000)
+        .execute(),
+      this.db
+        .selectFrom(['requests_1m', histogramCells])
+        .where(inScope)
+        .where(nonEmptyCell)
+        .select([...keys, cellBucket.as('bucket'), cellCount.as('count')])
+        .groupBy([...keys, cellBucket])
+        .execute(),
+    ]);
+    const keyOf = (row: {
+      operation_id: string;
+      protocol: string;
+      method: string;
+    }) => JSON.stringify([row.operation_id, row.protocol, row.method]);
+    const histograms = histogramsByKey(cells, keyOf);
     return rows.map((row) => ({
       operationId: row.operation_id,
       protocol: row.protocol,
-      method: row.method,
+      method: row.method || null,
       count: row.count,
       errorCount: row.error_count,
       errorRate: ratio(row.error_count, row.count),
-      latency: toPercentiles(row.latency, row.avg_ms),
+      latency: rollupPercentiles(row, histograms.get(keyOf(row))),
       lastSeenAt: new Date(row.last_seen_at).toISOString(),
     }));
   }

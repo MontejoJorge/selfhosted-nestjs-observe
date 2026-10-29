@@ -8,15 +8,20 @@ import {
 } from '../../database/database.types.js';
 import { toPage, type KeysetCursor, type Page } from '../common/cursor.js';
 import { windowFromId } from '../common/id-window.js';
-import { inApplications, type TelemetryScope } from '../common/scope.js';
 import {
-  avgOf,
-  countAll,
-  countWhere,
-  latencyPercentiles,
-  ratio,
-  toPercentiles,
-} from '../common/sql.js';
+  cellBucket,
+  cellCount,
+  histogramCells,
+  histogramsByKey,
+  inRollupScope,
+  maxOf,
+  minOf,
+  nonEmptyCell,
+  rollupPercentiles,
+  sumOf,
+} from '../common/rollups.js';
+import { inApplications, type TelemetryScope } from '../common/scope.js';
+import { ratio } from '../common/sql.js';
 import { asTags, asWireError, decodeTrace } from '../common/trace-decoder.js';
 import type { JobDetailDto, JobListItemDto, JobStatsDto } from './jobs.dto.js';
 import { JobsRepository, type JobFilter } from './jobs.repository.js';
@@ -71,30 +76,51 @@ export class PostgresJobsRepository extends JobsRepository {
     return q;
   }
 
+  /** Per-job stats from the per-minute rollups (see `common/rollups.ts`). */
   async queues(filter: JobFilter): Promise<JobStatsDto[]> {
-    const rows = await this.filtered(this.db.selectFrom('jobs'), filter)
-      .select((eb) => [
-        'queue',
-        'name',
-        countAll.as('count'),
-        countWhere('has_error').as('failed_count'),
-        latencyPercentiles('duration_ms').as('latency'),
-        avgOf('duration_ms').as('avg_ms'),
-        eb.fn.avg<number | null>('wait_ms').as('avg_wait_ms'),
-        eb.fn.max('called_at').as('last_seen_at'),
-      ])
-      .groupBy(['queue', 'name'])
-      .orderBy('count', 'desc')
-      .limit(1000)
-      .execute();
+    const inScope = inRollupScope(filter.scope, filter.window, {
+      queue: filter.queue,
+      name: filter.name,
+    });
+    const keys = ['queue', 'name'] as const;
+    const [rows, cells] = await Promise.all([
+      this.db
+        .selectFrom('jobs_1m')
+        .where(inScope)
+        .select((eb) => [
+          ...keys,
+          sumOf('count').as('count'),
+          sumOf('failed').as('failed_count'),
+          sumOf('sum_ms').as('sum_ms'),
+          minOf.as('min_ms'),
+          maxOf.as('max_ms'),
+          sumOf('wait_sum_ms').as('wait_sum_ms'),
+          sumOf('wait_count').as('wait_count'),
+          eb.fn.max('last_called_at').as('last_seen_at'),
+        ])
+        .groupBy([...keys])
+        .orderBy('count', 'desc')
+        .limit(1000)
+        .execute(),
+      this.db
+        .selectFrom(['jobs_1m', histogramCells])
+        .where(inScope)
+        .where(nonEmptyCell)
+        .select([...keys, cellBucket.as('bucket'), cellCount.as('count')])
+        .groupBy([...keys, cellBucket])
+        .execute(),
+    ]);
+    const keyOf = (row: { queue: string; name: string }) =>
+      JSON.stringify([row.queue, row.name]);
+    const histograms = histogramsByKey(cells, keyOf);
     return rows.map((row) => ({
       queue: row.queue,
       name: row.name,
       count: row.count,
       failedCount: row.failed_count,
       failureRate: ratio(row.failed_count, row.count),
-      latency: toPercentiles(row.latency, row.avg_ms),
-      avgWaitMs: row.avg_wait_ms ?? 0,
+      latency: rollupPercentiles(row, histograms.get(keyOf(row))),
+      avgWaitMs: row.wait_count > 0 ? row.wait_sum_ms / row.wait_count : 0,
       lastSeenAt: new Date(row.last_seen_at).toISOString(),
     }));
   }

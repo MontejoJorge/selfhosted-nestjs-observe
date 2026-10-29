@@ -1,18 +1,18 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { KYSELY, type Db } from '../../database/database.types.js';
-import { inApplications } from '../common/scope.js';
 import {
-  avgOf,
-  bucketStart,
-  count4xx,
-  count5xx,
-  countAll,
-  countWhere,
-  latencyPercentiles,
-  p95,
-  ratio,
-  toPercentiles,
-} from '../common/sql.js';
+  cellBucket,
+  cellCount,
+  histogramCells,
+  inRollupScope,
+  maxOf,
+  minOf,
+  nonEmptyCell,
+  sumOf,
+  summarizeTimeline,
+} from '../common/rollups.js';
+import { inApplications } from '../common/scope.js';
+import { bucketStart, countAll, ratio } from '../common/sql.js';
 import { bucketSeconds, fillTimeline } from '../common/time-window.js';
 import type { OverviewDto } from './overview.dto.js';
 import {
@@ -21,9 +21,9 @@ import {
 } from './overview.repository.js';
 
 /**
- * Independent aggregates over the pruned window, run in parallel on separate pool
- * connections: request and job totals, error counts, and one timeline each for
- * requests and jobs.
+ * Reads the per-minute rollups: for requests and for jobs, one grouped query for the
+ * timeline and one for the histogram cells of its buckets; the totals are the sum of the
+ * buckets. Error counts come from `error_occurrences`. All run in parallel.
  */
 @Injectable()
 export class PostgresOverviewRepository extends OverviewRepository {
@@ -38,31 +38,24 @@ export class PostgresOverviewRepository extends OverviewRepository {
     queue,
     name,
   }: OverviewFilter): Promise<OverviewDto> {
-    const apps = inApplications('application_id', scope.applicationIds);
     const instance = scope.instance;
-
-    const requestsInWindow = () => {
-      let q = this.db
-        .selectFrom('requests')
-        .where(apps)
-        .where('called_at', '>=', window.from)
-        .where('called_at', '<', window.to);
-      if (instance) q = q.where('service_id', '=', instance);
-      if (operationId) q = q.where('operation_id', '=', operationId);
-      return q;
-    };
-
-    const jobsInWindow = () => {
-      let q = this.db
-        .selectFrom('jobs')
-        .where(apps)
-        .where('called_at', '>=', window.from)
-        .where('called_at', '<', window.to);
-      if (instance) q = q.where('service_id', '=', instance);
-      if (queue) q = q.where('queue', '=', queue);
-      if (name) q = q.where('name', '=', name);
-      return q;
-    };
+    const requestsFilter = inRollupScope(scope, window, {
+      operation_id: operationId,
+    });
+    const jobsFilter = inRollupScope(scope, window, { queue, name });
+    const requests = () =>
+      this.db.selectFrom('requests_1m').where(requestsFilter);
+    const requestCells = () =>
+      this.db
+        .selectFrom(['requests_1m', histogramCells])
+        .where(requestsFilter)
+        .where(nonEmptyCell);
+    const jobs = () => this.db.selectFrom('jobs_1m').where(jobsFilter);
+    const jobCells = () =>
+      this.db
+        .selectFrom(['jobs_1m', histogramCells])
+        .where(jobsFilter)
+        .where(nonEmptyCell);
 
     // Distinct groups and events from the occurrences in the window, so the instance
     // filter is exact. Uses the (application_id, occurred_at) index.
@@ -74,77 +67,70 @@ export class PostgresOverviewRepository extends OverviewRepository {
     if (instance) occurrences = occurrences.where('service_id', '=', instance);
 
     const step = bucketSeconds(window);
-    const t = bucketStart('called_at', step);
+    const t = bucketStart('minute', step);
 
-    const [requestStats, jobStats, errorCounts, timeline, jobsTimeline] =
+    const [requestRows, requestCellRows, jobRows, jobCellRows, errorCounts] =
       await Promise.all([
-        requestsInWindow()
+        requests()
           .select([
-            countAll.as('count'),
-            countWhere('has_error').as('errors'),
-            count4xx.as('status4xx'),
-            count5xx.as('status5xx'),
-            latencyPercentiles('duration_ms').as('latency'),
-            avgOf('duration_ms').as('avg'),
+            t.as('t'),
+            sumOf('count').as('count'),
+            sumOf('errors').as('errors'),
+            sumOf('status_4xx').as('status4xx'),
+            sumOf('status_5xx').as('status5xx'),
+            sumOf('sum_ms').as('sum_ms'),
+            minOf.as('min_ms'),
+            maxOf.as('max_ms'),
           ])
-          .executeTakeFirstOrThrow(),
-        jobsInWindow()
+          .groupBy(t)
+          .execute(),
+        requestCells()
+          .select([t.as('t'), cellBucket.as('bucket'), cellCount.as('count')])
+          .groupBy([t, cellBucket])
+          .execute(),
+        jobs()
           .select([
-            countAll.as('count'),
-            countWhere('has_error').as('failed'),
-            latencyPercentiles('duration_ms').as('latency'),
-            avgOf('duration_ms').as('avg'),
+            t.as('t'),
+            sumOf('count').as('count'),
+            sumOf('failed').as('errors'),
+            sumOf('sum_ms').as('sum_ms'),
+            minOf.as('min_ms'),
+            maxOf.as('max_ms'),
           ])
-          .executeTakeFirstOrThrow(),
+          .groupBy(t)
+          .execute(),
+        jobCells()
+          .select([t.as('t'), cellBucket.as('bucket'), cellCount.as('count')])
+          .groupBy([t, cellBucket])
+          .execute(),
         occurrences
           .select((eb) => [
             countAll.as('events'),
             eb.fn.count<number>('group_id').distinct().as('groups'),
           ])
           .executeTakeFirstOrThrow(),
-        requestsInWindow()
-          .select([
-            t.as('t'),
-            countAll.as('count'),
-            countWhere('has_error').as('errors'),
-            count4xx.as('status4xx'),
-            count5xx.as('status5xx'),
-            p95('duration_ms').as('p95'),
-            avgOf('duration_ms').as('avg'),
-          ])
-          .groupBy(t)
-          .orderBy(t)
-          .execute(),
-        jobsInWindow()
-          .select([
-            t.as('t'),
-            countAll.as('count'),
-            countWhere('has_error').as('errors'),
-            p95('duration_ms').as('p95'),
-            avgOf('duration_ms').as('avg'),
-          ])
-          .groupBy(t)
-          .orderBy(t)
-          .execute(),
       ]);
+
+    const requestStats = summarizeTimeline(requestRows, requestCellRows);
+    const jobStats = summarizeTimeline(jobRows, jobCellRows);
 
     return {
       requests: {
-        count: requestStats.count,
-        errorRate: ratio(requestStats.errors, requestStats.count),
-        latency: toPercentiles(requestStats.latency, requestStats.avg),
-        status4xx: requestStats.status4xx,
-        status5xx: requestStats.status5xx,
+        count: requestStats.totals.count,
+        errorRate: ratio(requestStats.totals.errors, requestStats.totals.count),
+        latency: requestStats.latency,
+        status4xx: requestStats.totals.status4xx,
+        status5xx: requestStats.totals.status5xx,
       },
       jobs: {
-        count: jobStats.count,
-        failed: jobStats.failed,
-        failureRate: ratio(jobStats.failed, jobStats.count),
-        latency: toPercentiles(jobStats.latency, jobStats.avg),
+        count: jobStats.totals.count,
+        failed: jobStats.totals.errors,
+        failureRate: ratio(jobStats.totals.errors, jobStats.totals.count),
+        latency: jobStats.latency,
       },
       errors: { groups: errorCounts.groups, events: errorCounts.events },
-      timeline: fillTimeline(window, step, timeline),
-      jobsTimeline: fillTimeline(window, step, jobsTimeline),
+      timeline: fillTimeline(window, step, requestStats.buckets),
+      jobsTimeline: fillTimeline(window, step, jobStats.buckets),
     };
   }
 }

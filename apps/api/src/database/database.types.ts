@@ -93,6 +93,47 @@ export interface JobsTable {
   trace: Json;
 }
 
+/**
+ * Per-minute rollups of `requests` and `jobs`, upserted at ingest (see
+ * `ingest/domain/rollups.ts`). Aggregates and timelines read them instead of the raw rows.
+ */
+export interface RequestsMinuteTable {
+  application_id: string;
+  minute: Timestamp;
+  service_id: string;
+  operation_id: string;
+  protocol: string;
+  /** '' when the request has no method (part of the primary key) */
+  method: string;
+  count: number;
+  errors: number;
+  status_4xx: number;
+  status_5xx: number;
+  sum_ms: number;
+  min_ms: number;
+  max_ms: number;
+  /** latency histogram, see `ingest/domain/latency-histogram.ts` */
+  histogram: number[];
+  last_called_at: Timestamp;
+}
+
+export interface JobsMinuteTable {
+  application_id: string;
+  minute: Timestamp;
+  service_id: string;
+  queue: string;
+  name: string;
+  count: number;
+  failed: number;
+  sum_ms: number;
+  min_ms: number;
+  max_ms: number;
+  histogram: number[];
+  wait_sum_ms: number;
+  wait_count: number;
+  last_called_at: Timestamp;
+}
+
 export interface SpansTable {
   application_id: string;
   execution_id: string;
@@ -214,6 +255,8 @@ export interface Database {
   services: ServicesTable;
   requests: RequestsTable;
   jobs: JobsTable;
+  requests_1m: RequestsMinuteTable;
+  jobs_1m: JobsMinuteTable;
   spans: SpansTable;
   error_groups: ErrorGroupsTable;
   error_group_culprits: ErrorGroupCulpritsTable;
@@ -233,6 +276,8 @@ export const KYSELY = Symbol('KYSELY');
 export const APPLICATION_SCOPED_TABLES = [
   'requests',
   'jobs',
+  'requests_1m',
+  'jobs_1m',
   'spans',
   'error_occurrences',
   'logs',
@@ -252,6 +297,14 @@ export const PARTITIONED_TABLES = {
   logs: 'timestamp',
   runtime_metrics: 'sampled_at',
   custom_metrics: 'recorded_at',
+  requests_1m: 'minute',
+  jobs_1m: 'minute',
 } as const satisfies Partial<Record<keyof Database, string>>;
 
 export type PartitionedTable = keyof typeof PARTITIONED_TABLES;
+
+/** Partitioned tables kept for `AGGREGATE_RETENTION_DAYS` instead of `RETENTION_DAYS`. */
+export const ROLLUP_TABLES = [
+  'requests_1m',
+  'jobs_1m',
+] as const satisfies readonly PartitionedTable[];

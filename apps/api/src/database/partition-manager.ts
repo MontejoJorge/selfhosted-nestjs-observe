@@ -89,9 +89,16 @@ export class PartitionManager {
     return rows.map((row) => row.child);
   }
 
-  /** Drops every partition whose day is before `cutoffDay` (`YYYY-MM-DD`). Returns the dropped names. */
-  async dropBefore(cutoffDay: string): Promise<string[]> {
-    const parents = Object.keys(PARTITIONED_TABLES);
+  /**
+   * Drops every partition of `tables` whose day is before `cutoffDay` (`YYYY-MM-DD`).
+   * Returns the dropped names.
+   */
+  async dropBefore(
+    cutoffDay: string,
+    tables: readonly PartitionedTable[],
+  ): Promise<string[]> {
+    if (tables.length === 0) return [];
+    const parents = [...tables];
     const { rows } = await sql<{ parent: string; child: string }>`
       select parent.relname as parent, child.relname as child
       from pg_inherits

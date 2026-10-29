@@ -1,4 +1,5 @@
 import { errorFingerprint } from './error-fingerprint.js';
+import { rollUpJobs, rollUpRequests } from './rollups.js';
 import type {
   CustomMetricSample,
   ErrorOccurrence,
@@ -132,6 +133,8 @@ export function mapTelemetryBatch(
     service: { serviceId, serviceVersion, seenAt: receivedAt },
     requests,
     jobs,
+    requestRollups: rollUpRequests(requests),
+    jobRollups: rollUpJobs(jobs),
     spans,
     errors,
     logs,

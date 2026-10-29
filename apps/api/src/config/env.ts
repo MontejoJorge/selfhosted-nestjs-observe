@@ -71,6 +71,12 @@ export class Env {
   @Max(3650)
   RETENTION_DAYS: number = 14;
 
+  /** Days of per-minute rollups (charts and stats) to keep; at least RETENTION_DAYS. */
+  @IsInt()
+  @Min(1)
+  @Max(3650)
+  AGGREGATE_RETENTION_DAYS: number = 90;
+
   /** Built dashboard to serve from `/` (set in the Docker image). Unset: API only. */
   @IsOptional()
   @IsString()

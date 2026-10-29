@@ -1,7 +1,8 @@
-import { sql, type Kysely } from 'kysely';
+import type { Kysely } from 'kysely';
 import type { Database } from '../database/database.types.js';
+import { rollupWindow, sumOf } from '../telemetry/common/rollups.js';
 import { inApplications } from '../telemetry/common/scope.js';
-import { bucketStart, countAll, countWhere } from '../telemetry/common/sql.js';
+import { bucketStart } from '../telemetry/common/sql.js';
 import {
   BUCKET_ORIGIN,
   bucketSeconds,
@@ -26,8 +27,8 @@ interface BucketRow {
 
 /**
  * Request buckets for a set of applications, merged per `key` (a project or the
- * application itself): one aggregate query for a whole page of cards. The scan is one
- * range of the (application_id, called_at) index per application and pruned partition.
+ * application itself): one aggregate query over the per-minute rollups for a whole page
+ * of cards, a range of their primary key per application and pruned partition.
  */
 export async function requestActivity(
   db: Kysely<Database>,
@@ -40,15 +41,16 @@ export async function requestActivity(
   for (const app of applications) byKey.set(app.key, new Map());
 
   if (applications.length > 0) {
-    const t = bucketStart('called_at', step);
+    const t = bucketStart('minute', step);
+    const minutes = rollupWindow(window);
     const rows = await db
-      .selectFrom('requests')
+      .selectFrom('requests_1m')
       .select([
         'application_id',
         t.as('t'),
-        countAll.as('count'),
-        countWhere('has_error').as('errors'),
-        sql<number | null>`sum(duration_ms)::float8`.as('sum_ms'),
+        sumOf('count').as('count'),
+        sumOf('errors').as('errors'),
+        sumOf('sum_ms').as('sum_ms'),
       ])
       .where(
         inApplications(
@@ -56,8 +58,8 @@ export async function requestActivity(
           applications.map((app) => app.id),
         ),
       )
-      .where('called_at', '>=', window.from)
-      .where('called_at', '<', window.to)
+      .where('minute', '>=', minutes.from)
+      .where('minute', '<', minutes.to)
       .groupBy(['application_id', t])
       .execute();
     for (const row of rows) {

@@ -1,3 +1,4 @@
+import type { JobRollup, RequestRollup } from './rollups.js';
 import type { LogLevel, Tags, WireError, WireTraceNode } from './wire.js';
 
 /**
@@ -148,6 +149,9 @@ export interface TelemetryBatchRecord {
   service: ServiceSighting;
   requests: RequestExecution[];
   jobs: JobExecution[];
+  /** `requests` and `jobs` summed per minute, ordered by key */
+  requestRollups: RequestRollup[];
+  jobRollups: JobRollup[];
   spans: SpanRecord[];
   errors: ErrorOccurrence[];
   logs: LogRecord[];

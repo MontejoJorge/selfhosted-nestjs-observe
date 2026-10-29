@@ -1,6 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { sql, type Transaction } from 'kysely';
-import { insertMany, toJson, toText } from '../../database/batch-insert.js';
+import {
+  chunkRows,
+  insertMany,
+  toJson,
+  toText,
+} from '../../database/batch-insert.js';
 import {
   KYSELY,
   type Database,
@@ -22,11 +27,29 @@ interface ErrorGroupDelta {
   culprits: Map<string, number>;
 }
 
+/** `<table>.<column> + excluded.<column>`, to add a batch's counts to a rollup row. */
+function added(table: string, column: string) {
+  return sql<number>`${sql.ref(`${table}.${column}`)} + ${sql.ref(`excluded.${column}`)}`;
+}
+
+function rollupMerge(table: 'requests_1m' | 'jobs_1m') {
+  return {
+    count: added(table, 'count'),
+    sum_ms: added(table, 'sum_ms'),
+    min_ms: sql<number>`least(${sql.ref(`${table}.min_ms`)}, excluded.min_ms)`,
+    max_ms: sql<number>`greatest(${sql.ref(`${table}.max_ms`)}, excluded.max_ms)`,
+    histogram: sql<
+      number[]
+    >`histogram_add(${sql.ref(`${table}.histogram`)}, excluded.histogram)`,
+    last_called_at: sql<Date>`greatest(${sql.ref(`${table}.last_called_at`)}, excluded.last_called_at)`,
+  };
+}
+
 /**
  * Writes a batch in one transaction with multi-row inserts.
  *
- * Append-only tables are written first. Upserts on hot rows (error groups, culprits,
- * services) come last, in a deterministic key order, so row locks are held
+ * Append-only tables are written first. Upserts on hot rows (minute rollups, error
+ * groups, culprits, services) come last, in a deterministic key order, so row locks are held
  * briefly and concurrent batches cannot deadlock.
  */
 @Injectable()
@@ -43,6 +66,7 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
     await this.db.transaction().execute(async (trx) => {
       await this.insertExecutions(trx, batch);
       await this.insertSignals(trx, batch);
+      await this.upsertRollups(trx, batch);
       await this.upsertErrors(trx, batch.applicationId, batch.errors);
       await this.upsertService(trx, batch);
       await this.touchApplication(trx, batch);
@@ -209,6 +233,93 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
         data: toJson(m.data) ?? '{}',
       })),
     );
+  }
+
+  /** Adds the batch's per-minute rollups (already in key order) to `requests_1m` and `jobs_1m`. */
+  private async upsertRollups(
+    trx: Transaction<Database>,
+    batch: TelemetryBatchRecord,
+  ) {
+    const application_id = batch.applicationId;
+    const requestRows = batch.requestRollups.map((r) => ({
+      application_id,
+      minute: r.minute,
+      service_id: r.serviceId,
+      operation_id: r.operationId,
+      protocol: r.protocol,
+      method: r.method ?? '',
+      count: r.count,
+      errors: r.errors,
+      status_4xx: r.status4xx,
+      status_5xx: r.status5xx,
+      sum_ms: r.sumMs,
+      min_ms: r.minMs,
+      max_ms: r.maxMs,
+      histogram: r.histogram,
+      last_called_at: r.lastCalledAt,
+    }));
+    for (const chunk of chunkRows(requestRows, 15)) {
+      await trx
+        .insertInto('requests_1m')
+        .values(chunk)
+        .onConflict((oc) =>
+          oc
+            .columns([
+              'application_id',
+              'minute',
+              'service_id',
+              'operation_id',
+              'protocol',
+              'method',
+            ])
+            .doUpdateSet({
+              ...rollupMerge('requests_1m'),
+              errors: added('requests_1m', 'errors'),
+              status_4xx: added('requests_1m', 'status_4xx'),
+              status_5xx: added('requests_1m', 'status_5xx'),
+            }),
+        )
+        .execute();
+    }
+
+    const jobRows = batch.jobRollups.map((j) => ({
+      application_id,
+      minute: j.minute,
+      service_id: j.serviceId,
+      queue: j.queue,
+      name: j.name,
+      count: j.count,
+      failed: j.failed,
+      sum_ms: j.sumMs,
+      min_ms: j.minMs,
+      max_ms: j.maxMs,
+      histogram: j.histogram,
+      wait_sum_ms: j.waitSumMs,
+      wait_count: j.waitCount,
+      last_called_at: j.lastCalledAt,
+    }));
+    for (const chunk of chunkRows(jobRows, 14)) {
+      await trx
+        .insertInto('jobs_1m')
+        .values(chunk)
+        .onConflict((oc) =>
+          oc
+            .columns([
+              'application_id',
+              'minute',
+              'service_id',
+              'queue',
+              'name',
+            ])
+            .doUpdateSet({
+              ...rollupMerge('jobs_1m'),
+              failed: added('jobs_1m', 'failed'),
+              wait_sum_ms: added('jobs_1m', 'wait_sum_ms'),
+              wait_count: added('jobs_1m', 'wait_count'),
+            }),
+        )
+        .execute();
+    }
   }
 
   private async upsertErrors(
