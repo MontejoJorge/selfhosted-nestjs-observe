@@ -59,6 +59,24 @@ function NavItem({
   );
 }
 
+/** An Activity entry that is planned but not built yet: not a link, with a "Soon" badge. */
+function SoonItem({ label }: { label: string }) {
+  return (
+    <span
+      aria-disabled
+      className={cn(
+        itemBase,
+        'h-7 cursor-default border-transparent text-xs text-sidebar-foreground/50',
+      )}
+    >
+      {label}
+      <span className="ml-auto rounded-sm border border-sidebar-border px-1.5 py-px font-mono text-[9px] tracking-wider text-muted-foreground">
+        Soon
+      </span>
+    </span>
+  );
+}
+
 function Breadcrumb({ project }: { project?: string }) {
   return (
     <div className="mb-3 flex h-5 min-w-0 items-center gap-1 px-1 font-mono text-[11px] tracking-wider uppercase">
@@ -130,14 +148,18 @@ function ProjectNav({
       label: 'Users',
       prefixes: [paths.users(project)],
     },
+    { label: 'Custom', soon: true },
     {
       to: paths.services(project),
       label: 'Services',
       prefixes: [paths.services(project)],
     },
-  ];
-  const activityActive = activity.some((item) =>
-    item.prefixes.some((prefix) => isUnder(pathname, prefix)),
+    { label: 'Releases', soon: true },
+  ] as const;
+  const activityActive = activity.some(
+    (item) =>
+      'prefixes' in item &&
+      item.prefixes.some((prefix) => isUnder(pathname, prefix)),
   );
 
   return (
@@ -178,15 +200,21 @@ function ProjectNav({
       </button>
       {activityOpen ? (
         <div className="ml-[19px] flex flex-col gap-1 border-l border-sidebar-border py-0.5 pl-3">
-          {activity.map((item) => (
-            <NavItem
-              key={item.to}
-              to={item.to}
-              label={item.label}
-              active={item.prefixes.some((prefix) => isUnder(pathname, prefix))}
-              onNavigate={onNavigate}
-            />
-          ))}
+          {activity.map((item) =>
+            'soon' in item ? (
+              <SoonItem key={item.label} label={item.label} />
+            ) : (
+              <NavItem
+                key={item.to}
+                to={item.to}
+                label={item.label}
+                active={item.prefixes.some((prefix) =>
+                  isUnder(pathname, prefix),
+                )}
+                onNavigate={onNavigate}
+              />
+            ),
+          )}
         </div>
       ) : null}
       <NavItem
