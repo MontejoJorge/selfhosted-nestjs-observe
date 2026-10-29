@@ -14,6 +14,7 @@ Two new dashboard views aggregate over the selected range:
 - **Where the time goes**: span time per class and method (and outbound call), with total and **self**
   time (span duration minus its direct children's durations, at least 0), share of the total self time,
   calls and p95, filterable by execution source and operation. Clicking a method lists its slowest spans.
+  (Superseded in the UI by Services and the dashboard treemap; see the revision at the end.)
 
 ADR 0003 rules out aggregating the raw tables over the range: the seeded database has ~5.7 M requests
 and ~58 M spans (~8 M spans and ~780 k requests a day, ~31 GB) over 8 days, and a full scan of a day
@@ -146,3 +147,21 @@ row: `max_execution_id`, `max_trace_id`, `max_called_at`, `max_self_ms`.
   dropped (with its write cost) if nothing else comes to use it.
 - A user rollup row per user and hour does not shrink much for users with one or two requests an hour.
   With hundreds of thousands of active users, add a daily level for long ranges.
+
+## Revision (2026-10-29): Services and the dashboard treemap
+
+To match the hosted dashboard, the standalone "Where the time goes" page became two views over the same
+`span_stats_5m` rollup:
+
+- **Services** (Activity menu): one row per class with own time (`self_ms`) and its share, average own
+  time per call, total time, calls, errors and method count; a row expands into its methods. Filters: one
+  class, and a ≥/≤ threshold on the average own or total time per call.
+- **Where the time goes** (a card on the project dashboard): the top 10 classes by own time as a
+  squarified treemap, each tile linking to Services filtered to that class, and a strip for the rest.
+
+`GET /time-breakdown` became `GET /services`: one grouped query per class and method (no histogram query,
+since neither view shows percentiles), folded into classes in the repository; ~0.09 s at 7d on the seed.
+Spans of every origin count together. Outbound calls, which the agent reports with their kind as a
+lowercase class name (`http`, `pg`), are left out: Services lists classes, and their time already counts
+in the total time of the class that awaited them. `GET /services/spans` keeps the slowest-span read from
+the rollup's `max_*` columns, without the `origin` filter; no view calls it for now.

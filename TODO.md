@@ -74,7 +74,7 @@ samples)` instead of folding stacks on every query.
 
 ## Drop `spans`?
 
-The time breakdown reads `span_stats_5m`, including its slowest-span drill-down (ADR 0004), so no view
+Services and the dashboard treemap read `span_stats_5m` (ADR 0004), so no view
 reads `spans`. It is the most expensive table to write and store (~8 M rows and ~2.5 GB a day on the
 seed). Drop it, or stop writing it, unless a new view needs individual spans across executions (the
 detail views use `requests.trace` / `jobs.trace`).

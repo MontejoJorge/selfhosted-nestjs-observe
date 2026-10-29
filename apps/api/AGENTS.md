@@ -102,7 +102,7 @@ management tables `projects`, `applications`, `api_keys`, `application_purges`.
   `ingest/domain/latency-histogram.ts`) per application, minute, instance and operation or job. Ingest
   upserts them in the batch's transaction (`histogram_add` merges histograms); they are kept for
   `AGGREGATE_RETENTION_DAYS`. `method` is `''` when the request has none (it is in the primary key).
-- **Users and time breakdown rollups** ([ADR 0004](../../docs/adr/0004-users-and-time-breakdown.md)):
+- **Users and services rollups** ([ADR 0004](../../docs/adr/0004-users-and-time-breakdown.md)):
   `users_1h` per application, UTC hour and user id (no instance; `''` for requests without a user id,
   returned as `userId: null`; ids are truncated to 255 characters at ingest); `user_presence_15m`
   (application, 15-minute bucket, identified user; no payload) for distinct users per bucket; `span_stats_5m` per application, 5-minute bucket, instance,
@@ -147,7 +147,7 @@ hourly, and on demand for any day an ingest batch touches (advisory-locked). Ret
   per project), API keys by `(created_at desc, id desc)`. Card stats are computed for the whole page in
   one aggregate (`activity.ts`) plus one lateral per row for the latest runtime sample.
 - **Stats and timelines read the rollups, never the raw rows**: overview, operations, queues, users,
-  time breakdown and the project/application cards (`telemetry/common/rollups.ts`). One grouped query
+  services and the project/application cards (`telemetry/common/rollups.ts`). One grouped query
   for sums/min/max, one that unnests the histograms into `(bucket, count)` cells per group; percentiles
   are computed in TS. When there are many groups and a limit (users), fetch the cells of the returned
   groups only. Raw tables serve lists, details and traces. `percentile_cont` is only left for error
@@ -158,8 +158,9 @@ hourly, and on demand for any day an ingest batch touches (advisory-locked). Ret
   bucket read the grain that divides the bucket (`users_1h`, `user_presence_15m`, or raw for 1-minute
   buckets) and group by `(bucket, user)` before counting (never `count(distinct)` on large inputs).
   The users routes reject
-  `instance` (400). The time breakdown starts at the 5-minute bucket containing `from`, and its
-  slowest spans are the `max_*` columns of the rollup rows, not a scan of `spans`.
+  `instance` (400). Services (`span_stats_5m`) starts at the 5-minute bucket containing `from`, leaves out
+  outbound calls (lowercase class names such as `http`, `pg`), and its slowest spans are the `max_*`
+  columns of the rollup rows, not a scan of `spans`.
 - Timeline buckets use `date_bin` with a literal width from `bucketSeconds` (~100 buckets max). TimeBucket
   series are gap-filled in TS.
 - Select explicit columns, never `*`. Compose related data in one query (lateral join for top culprit) or
