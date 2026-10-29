@@ -1,4 +1,4 @@
-# Build context for apps/api/Dockerfile and apps/web/Dockerfile (both use the repo root).
+# Build context of the root Dockerfile.
 **/node_modules
 **/dist
 **/coverage
@@ -18,5 +18,5 @@ examples
 deploy
 docs
 apps/web/src/lib/api/generated
-**/Dockerfile
+Dockerfile
 .dockerignore

@@ -6,6 +6,7 @@ import { SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module.js';
 import { API_PREFIX, applyGlobalPrefix } from './app.setup.js';
 import type { Env } from './config/env.js';
+import { serveDashboard } from './dashboard.js';
 import { createOpenApiDocument } from './openapi/openapi.js';
 
 async function bootstrap() {
@@ -36,6 +37,9 @@ async function bootstrap() {
   SwaggerModule.setup(`${API_PREFIX}/docs`, app, () =>
     createOpenApiDocument(app),
   );
+
+  const dashboardDir = config.get('DASHBOARD_DIR', { infer: true });
+  if (dashboardDir) serveDashboard(app, dashboardDir);
 
   const port = config.get('API_PORT', { infer: true });
   await app.listen(port);

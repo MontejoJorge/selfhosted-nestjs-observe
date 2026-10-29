@@ -3,7 +3,7 @@ import { Api } from './generated/api';
 
 /**
  * Base URL of the collector. The generated paths already start with `/api`.
- * An empty `VITE_API_URL` means same origin (the Docker image proxies the API through nginx).
+ * An empty `VITE_API_URL` means same origin (the Docker image serves the dashboard from the API).
  */
 export const API_URL =
   (import.meta.env.VITE_API_URL ?? 'http://localhost:3000').replace(

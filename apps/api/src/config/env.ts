@@ -2,6 +2,7 @@ import { plainToInstance, Transform } from 'class-transformer';
 import {
   IsBoolean,
   IsInt,
+  IsOptional,
   IsString,
   Max,
   Min,
@@ -69,6 +70,12 @@ export class Env {
   @Min(1)
   @Max(3650)
   RETENTION_DAYS: number = 14;
+
+  /** Built dashboard to serve from `/` (set in the Docker image). Unset: API only. */
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  DASHBOARD_DIR?: string;
 }
 
 export function validateEnv(config: Record<string, unknown>): Env {

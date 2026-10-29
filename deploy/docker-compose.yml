@@ -1,18 +1,3 @@
-# Example production stack: PostgreSQL, the API and the dashboard.
-#
-#   cp deploy/.env.example deploy/.env   # then set POSTGRES_PASSWORD
-#   docker compose -f deploy/docker-compose.yml up -d --build
-#
-# Only the web container publishes ports:
-#   DASHBOARD_PORT -> dashboard and the query API (/api/*), proxied by nginx to the api container.
-#   INGEST_PORT    -> POST /applications/telemetry and /applications/profiles only. Point your
-#                     services' OBSERVE_ENDPOINT here (e.g. http://observe.internal:4000).
-#
-# WARNING: the dashboard and its API have no user authentication (anyone who reaches DASHBOARD_PORT can
-# read telemetry and create or delete API keys). Keep it on a private network or VPN, or put an
-# authenticating reverse proxy in front of it (oauth2-proxy, Authelia, basic auth on your ingress...),
-# e.g. bind it to localhost with DASHBOARD_PORT=127.0.0.1:8080. The ingest port is protected by API keys.
-
 name: observe
 
 services:
@@ -21,7 +6,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-observe}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: ${POSTGRES_DB:-observe}
     volumes:
       - postgres-data:/var/lib/postgresql
@@ -31,41 +16,21 @@ services:
       timeout: 5s
       retries: 10
 
-  api:
-    image: selfhosted-nestjs-observe-api:${OBSERVE_VERSION:-0.0.1}
-    build:
-      context: ..
-      dockerfile: apps/api/Dockerfile
+  observe:
+    image: ghcr.io/montejojorge/selfhosted-nestjs-observe:${OBSERVE_VERSION:-latest}
     restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
     environment:
-      API_PORT: 3000
       DATABASE_HOST: postgres
       DATABASE_PORT: 5432
       DATABASE_USER: ${POSTGRES_USER:-observe}
-      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       DATABASE_NAME: ${POSTGRES_DB:-observe}
-      DATABASE_POOL_MAX: ${DATABASE_POOL_MAX:-10}
-      DATABASE_MIGRATE_ON_START: ${DATABASE_MIGRATE_ON_START:-true}
       RETENTION_DAYS: ${RETENTION_DAYS:-14}
-    # Not published: the web container proxies to it on the internal network.
-
-  web:
-    image: selfhosted-nestjs-observe-web:${OBSERVE_VERSION:-0.0.1}
-    build:
-      context: ..
-      dockerfile: apps/web/Dockerfile
-    restart: unless-stopped
-    depends_on:
-      api:
-        condition: service_healthy
-    environment:
-      API_UPSTREAM: api:3000
     ports:
-      - '${DASHBOARD_PORT:-8080}:8080'
-      - '${INGEST_PORT:-4000}:8081'
+      - '${OBSERVE_PORT:-3000}:3000'
 
 volumes:
   postgres-data:
