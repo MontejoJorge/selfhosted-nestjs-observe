@@ -197,16 +197,6 @@ export interface CustomMetricsTable {
   data: Json;
 }
 
-export interface ObjectivesTable {
-  application_id: string;
-  service_id: string;
-  operation_id: string;
-  handler: string;
-  method: string | null;
-  objectives: Json;
-  updated_at: Timestamp;
-}
-
 export interface ProfilesTable {
   application_id: string;
   id: Generated<number>;
@@ -231,7 +221,6 @@ export interface Database {
   logs: LogsTable;
   runtime_metrics: RuntimeMetricsTable;
   custom_metrics: CustomMetricsTable;
-  objectives: ObjectivesTable;
   profiles: ProfilesTable;
 }
 
@@ -250,7 +239,6 @@ export const APPLICATION_SCOPED_TABLES = [
   'runtime_metrics',
   'custom_metrics',
   'error_groups',
-  'objectives',
   'services',
   'profiles',
 ] as const satisfies readonly (keyof Database)[];

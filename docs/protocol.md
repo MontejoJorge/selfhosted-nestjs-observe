@@ -92,7 +92,7 @@ Top level (`TELEMETRY_BATCH`):
 | `runtime`        | RuntimeMetrics                   | one sample per batch                        |
 | `custom`         | CustomMetric[] (max 5000)        | counters, gauges, summaries                 |
 | `logs`           | LogEntry[] (max 5000)            | forwarded and redacted logs                 |
-| `objectives`     | ObjectiveDeclaration[] (max 100) | SLOs declared with `@Objective()`           |
+| `objectives`     | ObjectiveDeclaration[] (max 100) | SLOs from `@Objective()`; ignored           |
 
 ### RequestSnapshot
 
@@ -182,6 +182,8 @@ Logs are the only section that uses full key names.
 
 `handler`, `operationId`, `method`, `objectives[]` of
 `{ availability?, latency?: { underMs, target }, windowDays?: 7 | 14 | 28 | 30, name? }`.
+The collector validates the section's shape (it must be an array) but does not store it: SLOs are
+out of scope.
 
 ## Profiles
 

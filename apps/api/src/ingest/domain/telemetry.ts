@@ -142,15 +142,6 @@ export interface CustomMetricSample {
   data: Record<string, unknown>;
 }
 
-export interface ObjectiveRecord {
-  serviceId: string;
-  operationId: string;
-  handler: string;
-  method: string | null;
-  objectives: unknown[];
-  updatedAt: Date;
-}
-
 export interface TelemetryBatchRecord {
   /** Application the batch was authenticated for; stamped on every stored row. */
   applicationId: string;
@@ -162,7 +153,6 @@ export interface TelemetryBatchRecord {
   logs: LogRecord[];
   runtime: RuntimeSample | null;
   customMetrics: CustomMetricSample[];
-  objectives: ObjectiveRecord[];
 }
 
 export interface ProfileUpload {

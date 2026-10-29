@@ -75,7 +75,7 @@ The read side deliberately has no use-case layer: controllers call the read port
 
 Day-partitioned (range on the time column, UTC days, partitions named `<table>_pYYYYMMDD`):
 `requests`, `jobs`, `spans`, `error_occurrences`, `logs`, `runtime_metrics`, `custom_metrics`.
-Plain tables: `services`, `error_groups`, `error_group_culprits`, `objectives`, `profiles`, and the
+Plain tables: `services`, `error_groups`, `error_group_culprits`, `profiles`, and the
 management tables `projects`, `applications`, `api_keys`, `application_purges`.
 
 - **Projects -> applications -> API keys.** A project has a unique, immutable `slug`; an application has a
@@ -135,7 +135,7 @@ hourly, and on demand for any day an ingest batch touches (advisory-locked). Ret
 - Select explicit columns, never `*`. Compose related data in one query (lateral join for top culprit) or
   parallel queries (`Promise.all`), never per row.
 - Ingest writes the batch in one transaction: append-only inserts first, then upserts on hot rows
-  (objectives, error groups, culprits, services) deduplicated and sorted by key to avoid deadlocks.
+  (error groups, culprits, services) deduplicated and sorted by key to avoid deadlocks.
   `insertMany` chunks rows to stay under the 65535 bind-parameter limit.
 - `int8`/`numeric` are parsed to JS numbers (`create-database.ts`).
 

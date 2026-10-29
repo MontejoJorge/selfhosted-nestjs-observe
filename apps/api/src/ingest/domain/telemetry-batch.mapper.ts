@@ -4,7 +4,6 @@ import type {
   ErrorOccurrence,
   JobExecution,
   LogRecord,
-  ObjectiveRecord,
   RequestExecution,
   RuntimeSample,
   SpanRecord,
@@ -26,7 +25,6 @@ import type {
   WireCustomMetric,
   WireJobSnapshot,
   WireLogEntry,
-  WireObjectiveDeclaration,
   WireRequestSnapshot,
   WireRuntimeMetrics,
   WireTelemetryBatch,
@@ -129,12 +127,6 @@ export function mapTelemetryBatch(
       customMetrics.push(sample);
   }
 
-  const objectives: ObjectiveRecord[] = [];
-  for (const declaration of batch.objectives ?? []) {
-    const objective = mapObjective(declaration, serviceId, receivedAt);
-    if (objective) objectives.push(objective);
-  }
-
   return {
     applicationId,
     service: { serviceId, serviceVersion, seenAt: receivedAt },
@@ -147,7 +139,6 @@ export function mapTelemetryBatch(
       ? mapRuntime(batch.runtime, serviceId, receivedAt)
       : null,
     customMetrics,
-    objectives,
   };
 }
 
@@ -360,25 +351,5 @@ function mapCustomMetric(
     description: asString(metric.d),
     value: scalarMetricValue(metric),
     data,
-  };
-}
-
-function mapObjective(
-  declaration: WireObjectiveDeclaration,
-  serviceId: string,
-  receivedAt: Date,
-): ObjectiveRecord | null {
-  if (!isRecord(declaration)) return null;
-  const operationId = asString(declaration.operationId);
-  if (!operationId) return null;
-  return {
-    serviceId,
-    operationId,
-    handler: asString(declaration.handler) ?? '',
-    method: asString(declaration.method),
-    objectives: Array.isArray(declaration.objectives)
-      ? declaration.objectives
-      : [],
-    updatedAt: receivedAt,
   };
 }

@@ -182,6 +182,7 @@ export interface WireTelemetryBatch {
   runtime?: WireRuntimeMetrics;
   custom?: WireCustomMetric[];
   logs?: WireLogEntry[];
+  /** SLO declarations: accepted and ignored (not stored). */
   objectives?: WireObjectiveDeclaration[];
 }
 

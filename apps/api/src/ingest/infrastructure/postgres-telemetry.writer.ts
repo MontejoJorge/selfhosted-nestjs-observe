@@ -25,8 +25,8 @@ interface ErrorGroupDelta {
 /**
  * Writes a batch in one transaction with multi-row inserts.
  *
- * Append-only tables are written first. Upserts on hot rows (objectives, error groups,
- * culprits, services) come last, in a deterministic key order, so row locks are held
+ * Append-only tables are written first. Upserts on hot rows (error groups, culprits,
+ * services) come last, in a deterministic key order, so row locks are held
  * briefly and concurrent batches cannot deadlock.
  */
 @Injectable()
@@ -43,7 +43,6 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
     await this.db.transaction().execute(async (trx) => {
       await this.insertExecutions(trx, batch);
       await this.insertSignals(trx, batch);
-      await this.upsertObjectives(trx, batch);
       await this.upsertErrors(trx, batch.applicationId, batch.errors);
       await this.upsertService(trx, batch);
       await this.touchApplication(trx, batch);
@@ -210,44 +209,6 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
         data: toJson(m.data) ?? '{}',
       })),
     );
-  }
-
-  private async upsertObjectives(
-    trx: Transaction<Database>,
-    batch: TelemetryBatchRecord,
-  ) {
-    // ON CONFLICT cannot touch the same row twice in one statement: dedupe, then sort.
-    const byKey = new Map(
-      batch.objectives.map(
-        (o) => [`${o.operationId}\u0000${o.handler}`, o] as const,
-      ),
-    );
-    const rows = [...byKey.entries()]
-      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-      .map(([, o]) => ({
-        application_id: batch.applicationId,
-        service_id: o.serviceId,
-        operation_id: o.operationId,
-        handler: o.handler,
-        method: o.method,
-        objectives: toJson(o.objectives) ?? '[]',
-        updated_at: o.updatedAt,
-      }));
-    if (rows.length === 0) return;
-    await trx
-      .insertInto('objectives')
-      .values(rows)
-      .onConflict((oc) =>
-        oc
-          .columns(['application_id', 'operation_id', 'handler'])
-          .doUpdateSet((eb) => ({
-            service_id: eb.ref('excluded.service_id'),
-            method: eb.ref('excluded.method'),
-            objectives: eb.ref('excluded.objectives'),
-            updated_at: eb.ref('excluded.updated_at'),
-          })),
-      )
-      .execute();
   }
 
   private async upsertErrors(
