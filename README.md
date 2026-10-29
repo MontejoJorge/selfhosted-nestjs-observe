@@ -113,6 +113,10 @@ Other scripts: `pnpm build`, `pnpm lint`, `pnpm typecheck`, `pnpm format` and `p
 (regenerates `openapi.json` and the dashboard's client). Conventions for contributors and coding agents are
 in [AGENTS.md](AGENTS.md).
 
+To try the dashboard with data, `pnpm seed --key <appKey> --secret <appSecret>` sends realistic, backdated
+telemetry through the ingest endpoint (3 days and 300k requests by default, about 1.5 GB; `--help` for the
+options).
+
 Pushing a `v*` tag (or running the **Docker image** workflow by hand) builds the image for amd64 and
 arm64 and publishes it with that version and `latest`.
 

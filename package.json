@@ -19,7 +19,8 @@
     "db:down": "docker compose down",
     "format": "prettier --cache --write .",
     "format:check": "prettier --check .",
-    "api:generate": "pnpm --filter api openapi:generate && pnpm --filter web api:client"
+    "api:generate": "pnpm --filter api openapi:generate && pnpm --filter web api:client",
+    "seed": "node scripts/seed-telemetry.mts"
   },
   "devDependencies": {
     "prettier": "^3.9.10",
