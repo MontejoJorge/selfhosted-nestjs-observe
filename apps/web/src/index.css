@@ -17,6 +17,9 @@
   --color-span-http: var(--span-http);
   --color-span-code: var(--span-code);
   --color-teal: var(--teal);
+  --color-usage-1: var(--usage-1);
+  --color-usage-2: var(--usage-2);
+  --color-usage-3: var(--usage-3);
   --color-bar: var(--bar);
   --color-card-header: var(--card-header);
   --color-rail: var(--rail);
@@ -105,6 +108,10 @@
   --span-db: #0f9f8f;
   --span-http: #7c5cd6;
   --span-code: #c47386;
+  /* Storage series (requests, logs, errors), checked for CVD and lightness. */
+  --usage-1: #0f9f8f;
+  --usage-2: #7c5cd6;
+  --usage-3: #c98500;
 }
 
 .dark {
@@ -150,6 +157,9 @@
   --span-db: #2cc4b2;
   --span-http: #9b85f0;
   --span-code: #c47386;
+  --usage-1: #1fa898;
+  --usage-2: #8a72e0;
+  --usage-3: #be850f;
 }
 
 @layer base {

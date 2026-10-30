@@ -11,7 +11,12 @@ import { ThemeToggle } from '@/features/theme/theme-toggle';
 import { API_URL } from '@/lib/api/client';
 import { paths } from '@/lib/paths';
 import { cn } from '@/lib/utils';
-import { FoldersIcon, MenuIcon } from 'lucide-react';
+import {
+  DatabaseIcon,
+  FoldersIcon,
+  MenuIcon,
+  type LucideIcon,
+} from 'lucide-react';
 import { Suspense, useState } from 'react';
 import {
   Link,
@@ -24,26 +29,55 @@ import { AppNav } from './app-nav';
 import { GlobalSearch } from './global-search';
 import { LogoMark } from './logo-mark';
 
-/** Narrow far-left rail: the mark, the projects shortcut and the theme toggle. */
+function RailLink({
+  to,
+  label,
+  icon: Icon,
+  active,
+}: {
+  to: string;
+  label: string;
+  icon: LucideIcon;
+  active: boolean;
+}) {
+  return (
+    <Link
+      to={to}
+      aria-label={label}
+      title={label}
+      aria-current={active ? 'page' : undefined}
+      className={cn(
+        'grid size-9 place-items-center rounded-lg text-sidebar-foreground transition-colors hover:text-foreground',
+        active && 'bg-sidebar-accent text-foreground',
+      )}
+    >
+      <Icon className="size-4" />
+    </Link>
+  );
+}
+
+/** Narrow far-left rail: the mark, the projects and storage shortcuts, and the theme toggle. */
 function Rail() {
   const atProjects = useMatch('/projects/*') !== null;
+  const atStorage = useMatch('/storage') !== null;
   return (
     <div className="sticky top-0 hidden h-svh w-[60px] shrink-0 flex-col items-center gap-6 border-r border-sidebar-border bg-rail py-5 lg:flex">
       <Link to={paths.projects} aria-label="All projects">
         <LogoMark />
       </Link>
       <div className="flex flex-col gap-1 rounded-xl border border-sidebar-border p-1">
-        <Link
+        <RailLink
           to={paths.projects}
-          aria-label="Projects"
-          title="Projects"
-          className={cn(
-            'grid size-9 place-items-center rounded-lg text-sidebar-foreground transition-colors hover:text-foreground',
-            atProjects && 'bg-sidebar-accent text-foreground',
-          )}
-        >
-          <FoldersIcon className="size-4" />
-        </Link>
+          label="Projects"
+          icon={FoldersIcon}
+          active={atProjects}
+        />
+        <RailLink
+          to={paths.storage}
+          label="Storage"
+          icon={DatabaseIcon}
+          active={atStorage}
+        />
       </div>
       <div className="mt-auto">
         <ThemeToggle />

@@ -134,7 +134,7 @@ export function DashboardPage() {
         <RequestsPanel
           overview={data}
           previous={previous}
-          range={scope.range}
+          timeWindow={scope}
           layout="figure"
         />
         <DurationPanel overview={data} previous={previous} layout="figure" />

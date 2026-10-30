@@ -21,15 +21,27 @@ export function Sparkline({
   const last = data.length - 1;
 
   return (
-    <div className={cn('h-10 w-full', className)} aria-hidden>
+    // Decorative and inert: clicks fall through to the card link under it, and the
+    // chart never takes focus (it drew a focus outline when clicked).
+    <div
+      className={cn('pointer-events-none h-10 w-full', className)}
+      aria-hidden
+    >
       <ResponsiveContainer
         width="100%"
         height="100%"
         initialDimension={{ width: 1, height: 1 }}
       >
         <AreaChart
+          accessibilityLayer={false}
           data={data}
-          margin={{ top: 6, right: endDot ? 6 : 0, bottom: 0, left: 0 }}
+          // Room for the end dot (radius plus stroke) so it is not clipped at the edges.
+          margin={{
+            top: endDot ? 8 : 6,
+            right: endDot ? 8 : 0,
+            bottom: 0,
+            left: 0,
+          }}
         >
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -37,7 +49,7 @@ export function Sparkline({
               <stop offset="100%" stopColor="var(--teal)" stopOpacity={0.02} />
             </linearGradient>
           </defs>
-          <YAxis hide domain={[0, 'dataMax']} />
+          <YAxis hide domain={[0, (max: number) => max * 1.15]} />
           <Area
             dataKey="v"
             type="monotone"

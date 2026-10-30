@@ -6,8 +6,9 @@ import {
 import { Button } from '@/components/ui/button';
 import type { ServiceDto } from '@/lib/api/generated/api';
 import type { SearchPatch } from '@/lib/search';
-import { useMemo } from 'react';
-import type { Comparison, ServicesSearch } from './search';
+import { cn } from '@/lib/utils';
+import { useMemo, useState } from 'react';
+import { COMPARISONS, type Comparison, type ServicesSearch } from './search';
 
 const SYMBOLS: Record<Comparison, string> = { gte: '≥', lte: '≤' };
 
@@ -58,6 +59,41 @@ export function ServicesFilters({
   );
 }
 
+/**
+ * ≥ / ≤ as two joined buttons. A native <select> here opened the browser's own
+ * unstyled list inside the popover; the choice is posted with the form as `op`.
+ */
+function ComparisonToggle({ defaultValue }: { defaultValue: Comparison }) {
+  const [value, setValue] = useState(defaultValue);
+  return (
+    <div
+      role="radiogroup"
+      aria-label="Comparison"
+      className="flex h-9 shrink-0 overflow-hidden rounded-md border"
+    >
+      <input type="hidden" name="op" value={value} />
+      {COMPARISONS.map((option) => (
+        <button
+          key={option}
+          type="button"
+          role="radio"
+          aria-checked={value === option}
+          aria-label={option === 'gte' ? 'At least' : 'At most'}
+          onClick={() => setValue(option)}
+          className={cn(
+            'w-9 text-sm transition-colors outline-none focus-visible:bg-accent',
+            value === option
+              ? 'bg-foreground text-background'
+              : 'text-muted-foreground hover:text-foreground',
+          )}
+        >
+          {SYMBOLS[option]}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /** A chip whose popover takes an operator (≥ or ≤) and a value in ms. */
 function ThresholdFilter({
   label,
@@ -100,15 +136,7 @@ function ThresholdFilter({
         >
           <p className="text-sm font-semibold">{title}</p>
           <div className="flex items-center gap-2">
-            <select
-              name="op"
-              defaultValue={current}
-              aria-label="Comparison"
-              className="h-9 rounded-md border bg-background px-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-            >
-              <option value="gte">≥</option>
-              <option value="lte">≤</option>
-            </select>
+            <ComparisonToggle defaultValue={current} />
             <div className="flex h-9 flex-1 items-center rounded-md border bg-background focus-within:ring-2 focus-within:ring-ring/50">
               <input
                 name="ms"

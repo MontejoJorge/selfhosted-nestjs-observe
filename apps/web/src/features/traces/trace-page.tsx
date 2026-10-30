@@ -12,6 +12,7 @@ import { EmptyState } from '@/components/states';
 import { TraceWaterfall } from '@/components/trace/trace-waterfall';
 import { LogStream } from '@/features/logs/log-stream';
 import { ProjectTitle } from '@/features/projects/project-title';
+import { VersionLink } from '@/features/releases/version-link';
 import { formatRelative } from '@/lib/format';
 import { paths } from '@/lib/paths';
 import { useProjectRef } from '@/lib/scope-hooks';
@@ -74,6 +75,12 @@ export function TracePage() {
           >
             <span className="font-mono text-xs text-muted-foreground">
               request · {request.serviceId}
+              {request.serviceVersion ? (
+                <>
+                  {' · '}
+                  <VersionLink version={request.serviceVersion} />
+                </>
+              ) : null}
             </span>
           </PanelHeader>
           <PanelBody>
@@ -110,6 +117,12 @@ export function TracePage() {
           >
             <span className="font-mono text-xs text-muted-foreground">
               job #{job.jobId} · {job.serviceId}
+              {job.serviceVersion ? (
+                <>
+                  {' · '}
+                  <VersionLink version={job.serviceVersion} />
+                </>
+              ) : null}
             </span>
           </PanelHeader>
           <PanelBody>

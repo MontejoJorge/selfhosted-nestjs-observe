@@ -68,11 +68,12 @@ const STATUS_OPTIONS = (['active', 'revoked'] as const).map((value) => ({
 type Pending = { kind: 'revoke' | 'delete'; key: ApiKeyDto } | null;
 
 export function ApiKeysPage() {
-  const { project, range } = useScope();
+  const scope = useScope();
+  const { project } = scope;
   const queryClient = useQueryClient();
   const query = useSuspenseInfiniteQuery(apiKeysQueryOptions(project));
   const { data: applications } = useSuspenseQuery(
-    applicationsQueryOptions(project, range),
+    applicationsQueryOptions(project, scope),
   );
   const [adding, setAdding] = useState(false);
   const [pending, setPending] = useState<Pending>(null);

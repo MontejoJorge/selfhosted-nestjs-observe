@@ -16,6 +16,7 @@ import {
 import { overviewQueryOptions } from '@/features/overview/queries';
 import { usePreviousOverview } from '@/features/overview/use-previous-overview';
 import { ProjectTitle } from '@/features/projects/project-title';
+import { useReleaseMarkers } from '@/features/releases/use-release-markers';
 import { formatCount, formatDuration, formatRelative } from '@/lib/format';
 import { useScope, useTypedSearch } from '@/lib/scope-hooks';
 import { useSuspenseQuery } from '@tanstack/react-query';
@@ -40,6 +41,7 @@ export function OperationPage() {
     overviewQueryOptions(scope, filters),
   );
   const previous = usePreviousOverview(scope, filters);
+  const markers = useReleaseMarkers(scope);
   const { data: operations } = useSuspenseQuery(operationsQueryOptions(scope));
   const stats = operations.find(
     (op) =>
@@ -95,13 +97,15 @@ export function OperationPage() {
           <RequestsPanel
             overview={overview}
             previous={previous}
-            range={scope.range}
+            timeWindow={scope}
             layout="header"
+            markers={markers}
           />
           <DurationPanel
             overview={overview}
             previous={previous}
             layout="header"
+            markers={markers}
           />
         </div>
       </div>

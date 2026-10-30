@@ -5,16 +5,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { applicationsQueryOptions } from '@/features/applications/queries';
 import { useLive } from '@/features/live/live-context';
-import { TIME_RANGES } from '@/lib/api/scope';
-import { useRange, useScope } from '@/lib/scope-hooks';
+import { useRangePresets } from '@/features/projects/use-range-presets';
+import { TIME_RANGE_INFO, TIME_RANGES } from '@/lib/api/scope';
+import { useScope, useSetTimeWindow, useTimeWindow } from '@/lib/scope-hooks';
 import { applySearchPatch } from '@/lib/search';
+import { isCustomWindow } from '@/lib/time-window';
 import { cn } from '@/lib/utils';
 import { useIsFetching, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CheckIcon, RefreshCwIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
+import { CustomRangePicker } from './custom-range-picker';
 
 const ALL_APPLICATIONS = '__all__';
 
@@ -28,9 +36,10 @@ export function ApplicationSelect({
 }: {
   defaultApplication?: string;
 }) {
-  const { project, application, range } = useScope();
+  const scope = useScope();
+  const { project, application } = scope;
   const [, setParams] = useSearchParams();
-  const applications = useQuery(applicationsQueryOptions(project, range));
+  const applications = useQuery(applicationsQueryOptions(project, scope));
   const options = applications.data?.items ?? [];
   const value = application ?? defaultApplication ?? ALL_APPLICATIONS;
 
@@ -79,61 +88,92 @@ export function ApplicationSelect({
   );
 }
 
-/** Auto-refresh toggle. */
+/** Auto-refresh toggle; off while a custom window with a fixed end is shown. */
 export function LivePill() {
   const {
-    state: { live },
+    state: { live, paused },
     actions: { setLive },
   } = useLive();
-  return (
+  const on = live && !paused;
+  const pill = (
     <button
       type="button"
-      aria-pressed={live}
+      aria-pressed={on}
+      disabled={paused}
       title={
-        live
-          ? 'Auto-refresh every 10 s (click to pause)'
-          : 'Enable auto-refresh'
+        paused
+          ? undefined
+          : live
+            ? 'Auto-refresh every 10 s (click to pause)'
+            : 'Enable auto-refresh'
       }
       onClick={() => setLive(!live)}
       className={cn(
-        'inline-flex h-10 items-center gap-2 rounded-md border px-4 font-mono text-[11px] font-semibold tracking-wider uppercase transition-colors',
-        live
+        'inline-flex h-10 items-center gap-2 rounded-md border px-4 font-mono text-[11px] font-semibold tracking-wider uppercase transition-colors disabled:cursor-not-allowed disabled:opacity-50',
+        on
           ? 'border-teal/50 bg-teal/10 text-foreground'
-          : 'border-border bg-card text-muted-foreground hover:text-foreground',
+          : 'border-border bg-card text-muted-foreground enabled:hover:text-foreground',
       )}
     >
       <span
         className={cn(
           'size-1.5 rounded-full',
-          live ? 'animate-pulse bg-teal' : 'bg-muted-foreground',
+          on ? 'animate-pulse bg-teal' : 'bg-muted-foreground',
         )}
       />
       Live
     </button>
   );
+  if (!paused) return pill;
+  // A disabled button gets no pointer events: the wrapper carries the tooltip.
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span tabIndex={0} className="inline-flex rounded-md">
+          {pill}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent className="max-w-60">
+        A custom range has a fixed end, so there is nothing new to load. Pick a
+        preset range to turn LIVE back on.
+      </TooltipContent>
+    </Tooltip>
+  );
 }
 
-/** Segmented control over the time ranges the API supports. */
+/**
+ * The project's three quick ranges (Settings). A preset in the URL that is not
+ * one of them (a shared link) shows as an extra segment, in order; a custom
+ * window leaves every segment off (the custom button shows it).
+ */
 export function RangeSegmented() {
-  const range = useRange();
-  const [, setParams] = useSearchParams();
+  const timeWindow = useTimeWindow();
+  const presets = useRangePresets();
+  const setWindow = useSetTimeWindow();
+  const custom = isCustomWindow(timeWindow);
+  const segments =
+    custom || presets.includes(timeWindow.range)
+      ? presets
+      : TIME_RANGES.filter(
+          (value) => presets.includes(value) || value === timeWindow.range,
+        );
   return (
     <div
       role="radiogroup"
       aria-label="Time range"
-      className="inline-flex h-10 overflow-hidden rounded-md border bg-card"
+      className="inline-flex h-10 shrink-0 overflow-hidden rounded-md border bg-card"
     >
-      {TIME_RANGES.map((value) => {
-        const active = value === range;
+      {segments.map((value) => {
+        const active = !custom && value === timeWindow.range;
         return (
           <button
             key={value}
             type="button"
             role="radio"
             aria-checked={active}
-            onClick={() =>
-              setParams((prev) => applySearchPatch(prev, { range: value }))
-            }
+            aria-label={TIME_RANGE_INFO[value].label}
+            title={TIME_RANGE_INFO[value].label}
+            onClick={() => setWindow.preset(value)}
             className={cn(
               'min-w-12 border-l px-3 font-mono text-xs font-semibold uppercase first:border-l-0 transition-colors',
               active
@@ -141,7 +181,7 @@ export function RangeSegmented() {
                 : 'text-muted-foreground hover:text-foreground',
             )}
           >
-            {value}
+            {TIME_RANGE_INFO[value].short}
           </button>
         );
       })}
@@ -196,7 +236,7 @@ export function RefreshButton() {
   );
 }
 
-/** The right side of a project page header: application, live, time range and refresh. */
+/** The right side of a project page header: application, live, time range, custom range and refresh. */
 export function ScopeControls({
   defaultApplication,
 }: {
@@ -208,6 +248,7 @@ export function ScopeControls({
       <ApplicationSelect defaultApplication={defaultApplication} />
       <LivePill />
       <RangeSegmented />
+      <CustomRangePicker />
       <RefreshButton />
     </div>
   );

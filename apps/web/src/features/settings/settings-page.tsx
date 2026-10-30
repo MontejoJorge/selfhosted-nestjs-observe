@@ -12,6 +12,7 @@ import {
   projectQueryOptions,
   updateProjectMutation,
 } from '@/features/projects/queries';
+import { StorageSummaryPanel } from '@/features/storage/storage-summary-panel';
 import { paths } from '@/lib/paths';
 import { useProjectRef } from '@/lib/scope-hooks';
 import {
@@ -22,6 +23,7 @@ import {
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
+import { RangePresetsPanel } from './range-presets-panel';
 
 const dateFormat = new Intl.DateTimeFormat('en-US', {
   month: 'long',
@@ -136,6 +138,10 @@ export function SettingsPage() {
           </PanelBody>
         </Panel>
       </div>
+
+      <RangePresetsPanel projectRef={ref} project={project} />
+
+      <StorageSummaryPanel project={ref} />
 
       <Panel className="border-primary/40">
         <PanelHeader

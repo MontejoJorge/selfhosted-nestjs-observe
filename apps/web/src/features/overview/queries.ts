@@ -32,7 +32,7 @@ export const previousOverviewQueryOptions = (
     queryKey: ['overview', 'previous', scope, filters],
     queryFn: ({ signal }) =>
       api.overview.getOverview(
-        { ...scope, ...filters, ...previousWindow(scope.range) },
+        { ...scope, ...filters, ...previousWindow(scope) },
         { signal },
       ),
     staleTime: 5 * 60_000,

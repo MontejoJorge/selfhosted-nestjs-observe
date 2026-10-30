@@ -8,6 +8,7 @@ import {
   AppWindowIcon,
   ChevronDownIcon,
   ChevronRightIcon,
+  DatabaseIcon,
   FolderOpenIcon,
   KeyRoundIcon,
   LayoutGridIcon,
@@ -110,6 +111,13 @@ function RootNav({ onNavigate }: { onNavigate?: () => void }) {
         active={isUnder(pathname, paths.projects)}
         onNavigate={onNavigate}
       />
+      <NavItem
+        to={paths.storage}
+        label="Storage"
+        icon={DatabaseIcon}
+        active={isUnder(pathname, paths.storage)}
+        onNavigate={onNavigate}
+      />
     </nav>
   );
 }
@@ -154,7 +162,11 @@ function ProjectNav({
       label: 'Services',
       prefixes: [paths.services(project)],
     },
-    { label: 'Releases', soon: true },
+    {
+      to: paths.releases(project),
+      label: 'Releases',
+      prefixes: [paths.releases(project)],
+    },
   ] as const;
   const activityActive = activity.some(
     (item) =>

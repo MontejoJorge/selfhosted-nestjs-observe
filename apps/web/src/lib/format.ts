@@ -75,6 +75,45 @@ export function formatMegabytes(mb: number | null | undefined): string {
   return `${mb.toFixed(mb < 10 ? 1 : 0)} MB`;
 }
 
+const BYTE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB'] as const;
+
+/** Formats a byte count with binary multiples (1 KB = 1024 B): "1.93 GB". */
+export function formatBytes(bytes: number | null | undefined): string {
+  if (bytes === null || bytes === undefined || Number.isNaN(bytes)) return '–';
+  let value = Math.max(0, bytes);
+  let unit = 0;
+  while (value >= 1024 && unit < BYTE_UNITS.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
+  if (unit === 0) return `${Math.round(value)} B`;
+  const digits = value < 10 ? 2 : value < 100 ? 1 : 0;
+  return `${value.toFixed(digits)} ${BYTE_UNITS[unit]}`;
+}
+
+const dayFormat = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+  timeZone: 'UTC',
+});
+const longDayFormat = new Intl.DateTimeFormat('en-US', {
+  weekday: 'short',
+  month: 'short',
+  day: 'numeric',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
+
+/** A UTC calendar day (`YYYY-MM-DD`) as "Oct 29". */
+export function formatDay(day: string): string {
+  return dayFormat.format(new Date(`${day}T00:00:00Z`));
+}
+
+/** A UTC calendar day (`YYYY-MM-DD`) as "Thu, Oct 29, 2026". */
+export function formatLongDay(day: string): string {
+  return longDayFormat.format(new Date(`${day}T00:00:00Z`));
+}
+
 export function formatDateTime(iso: string): string {
   return dateTimeFormat.format(new Date(iso));
 }

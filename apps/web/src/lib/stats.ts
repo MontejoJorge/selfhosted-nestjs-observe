@@ -1,27 +1,20 @@
-import type { TimeBucketDto, TimeRange } from '@/lib/api/generated/api';
+import type { TimeBucketDto } from '@/lib/api/generated/api';
+import type { TimeWindow } from './api/scope';
+import { windowBounds, windowMs } from './time-window';
 
-const RANGE_MS: Record<TimeRange, number> = {
-  '1h': 60 * 60_000,
-  '24h': 24 * 60 * 60_000,
-  '7d': 7 * 24 * 60 * 60_000,
-};
-
-export function rangeMs(range: TimeRange): number {
-  return RANGE_MS[range];
-}
-
-/** The window right before the current relative range, as ISO from/to. */
-export function previousWindow(range: TimeRange, now = Date.now()) {
-  const span = rangeMs(range);
+/** The window of the same length right before `window`, as ISO from/to. */
+export function previousWindow(window: TimeWindow, now = Date.now()) {
+  const { from, to } = windowBounds(window, now);
+  const span = to - from;
   return {
-    from: new Date(now - 2 * span).toISOString(),
-    to: new Date(now - span).toISOString(),
+    from: new Date(from - span).toISOString(),
+    to: new Date(from).toISOString(),
   };
 }
 
 /** Throughput like "2.4/s" or "33/min", whichever reads better. */
-export function formatThroughput(count: number, range: TimeRange): string {
-  const perSecond = count / (rangeMs(range) / 1000);
+export function formatThroughput(count: number, window: TimeWindow): string {
+  const perSecond = count / (windowMs(window) / 1000);
   if (perSecond >= 1) return `${perSecond.toFixed(1)}/s`;
   const perMinute = perSecond * 60;
   if (perMinute >= 1) return `${Math.round(perMinute)}/min`;

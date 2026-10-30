@@ -65,10 +65,11 @@ type Dialog =
   | null;
 
 export function ApplicationsPage() {
-  const { project, range } = useScope();
+  const scope = useScope();
+  const { project } = scope;
   // When the data was fetched: the reference for "active".
   const { data, dataUpdatedAt: now } = useSuspenseQuery(
-    applicationsQueryOptions(project, range),
+    applicationsQueryOptions(project, scope),
   );
   const queryClient = useQueryClient();
   const [dialog, setDialog] = useState<Dialog>(null);

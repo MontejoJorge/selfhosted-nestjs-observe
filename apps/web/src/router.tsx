@@ -30,6 +30,7 @@ import {
   projectQueryOptions,
   projectsQueryOptions,
 } from '@/features/projects/queries';
+import { releasesQueryOptions } from '@/features/releases/queries';
 import {
   operationsQueryOptions,
   requestDetailQueryOptions,
@@ -37,11 +38,17 @@ import {
 } from '@/features/requests/queries';
 import { operationSearch } from '@/features/requests/search';
 import { servicesQueryOptions } from '@/features/services/queries';
+import {
+  projectStorageQueryOptions,
+  storageOverviewQueryOptions,
+  storageTrimsQueryOptions,
+} from '@/features/storage/queries';
+import { projectStorageSearch } from '@/features/storage/search';
 import { traceQueryOptions } from '@/features/traces/queries';
 import { userQueryOptions, usersQueryOptions } from '@/features/users/queries';
 import { userSearch, usersSearch } from '@/features/users/search';
 import { errorStatus } from '@/lib/api/client';
-import { rangeFromParams, scopeFromParams } from '@/lib/api/scope';
+import { pickWindow, scopeFromParams, windowFromParams } from '@/lib/api/scope';
 import { paths } from '@/lib/paths';
 import { parseRequestSearch } from '@/lib/search';
 import { QueryClient } from '@tanstack/react-query';
@@ -71,7 +78,7 @@ function param(params: LoaderFunctionArgs['params'], name: string): string {
   return value;
 }
 
-/** The project (from the path) + application and range (from the search params). */
+/** The project (from the path) + application and time window (from the search params). */
 const scopeOf = ({ request, params }: LoaderFunctionArgs) =>
   scopeFromParams(
     param(params, 'projectId'),
@@ -103,13 +110,23 @@ export const router = createBrowserRouter([
             loader: async ({ request }) => {
               await queryClient.ensureQueryData(
                 projectsQueryOptions(
-                  rangeFromParams(new URL(request.url).searchParams),
+                  windowFromParams(new URL(request.url).searchParams),
                 ),
               );
             },
             lazy: async () => ({
               Component: (await import('@/features/projects/projects-page'))
                 .ProjectsPage,
+            }),
+          },
+          {
+            path: 'storage',
+            loader: async () => {
+              await queryClient.ensureQueryData(storageOverviewQueryOptions());
+            },
+            lazy: async () => ({
+              Component: (await import('@/features/storage/storage-page'))
+                .StoragePage,
             }),
           },
           {
@@ -148,7 +165,7 @@ export const router = createBrowserRouter([
                 loader: async (args) => {
                   const scope = scopeOf(args);
                   await queryClient.ensureQueryData(
-                    applicationsQueryOptions(scope.project, scope.range),
+                    applicationsQueryOptions(scope.project, scope),
                   );
                 },
                 lazy: async () => ({
@@ -231,7 +248,7 @@ export const router = createBrowserRouter([
                 loader: async (args) => {
                   const scope = scopeOf(args);
                   const applications = await queryClient.ensureQueryData(
-                    applicationsQueryOptions(scope.project, scope.range),
+                    applicationsQueryOptions(scope.project, scope),
                   );
                   // Runtime metrics are per application: default to the first.
                   const application =
@@ -242,9 +259,9 @@ export const router = createBrowserRouter([
                     args.request,
                   );
                   const runtime = {
+                    ...pickWindow(scope),
                     project: scope.project,
                     application,
-                    range: scope.range,
                   };
                   await Promise.all([
                     queryClient.ensureQueryData(
@@ -374,6 +391,18 @@ export const router = createBrowserRouter([
                 }),
               },
               {
+                path: 'releases',
+                loader: async (args) => {
+                  await queryClient.ensureInfiniteQueryData(
+                    releasesQueryOptions(scopeOf(args)),
+                  );
+                },
+                lazy: async () => ({
+                  Component: (await import('@/features/releases/releases-page'))
+                    .ReleasesPage,
+                }),
+              },
+              {
                 path: 'errors',
                 loader: async (args) => {
                   const scope = scopeOf(args);
@@ -450,7 +479,7 @@ export const router = createBrowserRouter([
                       apiKeysQueryOptions(project),
                     ),
                     queryClient.ensureQueryData(
-                      applicationsQueryOptions(project, scopeOf(args).range),
+                      applicationsQueryOptions(project, scopeOf(args)),
                     ),
                   ]);
                 },
@@ -461,9 +490,38 @@ export const router = createBrowserRouter([
               },
               {
                 path: 'settings',
+                loader: (args) => {
+                  // The storage summary is secondary: don't hold the page for it.
+                  void queryClient.prefetchQuery(
+                    projectStorageQueryOptions(projectOf(args), undefined),
+                  );
+                },
                 lazy: async () => ({
                   Component: (await import('@/features/settings/settings-page'))
                     .SettingsPage,
+                }),
+              },
+              {
+                path: 'settings/storage',
+                loader: async (args) => {
+                  const project = projectOf(args);
+                  const { application } = parseRequestSearch(
+                    projectStorageSearch,
+                    args.request,
+                  );
+                  await Promise.all([
+                    queryClient.ensureQueryData(
+                      projectStorageQueryOptions(project, application),
+                    ),
+                    queryClient.ensureQueryData(
+                      storageTrimsQueryOptions(project),
+                    ),
+                  ]);
+                },
+                lazy: async () => ({
+                  Component: (
+                    await import('@/features/storage/project-storage-page')
+                  ).ProjectStoragePage,
                 }),
               },
             ],

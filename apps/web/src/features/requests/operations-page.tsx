@@ -40,6 +40,7 @@ import {
 import { overviewQueryOptions } from '@/features/overview/queries';
 import { usePreviousOverview } from '@/features/overview/use-previous-overview';
 import { ProjectTitle } from '@/features/projects/project-title';
+import { useReleaseMarkers } from '@/features/releases/use-release-markers';
 import type { OperationStatsDto } from '@/lib/api/generated/api';
 import { formatCount } from '@/lib/format';
 import { paths } from '@/lib/paths';
@@ -84,6 +85,7 @@ export function OperationsPage() {
   const scope = useScope();
   const { data: overview } = useSuspenseQuery(overviewQueryOptions(scope));
   const previous = usePreviousOverview(scope);
+  const markers = useReleaseMarkers(scope);
   const { data } = useSuspenseQuery(operationsQueryOptions(scope));
   const [filters, setFilters] = useState<OperationFilters>({ q: '' });
 
@@ -115,13 +117,15 @@ export function OperationsPage() {
         <RequestsPanel
           overview={overview}
           previous={previous}
-          range={scope.range}
+          timeWindow={scope}
           layout="header"
+          markers={markers}
         />
         <DurationPanel
           overview={overview}
           previous={previous}
           layout="header"
+          markers={markers}
         />
       </PanelGrid>
 
