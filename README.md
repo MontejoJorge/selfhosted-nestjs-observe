@@ -18,6 +18,8 @@
 > team. It is built with AI: most of the code and docs were written by AI coding agents, reviewed and
 > directed by the maintainer.
 
+![Requests page: request rate and status split, latency over time, and the slowest operations](docs/assets/screenshots/requests.png)
+
 ## Features
 
 - **Drop-in collector** for the `@nestjs/observe` agent: you only change its `endpoint`.
