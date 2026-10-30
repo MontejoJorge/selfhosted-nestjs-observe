@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0%20%2B%20Commons%20Clause-blue.svg" alt="License: AGPL-3.0 + Commons Clause" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT" /></a>
   <a href="https://github.com/nestjs/observe"><img src="https://img.shields.io/badge/%40nestjs%2Fobserve-%E2%89%A4%200.3.20-red.svg" alt="@nestjs/observe 0.3.20 or earlier" /></a>
 </p>
 
@@ -135,6 +135,4 @@ for amd64 and arm64 and publishes it as that tag, `v` included, and as `latest`.
 
 ## License
 
-[AGPL-3.0 with the Commons Clause](LICENSE). You may use, modify and self-host it. If you distribute it or
-offer a modified version over a network, you must publish your source under the same terms. You may not
-sell it, or sell hosting or support whose value comes from it.
+[MIT](LICENSE).

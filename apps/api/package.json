@@ -4,7 +4,7 @@
   "description": "Collector and query API for @nestjs/observe telemetry",
   "author": "",
   "private": true,
-  "license": "SEE LICENSE IN LICENSE",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "nest start --watch",
