@@ -1,5 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { LOAD_CONFIG } from './load.config.js';
+import { ANONYMOUS_SHARE, USER_POOL } from './user-pool.js';
 
 type Range = readonly [number, number];
 
@@ -24,10 +25,15 @@ const CATEGORIES = [
   'furniture',
 ];
 
-/** A path on this app, picked by weight. */
-interface Route {
+/** Anything picked by weight. */
+interface Weighted {
   weight: number;
+}
+
+/** A path on this app, picked by weight. Routes with a `body` are POSTed as JSON. */
+interface Route extends Weighted {
   path: () => string;
+  body?: () => unknown;
 }
 
 const OK_ROUTES: Route[] = [
@@ -38,6 +44,13 @@ const OK_ROUTES: Route[] = [
     path: () =>
       `/catalog/insights?categories=${sample(CATEGORIES, 1 + randomInt(3)).join(',')}`,
   },
+  { weight: 2, path: () => `/stock/${1 + randomInt(30)}` },
+  { weight: 1, path: () => '/stock/low' },
+  {
+    weight: 2,
+    path: () => `/stock/${1 + randomInt(30)}/reservations`,
+    body: () => ({ quantity: 1 + randomInt(3) }),
+  },
   { weight: 1, path: () => '/' },
 ];
 
@@ -47,11 +60,18 @@ const FAILING_ROUTES: Route[] = [
   { weight: 2, path: () => '/pokemon/missingno/matchups' },
   { weight: 2, path: () => '/catalog/insights?fail=true' },
   { weight: 1, path: () => '/catalog/insights?categories=laptops,spaceships' },
+  { weight: 1, path: () => `/stock/${9000 + randomInt(1000)}` },
+  {
+    weight: 1,
+    path: () => `/stock/${1 + randomInt(30)}/reservations`,
+    body: () => ({ quantity: 0 }),
+  },
 ];
 
 /**
  * Calls the app's own endpoints at a randomized rate: a base rate that drifts
  * along a slow wave, plus random bursts, with a share of failing requests.
+ * Most requests carry an `x-user-id` from a skewed pool (see user-pool.ts).
  * A plain function, not a provider, so the generator itself is not traced.
  */
 export function startLoadGenerator(baseUrl: string): void {
@@ -73,12 +93,22 @@ export function startLoadGenerator(baseUrl: string): void {
     }
     const routes =
       Math.random() < config.errorRate ? FAILING_ROUTES : OK_ROUTES;
-    const path = pickWeighted(routes).path();
+    const route = pickWeighted(routes);
+    const path = route.path();
+    const headers: Record<string, string> =
+      Math.random() < ANONYMOUS_SHARE
+        ? {}
+        : { 'x-user-id': pickWeighted(USER_POOL).id };
+    const body = route.body ? JSON.stringify(route.body()) : undefined;
+    if (body) headers['content-type'] = 'application/json';
     inFlight++;
     stats.sent++;
     let status: string;
     try {
       const response = await fetch(baseUrl + path, {
+        method: body ? 'POST' : 'GET',
+        body,
+        headers,
         signal: AbortSignal.timeout(30_000),
       });
       await response.arrayBuffer();
@@ -160,11 +190,11 @@ function sample<T>(items: readonly T[], count: number): T[] {
   return [...items].sort(() => Math.random() - 0.5).slice(0, count);
 }
 
-function pickWeighted(routes: Route[]): Route {
-  let roll = Math.random() * routes.reduce((sum, r) => sum + r.weight, 0);
-  for (const route of routes) {
-    roll -= route.weight;
-    if (roll < 0) return route;
+function pickWeighted<T extends Weighted>(items: readonly T[]): T {
+  let roll = Math.random() * items.reduce((sum, i) => sum + i.weight, 0);
+  for (const item of items) {
+    roll -= item.weight;
+    if (roll < 0) return item;
   }
-  return routes[routes.length - 1];
+  return items[items.length - 1];
 }

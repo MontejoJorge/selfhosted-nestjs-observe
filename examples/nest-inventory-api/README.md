@@ -78,16 +78,33 @@ $ curl "http://localhost:34240/catalog/insights?fail=true"   # 500
 
 Upstream responses are cached in memory for 60 s (`src/common/http/get-json.ts`), so the generated load does not hammer the public APIs.
 
+## Local database (SQLite)
+
+`src/stock` keeps local stock levels and reservations in a SQLite file, queried with [Kysely](https://kysely.dev) and its built-in `SqliteDialect` over `better-sqlite3`. The file lives at `SQLITE_FILE` (default `data/inventory.sqlite`, git-ignored); its directory and tables are created on startup, and the first 30 products are seeded with stock.
+
+| Method | Path                             | What it does                                                                                                                                                     |
+| ------ | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET`  | `/stock/:productId`              | A product's units on hand, reserved and available. An unknown product returns 404.                                                                               |
+| `GET`  | `/stock/low`                     | The 10 products with the fewest units available.                                                                                                                 |
+| `POST` | `/stock/:productId/reservations` | Body `{ "quantity": 1-50 }`. In one transaction, checks availability, inserts a reservation (with the `x-user-id` header) and updates the stock. 409 when short. |
+
+```bash
+$ curl http://localhost:34240/stock/3
+$ curl -X POST -H 'content-type: application/json' -d '{"quantity":2}' http://localhost:34240/stock/3/reservations
+```
+
+`@nestjs/observe` 0.3.20 traces `pg`, `mysql2`, `mssql` and `mongodb` queries on its own, but not SQLite. So `src/database/traced-dialect.ts` wraps the Kysely dialect and runs every query in a manual span (`TracerService.createSpan`), named like the agent's SQL spans - `SELECT stock`, `INSERT reservations`, `BEGIN` - and tagged with `db.system: sqlite` and `db.statement` (the compiled SQL, values as `?` placeholders). A failing query fails its span. Repositories use Kysely as usual and never see the spans.
+
 ## Scheduled jobs
 
 `src/jobs` has two `@nestjs/schedule` cron jobs, traced as jobs:
 
 - `featured-pokemon` (every minute): fetches 3 to 5 random pokemon in parallel and ranks them by base stats.
-- `inventory-reconcile` (every minute, at second 30): fetches a page of products, finds low stock and "saves" a report to a slow warehouse API that fails 20% of the time.
+- `inventory-reconcile` (every minute, at second 30): fetches a page of products, upserts their stock into SQLite, releases reservations older than 2 minutes, finds low stock and "saves" a report to a slow warehouse API that fails 20% of the time.
 
 ## Generated load
 
-On startup the app calls its own endpoints (`src/load`) so the dashboard fills up: a base rate that drifts along a slow wave, random bursts, and a share of failing requests (404, 400 and 500). It logs its counters every 30 s. Tune or disable it in `src/load/load.config.ts`:
+On startup the app calls its own endpoints (`src/load`) so the dashboard fills up: a base rate that drifts along a slow wave, random bursts, and a share of failing requests (404, 400 and 500). It logs its counters every 30 s. About 80% of the requests carry an `x-user-id` header from a fixed pool of 14 users, a few of them much busier than the rest (`src/load/user-pool.ts`); the rest stay anonymous. The app reports that header as the request's user id through `http.getUserId` in `src/app.module.ts`. Tune or disable it in `src/load/load.config.ts`:
 
 | Setting              | Default      | What                                         |
 | -------------------- | ------------ | -------------------------------------------- |

@@ -30,6 +30,11 @@ export class Env {
     protocols: ['http', 'https'],
   })
   OBSERVE_ENDPOINT: string;
+
+  /** SQLite database file, relative to the working directory. Created on startup. */
+  @IsString()
+  @IsNotEmpty()
+  SQLITE_FILE: string = 'data/inventory.sqlite';
 }
 
 export function validateEnv(config: Record<string, unknown>): Env {

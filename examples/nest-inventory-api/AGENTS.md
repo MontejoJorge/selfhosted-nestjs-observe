@@ -8,3 +8,7 @@ When a task depends on how the app behaves in production - an error users hit, a
 
 - The Observe MCP server answers those questions directly: errors with their traces and logs, slow operations, jobs, and what a release changed (`find_regressions`, `diff_release`). It is included on the Pro plan and above. In Claude Code: `claude mcp add observe --transport http https://observe-api.nestjs.com/mcp`, and the client opens a browser to approve. Other clients: https://www.observe.nestjs.com/documentation/mcp
 - Without it, the user can open the request or error in the Observe dashboard and click **Copy agent prompt**, which hands over that page's trace, stack and logs as text.
+
+## SQLite queries are traced by hand
+
+`@nestjs/observe` 0.3.20 does not instrument SQLite. Every Kysely query goes through `TracedDialect` (`src/database/traced-dialect.ts`), which wraps it in a manual span. Query through `InventoryDatabase.db` from a repository and the span comes for free; do not register the `Kysely` instance itself as a provider, or the agent wraps its builder methods in spans.
