@@ -51,6 +51,23 @@ last 7.
 - Maybe a retention per project or application (override of `RETENTION_DAYS`) applied by the maintenance
   job, so trimming does not have to be manual.
 
+## Free the disk of deleted applications
+
+`ApplicationPurger` deletes a deleted application's rows with `DELETE`, which only leaves dead tuples:
+after deleting the seeded demo project (2026-10-30) the database stayed at 31 GB (`spans` 21 GB with
+~59 M dead rows, `requests` 9.6 GB) until a manual `VACUUM`. Decide what to do so the space comes back
+on its own. Options to weigh:
+
+- `TRUNCATE` (or detach and drop) a partition when the purged application is the only one in it, and
+  only `DELETE` from partitions shared with other applications.
+- Run `VACUUM` on the partitions the purge touched once it finishes (outside a transaction, one
+  partition at a time). Plain `VACUUM` gives the trailing empty pages back to the OS and keeps the rest
+  for reuse. `VACUUM FULL` frees everything but locks the partition, so it does not fit a live collector.
+- Partition (or sub-partition) by application as well as by day, so deleting an application is a
+  `DROP` like retention. Costs many more partitions.
+- Do nothing beyond saying in the UI that the space is reused by new telemetry and comes back at the
+  latest when the partitions age out of `RETENTION_DAYS`.
+
 ## Custom metrics
 
 `custom_metrics` holds every counter, gauge and summary the agents send (with tags and p50/p95/p99).
