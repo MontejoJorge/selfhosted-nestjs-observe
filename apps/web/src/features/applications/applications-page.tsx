@@ -122,7 +122,7 @@ export function ApplicationsPage() {
   return (
     <Page>
       <PageHeader>
-        <ProjectTitle subtitle="Each application represents a separate Nest service.">
+        <ProjectTitle subtitle="One application per service, each with its own API keys.">
           My applications <CountBadge>{data.items.length}</CountBadge>
         </ProjectTitle>
         <PageActions>

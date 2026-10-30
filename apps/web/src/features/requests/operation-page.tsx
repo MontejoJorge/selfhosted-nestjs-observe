@@ -50,7 +50,7 @@ export function OperationPage() {
   return (
     <Page>
       <PageHeader>
-        <ProjectTitle subtitle="View and analyze requests made to your applications.">
+        <ProjectTitle subtitle="Throughput, latency and failures per operation.">
           Requests
         </ProjectTitle>
         <ScopeControls />

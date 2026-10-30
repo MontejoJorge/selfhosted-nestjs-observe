@@ -26,7 +26,7 @@ export function ServicesPage() {
   return (
     <Page>
       <PageHeader>
-        <ProjectTitle subtitle="Which of your NestJS classes actually burn the time.">
+        <ProjectTitle subtitle="Find the classes and methods your executions spend the most time in.">
           Services
         </ProjectTitle>
         <ScopeControls />

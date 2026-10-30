@@ -55,7 +55,7 @@ export function UsersPage() {
   return (
     <Page>
       <PageHeader>
-        <ProjectTitle subtitle="An overview of users interacting with your project.">
+        <ProjectTitle subtitle="Who is calling your services and how their requests perform.">
           Users
         </ProjectTitle>
         <ScopeControls />

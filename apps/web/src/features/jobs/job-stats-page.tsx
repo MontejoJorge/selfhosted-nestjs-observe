@@ -102,7 +102,7 @@ export function JobStatsPage() {
   return (
     <Page>
       <PageHeader>
-        <ProjectTitle subtitle="View and analyze jobs processed by your applications.">
+        <ProjectTitle subtitle="Queue and cron runs: duration, wait time and failures.">
           Jobs
         </ProjectTitle>
         <ScopeControls />

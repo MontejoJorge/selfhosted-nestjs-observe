@@ -118,7 +118,7 @@ export function DashboardPage() {
   return (
     <Page>
       <PageHeader>
-        <ProjectTitle subtitle="Here's an overview of your project and its applications.">
+        <ProjectTitle subtitle="A quick look at your project: traffic, errors and slow spots.">
           Dashboard
         </ProjectTitle>
         <ScopeControls />

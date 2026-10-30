@@ -60,7 +60,7 @@ export function SettingsPage() {
   return (
     <Page>
       <PageHeader>
-        <ProjectTitle subtitle="Manage your project's name, description and lifecycle.">
+        <ProjectTitle subtitle="Rename, describe or delete this project.">
           Settings
         </ProjectTitle>
       </PageHeader>

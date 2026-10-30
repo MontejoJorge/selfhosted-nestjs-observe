@@ -485,7 +485,7 @@ export function ProfilerPage() {
   return (
     <Page>
       <PageHeader>
-        <ProjectTitle subtitle="Monitor your application's performance and resource usage.">
+        <ProjectTitle subtitle="Runtime metrics from each running instance.">
           Profiler
         </ProjectTitle>
         <ScopeControls defaultApplication={application} />

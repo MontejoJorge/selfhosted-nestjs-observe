@@ -43,7 +43,7 @@ export function LogsPage() {
   return (
     <Page>
       <PageHeader>
-        <ProjectTitle subtitle="Everything your services logged, correlated to the traces they ran in.">
+        <ProjectTitle subtitle="Search log lines and jump to the trace behind each one.">
           Logs
         </ProjectTitle>
         <ScopeControls />

@@ -147,7 +147,7 @@ export function ProjectsPage() {
   return (
     <Page>
       <PageHeader>
-        <PageTitle subtitle="Group your applications into projects to manage them more effectively.">
+        <PageTitle subtitle="One project per environment or product, each with its own applications.">
           My projects <CountBadge>{data.items.length}</CountBadge>
         </PageTitle>
         {data.items.length > 0 ? (
