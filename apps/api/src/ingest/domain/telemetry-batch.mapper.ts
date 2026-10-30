@@ -15,6 +15,7 @@ import type {
   RuntimeSample,
   SpanRecord,
   TelemetryBatchRecord,
+  VersionSighting,
 } from './telemetry.js';
 import { flattenTrace } from './trace-flattener.js';
 import { uuidV7 } from './uuid-v7.js';
@@ -142,6 +143,13 @@ export function mapTelemetryBatch(
   return {
     applicationId,
     service: { serviceId, serviceVersion, seenAt: receivedAt },
+    version: versionSighting(
+      serviceId,
+      serviceVersion,
+      receivedAt,
+      requests,
+      jobs,
+    ),
     requests,
     jobs,
     requestRollups: rollUpRequests(requests),
@@ -149,13 +157,40 @@ export function mapTelemetryBatch(
     userRollups: rollUpUsers(requests),
     userPresence: userPresence(requests),
     spanRollups: rollUpSpans(spans),
-    spans,
     errors,
     logs,
     runtime: isRecord(batch.runtime)
       ? mapRuntime(batch.runtime, serviceId, receivedAt)
       : null,
     customMetrics,
+  };
+}
+
+/**
+ * When the batch's instance ran its version: the span of its executions' `calledAt`, or
+ * `receivedAt` when it has none. Null when the agent reports no version.
+ */
+function versionSighting(
+  serviceId: string,
+  serviceVersion: string | null,
+  receivedAt: Date,
+  requests: RequestExecution[],
+  jobs: JobExecution[],
+): VersionSighting | null {
+  if (serviceVersion === null) return null;
+  let first = Infinity;
+  let last = -Infinity;
+  for (const execution of [...requests, ...jobs]) {
+    const t = execution.calledAt.getTime();
+    if (t < first) first = t;
+    if (t > last) last = t;
+  }
+  if (first === Infinity) first = last = receivedAt.getTime();
+  return {
+    serviceId,
+    serviceVersion,
+    firstSeenAt: new Date(first),
+    lastSeenAt: new Date(last),
   };
 }
 

@@ -1,4 +1,5 @@
 import type { Page, TextKeysetCursor } from '../../telemetry/common/cursor.js';
+import type { TimeRange } from '../../telemetry/common/query.dto.js';
 import type { TimeWindow } from '../../telemetry/common/time-window.js';
 import type { ProjectDto, ProjectSummaryDto } from './projects.dto.js';
 
@@ -11,6 +12,8 @@ export interface NewProject {
 export interface ProjectPatch {
   name?: string;
   description?: string | null;
+  /** Sorted by duration. */
+  rangePresets?: TimeRange[];
 }
 
 /** Thrown by `insert` when the slug is already taken (a concurrent create won the race). */

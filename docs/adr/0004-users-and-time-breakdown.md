@@ -165,3 +165,13 @@ Spans of every origin count together. Outbound calls, which the agent reports wi
 lowercase class name (`http`, `pg`), are left out: Services lists classes, and their time already counts
 in the total time of the class that awaited them. `GET /services/spans` keeps the slowest-span read from
 the rollup's `max_*` columns, without the `origin` filter; no view calls it for now.
+
+## Revision (2026-10-30): raw spans are no longer stored
+
+Migration 0009 dropped `spans`. No query read it: waterfalls read `requests.trace` / `jobs.trace`, the
+trace page reads requests, jobs and logs by trace id, and Services and the treemap read `span_stats_5m`,
+whose slowest spans are its `max_*` columns. It was still the most written table and the largest: 21 of
+the 31 GB of the seeded database. Ingest keeps flattening each execution's tree in memory
+(`flattenTrace`, which also computes self time) and rolls it up into `span_stats_5m`; it just no longer
+inserts one row per span. Analytics that need individual spans would have to read the `trace` jsonb of
+the executions, or bring back a narrower table.

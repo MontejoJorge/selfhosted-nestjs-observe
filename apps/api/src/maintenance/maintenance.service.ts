@@ -16,6 +16,7 @@ import {
 } from '../database/database.types.js';
 import { PartitionManager, utcDay } from '../database/partition-manager.js';
 import { ApplicationPurger } from './application-purger.js';
+import { StorageTrimmer } from './storage-trimmer.js';
 
 const DAY_MS = 86_400_000;
 /** Daily partitions created ahead of time, so ingest never waits on DDL. */
@@ -30,9 +31,10 @@ const RAW_TABLES = (
 /**
  * Keeps the partition window rolling: creates upcoming daily partitions and drops
  * raw telemetry older than RETENTION_DAYS and rollups older than
- * AGGREGATE_RETENTION_DAYS (never less than RETENTION_DAYS), prunes the
- * non-partitioned tables, and finishes any
- * pending purge of deleted applications.
+ * AGGREGATE_RETENTION_DAYS (never less than RETENTION_DAYS), prunes the version history
+ * on the rollups' schedule and the
+ * non-partitioned tables and the usage counters of the expired days, and finishes any
+ * pending purge of deleted applications and storage trim.
  */
 @Injectable()
 export class MaintenanceService implements OnApplicationBootstrap {
@@ -45,6 +47,7 @@ export class MaintenanceService implements OnApplicationBootstrap {
     @Inject(KYSELY) private readonly db: Db,
     private readonly partitions: PartitionManager,
     private readonly purger: ApplicationPurger,
+    private readonly trimmer: StorageTrimmer,
     config: ConfigService<Env, true>,
   ) {
     this.retentionDays = config.get('RETENTION_DAYS', { infer: true });
@@ -99,9 +102,22 @@ export class MaintenanceService implements OnApplicationBootstrap {
         .deleteFrom('profiles')
         .where('received_at', '<', cutoff)
         .execute();
+      // Versions no instance reported since the rollups expired: nothing left to compare
+      // them with (ADR 0006).
+      await this.db
+        .deleteFrom('service_versions')
+        .where('last_seen_at', '<', rollupCutoff)
+        .execute();
+      // Usage counters of the days whose raw partitions were dropped.
+      await this.db
+        .deleteFrom('application_usage')
+        .where('day', '<', utcDay(cutoff))
+        .execute();
 
       // Telemetry of deleted applications (normally purged right after the delete).
       await this.purger.run();
+      // Trims can take long (deletes and VACUUM): run them in the background.
+      this.trimmer.trigger();
     } finally {
       this.running = false;
     }

@@ -5,6 +5,11 @@ import {
 } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  ArrayUnique,
+  IsArray,
+  IsIn,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -14,7 +19,12 @@ import {
 import {
   CursorQueryDto,
   RangeQueryDto,
+  TIME_RANGES,
+  type TimeRange,
 } from '../../telemetry/common/query.dto.js';
+
+/** Number of range presets a project shows in the dashboard header. */
+export const RANGE_PRESET_COUNT = 3;
 
 const trim = ({ value }: { value: unknown }) =>
   typeof value === 'string' ? value.trim() : value;
@@ -45,6 +55,15 @@ export class ProjectDto {
   description: string | null;
   createdAt: string;
   applicationCount: number;
+  /** The three ranges of the header's range control, shortest first (default 1h, 24h, 7d). */
+  @ApiProperty({
+    enum: TIME_RANGES,
+    enumName: 'TimeRange',
+    isArray: true,
+    minItems: RANGE_PRESET_COUNT,
+    maxItems: RANGE_PRESET_COUNT,
+  })
+  rangePresets: TimeRange[];
 }
 
 export class ProjectSummaryDto extends ProjectDto {
@@ -98,4 +117,28 @@ export class UpdateProjectDto {
   @IsString()
   @MaxLength(500)
   description?: string | null;
+
+  /** Exactly three distinct ranges, in any order; they are stored shortest first. */
+  @ApiPropertyOptional({
+    enum: TIME_RANGES,
+    enumName: 'TimeRange',
+    isArray: true,
+    minItems: RANGE_PRESET_COUNT,
+    maxItems: RANGE_PRESET_COUNT,
+    uniqueItems: true,
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(RANGE_PRESET_COUNT, {
+    message: `rangePresets must contain exactly ${RANGE_PRESET_COUNT} ranges`,
+  })
+  @ArrayMaxSize(RANGE_PRESET_COUNT, {
+    message: `rangePresets must contain exactly ${RANGE_PRESET_COUNT} ranges`,
+  })
+  @ArrayUnique({ message: 'rangePresets must not repeat a range' })
+  @IsIn(TIME_RANGES, {
+    each: true,
+    message: `each value in rangePresets must be one of: ${TIME_RANGES.join(', ')}`,
+  })
+  rangePresets?: TimeRange[];
 }

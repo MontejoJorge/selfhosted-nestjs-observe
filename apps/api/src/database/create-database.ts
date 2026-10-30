@@ -6,6 +6,8 @@ import type { Database } from './database.types.js';
 pg.types.setTypeParser(pg.types.builtins.INT8, (value) => Number(value));
 // Return numeric (avg, sum) as JS numbers.
 pg.types.setTypeParser(pg.types.builtins.NUMERIC, (value) => Number(value));
+// Return date as its `YYYY-MM-DD` text: a JS Date would shift it to the local time zone.
+pg.types.setTypeParser(pg.types.builtins.DATE, (value) => value);
 
 export interface DatabaseOptions {
   host: string;

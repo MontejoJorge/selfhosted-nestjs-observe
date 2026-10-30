@@ -44,6 +44,7 @@ const LIST_COLUMNS = [
 
 const DETAIL_COLUMNS = [
   ...LIST_COLUMNS,
+  'service_version',
   'enqueued_at',
   'tags',
   'error',
@@ -211,6 +212,7 @@ function toListItem(row: ListRow): JobListItemDto {
 
 function toDetail(row: DetailRow): JobDetailDto {
   return Object.assign(toListItem(row), {
+    serviceVersion: row.service_version,
     enqueuedAt: row.enqueued_at ? row.enqueued_at.toISOString() : null,
     tags: asTags(row.tags),
     error: asWireError(row.error),

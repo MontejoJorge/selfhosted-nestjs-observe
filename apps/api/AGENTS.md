@@ -46,16 +46,19 @@ src/
     migrations/                          one file per migration + index.ts (explicit provider)
     partition-manager.ts                 create/drop daily partitions
     batch-insert.ts                      chunked multi-row INSERT, jsonb/text sanitizing
+    cleanup.ts                           batched DELETE by ctid, VACUUM of one table or partition
   projects/                              management API: projects -> applications -> API keys
     domain/                              slugs, key generation, secret hashing, key status
     projects|applications|api-keys/      controller, DTOs, service, port + Postgres adapter
     api-keys/api-key-authenticator.ts    ingest credentials -> application id (60 s cache)
     activity.ts                          request buckets for the project and application cards
+                                         (projects also hold their 3 header range presets, `range_presets`)
   ingest/                                write side (hexagonal)
     domain/                              pure TS: wire types (wire.ts), wire -> domain mapping, span flattening,
                                          fingerprints, UUIDv7
     application/                         use cases + output ports (TelemetryWriter, ProfileWriter)
-    infrastructure/                      Postgres adapters of the ports
+    infrastructure/                      Postgres adapters of the ports; usage-tally.ts counts rows/bytes
+                                         per day and raw table for application_usage
     http/                                controller (/applications/*), auth guard, light payload validation
   telemetry/                             read side: one module per feature
     <feature>/<feature>.repository.ts    read port (abstract class, used as the DI token)
@@ -63,7 +66,14 @@ src/
     <feature>/<feature>.dto.ts           query + response DTO classes (OpenAPI)
     <feature>/<feature>.controller.ts
     common/                              time windows, buckets, keyset cursors, scope, SQL fragments, shared DTOs
-  maintenance/                           hourly cron: partitions ahead, retention, purge of deleted applications
+    releases/release-comparison.ts       release windows and verdict thresholds (pure, ADR 0006)
+    data-days/                           GET /projects/:project/data-days: UTC days with telemetry (ADR 0007)
+  storage/                               /api/storage and /api/projects/:project/storage (ADR 0005)
+    domain/                              apportioning of partition sizes, trim cutoff rule
+    storage.service.ts                   assembles the views, validates and queues trims
+    storage.repository.ts                read port (catalog sizes, usage) + trim queue port
+  maintenance/                           hourly cron: partitions ahead, retention, purge of deleted applications,
+                                         storage trims (StorageTrimmer)
   health/                                GET /api/health
   openapi/                               document builder + generate.ts (writes apps/api/openapi.json)
 ```
@@ -75,10 +85,10 @@ The read side deliberately has no use-case layer: controllers call the read port
 ## Data model
 
 Day-partitioned (range on the time column, UTC days, partitions named `<table>_pYYYYMMDD`):
-`requests`, `jobs`, `spans`, `error_occurrences`, `logs`, `runtime_metrics`, `custom_metrics`, and the
+`requests`, `jobs`, `error_occurrences`, `logs`, `runtime_metrics`, `custom_metrics`, and the
 rollups `requests_1m`, `jobs_1m`, `users_1h`, `user_presence_15m` and `span_stats_5m`.
-Plain tables: `services`, `error_groups`, `error_group_culprits`, `profiles`, and the
-management tables `projects`, `applications`, `api_keys`, `application_purges`.
+Plain tables: `services`, `service_versions`, `error_groups`, `error_group_culprits`, `profiles`, `application_usage`, and
+the management tables `projects`, `applications`, `api_keys`, `application_purges`, `storage_trims`.
 
 - **Projects -> applications -> API keys.** A project has a unique, immutable `slug`; an application has a
   name unique in its project and up to 3 tags; an API key belongs to one application. Secrets are 32
@@ -89,14 +99,15 @@ management tables `projects`, `applications`, `api_keys`, `application_purges`.
   attribute: the agent's serviceId, exposed as the optional `instance` filter.
 - Telemetry has no foreign key to `applications` (cascades into partitions would be row by row). Deleting
   a project or application inserts its ids into `application_purges` in the same transaction;
-  `ApplicationPurger` then deletes the rows table by table and partition by partition (right away in the
-  background, and on every maintenance run until done). Queries only see applications of live projects.
+  `ApplicationPurger` then deletes the rows table by table and partition by partition, in batches,
+  and runs a plain `VACUUM` on each one it deleted from (right away in the background, and on every
+  maintenance run until done). Queries only see applications of live projects.
 
 - Execution and log ids are **UUIDv7 stamped with the event time**, so a lookup by id also filters on the
   partition key (`windowFromId`) and touches one partition.
-- Each execution keeps its original span tree as `jsonb` (`trace`), so detail views need one read. `spans` holds
-  the flattened tree (depth-first `position`, `parent_position`, `parent_span_id`, `depth`) for future
-  analytics; no view reads it.
+- Each execution keeps its original span tree as `jsonb` (`trace`), so detail views need one read. Spans
+  are not stored one by one: ingest flattens the tree in memory (`flattenTrace`) only to roll it up into
+  `span_stats_5m` (the `spans` table was dropped by migration 0009, see ADR 0004).
 - **Per-minute rollups** ([ADR 0003](../../docs/adr/0003-minute-rollups.md)): `requests_1m` and `jobs_1m`
   hold counts, duration sum/min/max and a log-scale latency histogram (`int4[]`,
   `ingest/domain/latency-histogram.ts`) per application, minute, instance and operation or job. Ingest
@@ -110,6 +121,21 @@ management tables `projects`, `applications`, `api_keys`, `application_purges`.
   (duration minus direct children, at least 0, computed by the trace flattener) and the slowest span
   of the row (`max_execution_id`, `max_trace_id`, `max_called_at`, `max_self_ms`). The user tables
   were backfilled; `span_stats_5m` only covers spans ingested after migration 0007.
+- **Releases** ([ADR 0006](../../docs/adr/0006-releases.md)): `service_versions` holds one row per
+  application, instance and version with its first and last sighting (the batch's execution time span,
+  or receive time without executions), upserted at ingest after `services`; null versions are skipped.
+  A release is (application, version); its boundary is the earliest `first_seen_at` across instances
+  (a redeploy of an old version keeps it). Comparisons read `requests_1m`/`jobs_1m` before and after
+  the boundary minute; rows not seen for `AGGREGATE_RETENTION_DAYS` are pruned.
+- **Storage usage** ([ADR 0005](../../docs/adr/0005-storage-usage-and-trims.md)): `application_usage`
+  holds rows and estimated payload bytes per application, UTC day and raw table (`USAGE_TABLES`),
+  upserted as the last statement of each ingest transaction (and by the profile writer), backfilled by
+  migration 0010. Sizes per application are estimates: each day partition's `pg_total_relation_size`
+  split by the counted bytes. Retention, the purger and trims delete the matching usage rows.
+- **Trims** (`storage_trims`): "keep the last N days" (`1 <= N < RETENTION_DAYS`, cutoff day
+  `today - N`) for a project or one application, one queued row per target. `StorageTrimmer` deletes the
+  rows of the raw tables before the cutoff partition by partition in batches, `VACUUM`s each partition
+  it deleted from and saves its progress; rollups and error groups are not trimmed.
 - Error fingerprint = sha1(source, class, normalized message, top stack frame without line/column), per
   application. `error_groups.service_id` is the instance of the most recent occurrence.
   `error_groups.count` is all-time; `error_group_culprits` counts per operationId or `queue/name`.
@@ -134,7 +160,10 @@ hourly, and on demand for any day an ingest batch touches (advisory-locked). Ret
   `application` into application ids (404 when the application is not in the project), and queries filter
   with `inApplications()` (`=` for one id, `in (...)` for several).
 - Every query on a partitioned table filters its partition key with a half-open `[from, to)` window.
-  Ranges are `1h`, `24h` and `7d` (buckets of 1 min, 15 min and 3 h).
+  Ranges ([ADR 0007](../../docs/adr/0007-time-ranges.md)) are `1h`, `3h`, `6h`, `12h`, `24h`, `3d`, `7d`
+  and `15d` (buckets of 1 min, 5 min, 5 min, 15 min, 15 min, 1 h, 3 h and 6 h). Every route that takes
+  `range` also takes a custom `from`/`to` (zoned ISO date-times, `from < to`, at most `MAX_WINDOW_DAYS`
+  = 31 days apart, else 400), validated in one place (`RangeQueryDto`, `resolveWindow`).
 - Lists use keyset pagination on `(time desc, id desc)` with `limit + 1` rows. Never OFFSET. Cursors are
   opaque base64url `[iso, id]`, validated before use.
 - Indexes lead with `application_id` (equality) then the time column (range):
@@ -142,7 +171,7 @@ hourly, and on demand for any day an ingest batch touches (advisory-locked). Ret
   `(application_id, queue, name, ...)`, `(application_id, user_id, called_at desc, id desc)` (partial,
   `user_id is not null`), `(application_id, sampled_at desc)`, ... The plain
   `(time desc, id desc)` indexes serve keyset lists across several applications of a project, and
-  `trace_id` the trace lookups. `spans` is only BRIN-indexed (nothing reads it).
+  `trace_id` the trace lookups.
 - Management lists use keyset pagination too: projects by `(name, id)`, applications by `name` (unique
   per project), API keys by `(created_at desc, id desc)`. Card stats are computed for the whole page in
   one aggregate (`activity.ts`) plus one lateral per row for the latest runtime sample.
@@ -155,20 +184,34 @@ hourly, and on demand for any day an ingest batch touches (advisory-locked). Ret
 - `users_1h` reads are exact for any window: whole hours from the rollup, the partial hours at both
   ends from `requests` (`histogramBucketOf` buckets raw durations in SQL). A user's timeline with
   buckets under 1 h reads their raw requests through the user index. Distinct users per timeline
-  bucket read the grain that divides the bucket (`users_1h`, `user_presence_15m`, or raw for 1-minute
+  bucket read the grain that divides the bucket (`users_1h`, `user_presence_15m`, or raw for 1- and 5-minute
   buckets) and group by `(bucket, user)` before counting (never `count(distinct)` on large inputs).
   The users routes reject
   `instance` (400). Services (`span_stats_5m`) starts at the 5-minute bucket containing `from`, leaves out
   outbound calls (lowercase class names such as `http`, `pg`), and its slowest spans are the `max_*`
-  columns of the rollup rows, not a scan of `spans`.
+  columns of the rollup rows.
 - Timeline buckets use `date_bin` with a literal width from `bucketSeconds` (~100 buckets max). TimeBucket
   series are gap-filled in TS.
 - Select explicit columns, never `*`. Compose related data in one query (lateral join for top culprit) or
   parallel queries (`Promise.all`), never per row.
 - Ingest writes the batch in one transaction: append-only inserts first, then upserts on hot rows
-  (error groups, culprits, services) deduplicated and sorted by key to avoid deadlocks.
+  (error groups, culprits, services, `service_versions`, and `application_usage` as the very last statement) deduplicated
+  and sorted by key to avoid deadlocks.
   `insertMany` chunks rows to stay under the 65535 bind-parameter limit.
-- `int8`/`numeric` are parsed to JS numbers (`create-database.ts`).
+- Releases: the scope's releases are one aggregate over `service_versions` (primary key) with `lag()`
+  for the previous version. Comparisons of a whole page run in two queries per rollup: a `values`
+  list of (release, side, application, from, to) joined on `(application_id, minute)` inside the
+  overall window (pruning), one for sums and one for histogram cells; per-operation impact fetches
+  the cells of the top 10 groups only. Markers have their own path (`/release-markers`) so no
+  version string shadows them.
+- Days with data (`data-days`) read `application_usage` through its primary key, then probe
+  `requests_1m`/`jobs_1m` with one `exists` per remaining day (run-time pruning, one partition each).
+- Storage views read the catalog (`pg_total_relation_size`, `reltuples`, `pg_partition_tree`) and
+  `application_usage` (through its primary key for one project), never the telemetry rows.
+- Bulk deletes (purge, trim) go through `deleteInBatches` (10 000 rows per statement by `ctid`, one
+  partition at a time, over an index leading with `application_id`), then `vacuumTable` (plain
+  `VACUUM`, outside a transaction, errors logged). Never `VACUUM FULL` on a live collector.
+- `int8`/`numeric` are parsed to JS numbers and `date` stays a `YYYY-MM-DD` string (`create-database.ts`).
 
 ## OpenAPI
 

@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { sql, type Transaction } from 'kysely';
+import { sql, type Insertable, type Transaction } from 'kysely';
 import {
   chunkRows,
   insertMany,
@@ -10,6 +10,7 @@ import {
   KYSELY,
   type Database,
   type Db,
+  type UsageTable,
 } from '../../database/database.types.js';
 import { PartitionManager, utcDay } from '../../database/partition-manager.js';
 import { TelemetryWriter } from '../application/ports.js';
@@ -17,6 +18,7 @@ import type {
   ErrorOccurrence,
   TelemetryBatchRecord,
 } from '../domain/telemetry.js';
+import { UsageTally, upsertUsage } from './usage-tally.js';
 
 interface ErrorGroupDelta {
   fingerprint: string;
@@ -56,8 +58,9 @@ function latencyMerge(table: LatencyRollupTable) {
  * Writes a batch in one transaction with multi-row inserts.
  *
  * Append-only tables are written first. Upserts on hot rows (minute rollups, error
- * groups, culprits, services) come last, in a deterministic key order, so row locks are held
- * briefly and concurrent batches cannot deadlock.
+ * groups, culprits, services, version history, and the application's usage counters at
+ * the very end) come last, in a deterministic key order, so row locks are held briefly
+ * and concurrent batches cannot deadlock.
  */
 @Injectable()
 export class PostgresTelemetryWriter extends TelemetryWriter {
@@ -70,13 +73,16 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
 
   async write(batch: TelemetryBatchRecord): Promise<void> {
     await this.partitions.ensureDays(this.daysOf(batch));
+    const usage = new UsageTally();
     await this.db.transaction().execute(async (trx) => {
-      await this.insertExecutions(trx, batch);
-      await this.insertSignals(trx, batch);
+      await this.insertExecutions(trx, batch, usage);
+      await this.insertSignals(trx, batch, usage);
       await this.upsertRollups(trx, batch);
-      await this.upsertErrors(trx, batch.applicationId, batch.errors);
+      await this.upsertErrors(trx, batch.applicationId, batch.errors, usage);
       await this.upsertService(trx, batch);
+      await this.upsertVersion(trx, batch);
       await this.touchApplication(trx, batch);
+      await upsertUsage(trx, usage.rowsOf(batch.applicationId));
     });
   }
 
@@ -92,10 +98,12 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
   private async insertExecutions(
     trx: Transaction<Database>,
     batch: TelemetryBatchRecord,
+    usage: UsageTally,
   ) {
     const application_id = batch.applicationId;
-    await insertMany(
+    await this.insertCounted(
       trx,
+      usage,
       'requests',
       batch.requests.map((r) => ({
         id: r.id,
@@ -119,8 +127,9 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
       })),
     );
 
-    await insertMany(
+    await this.insertCounted(
       trx,
+      usage,
       'jobs',
       batch.jobs.map((j) => ({
         id: j.id,
@@ -144,42 +153,17 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
         trace: toJson(j.trace) ?? '[]',
       })),
     );
-
-    await insertMany(
-      trx,
-      'spans',
-      batch.spans.map((s) => ({
-        execution_id: s.executionId,
-        called_at: s.calledAt,
-        application_id,
-        source: s.source,
-        service_id: s.serviceId,
-        trace_id: s.traceId,
-        position: s.position,
-        parent_position: s.parentPosition,
-        depth: s.depth,
-        span_id: s.spanId,
-        parent_span_id: s.parentSpanId,
-        name: s.name,
-        origin: s.origin,
-        class_name: s.className,
-        method_name: s.methodName,
-        duration_ms: s.durationMs,
-        start_offset_ms: s.startOffsetMs,
-        has_error: s.hasError,
-        tags: toJson(s.tags),
-        error: toJson(s.error),
-      })),
-    );
   }
 
   private async insertSignals(
     trx: Transaction<Database>,
     batch: TelemetryBatchRecord,
+    usage: UsageTally,
   ) {
     const application_id = batch.applicationId;
-    await insertMany(
+    await this.insertCounted(
       trx,
+      usage,
       'logs',
       batch.logs.map((l) => ({
         id: l.id,
@@ -197,7 +181,7 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
 
     if (batch.runtime) {
       const r = batch.runtime;
-      await insertMany(trx, 'runtime_metrics', [
+      await this.insertCounted(trx, usage, 'runtime_metrics', [
         {
           sampled_at: r.sampledAt,
           application_id,
@@ -225,8 +209,9 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
       ]);
     }
 
-    await insertMany(
+    await this.insertCounted(
       trx,
+      usage,
       'custom_metrics',
       batch.customMetrics.map((m) => ({
         recorded_at: m.recordedAt,
@@ -240,6 +225,17 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
         data: toJson(m.data) ?? '{}',
       })),
     );
+  }
+
+  /** Inserts rows into a raw table and counts them for `application_usage`. */
+  private async insertCounted<T extends UsageTable>(
+    trx: Transaction<Database>,
+    usage: UsageTally,
+    table: T,
+    rows: Insertable<Database[T]>[],
+  ) {
+    usage.add(table, rows);
+    await insertMany(trx, table, rows);
   }
 
   /**
@@ -441,6 +437,7 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
     trx: Transaction<Database>,
     applicationId: string,
     errors: ErrorOccurrence[],
+    usage: UsageTally,
   ) {
     if (errors.length === 0) return;
 
@@ -542,8 +539,9 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
       )
       .execute();
 
-    await insertMany(
+    await this.insertCounted(
       trx,
+      usage,
       'error_occurrences',
       errors.map((e) => ({
         group_id: idOf(e.fingerprint),
@@ -579,6 +577,34 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
           >`coalesce(${eb.ref('excluded.service_version')}, ${eb.ref('services.service_version')})`,
           last_seen_at: sql<Date>`greatest(${eb.ref('services.last_seen_at')}, ${eb.ref('excluded.last_seen_at')})`,
         })),
+      )
+      .execute();
+  }
+
+  /** One row per batch (one instance and version), after `services` in key order. */
+  private async upsertVersion(
+    trx: Transaction<Database>,
+    batch: TelemetryBatchRecord,
+  ) {
+    if (!batch.version) return;
+    const { serviceId, serviceVersion, firstSeenAt, lastSeenAt } =
+      batch.version;
+    await trx
+      .insertInto('service_versions')
+      .values({
+        application_id: batch.applicationId,
+        service_id: serviceId,
+        service_version: serviceVersion,
+        first_seen_at: firstSeenAt,
+        last_seen_at: lastSeenAt,
+      })
+      .onConflict((oc) =>
+        oc
+          .columns(['application_id', 'service_id', 'service_version'])
+          .doUpdateSet((eb) => ({
+            first_seen_at: sql<Date>`least(${eb.ref('service_versions.first_seen_at')}, ${eb.ref('excluded.first_seen_at')})`,
+            last_seen_at: sql<Date>`greatest(${eb.ref('service_versions.last_seen_at')}, ${eb.ref('excluded.last_seen_at')})`,
+          })),
       )
       .execute();
   }

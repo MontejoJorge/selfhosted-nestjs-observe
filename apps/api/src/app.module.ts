@@ -8,6 +8,7 @@ import { IngestModule } from './ingest/ingest.module.js';
 import { MaintenanceModule } from './maintenance/maintenance.module.js';
 import { SelfObserveModule } from './observe.js';
 import { ProjectsModule } from './projects/projects.module.js';
+import { StorageModule } from './storage/storage.module.js';
 import { TelemetryModule } from './telemetry/telemetry.module.js';
 
 @Module({
@@ -27,6 +28,7 @@ import { TelemetryModule } from './telemetry/telemetry.module.js';
     IngestModule,
     ProjectsModule,
     TelemetryModule,
+    StorageModule,
     MaintenanceModule,
   ],
   controllers: [HealthController],

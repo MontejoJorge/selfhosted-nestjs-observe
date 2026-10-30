@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ApplicationPurger } from '../../maintenance/application-purger.js';
+import { sortRanges } from '../../telemetry/common/time-window.js';
 import { ApiKeyAuthenticator } from '../api-keys/api-key-authenticator.js';
 import { slugify, uniqueSlug } from '../domain/slug.js';
 import type {
@@ -50,6 +51,7 @@ export class ProjectsService {
       name: input.name,
       description:
         input.description === undefined ? undefined : input.description || null,
+      rangePresets: input.rangePresets && sortRanges(input.rangePresets),
     });
     if (!project) throw new NotFoundException(`Project ${ref} not found`);
     return project;

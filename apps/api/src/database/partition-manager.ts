@@ -15,7 +15,13 @@ export function utcDay(date: Date | number): string {
   return new Date(date).toISOString().slice(0, 10);
 }
 
-function addDays(day: string, days: number): string {
+/** UTC day (`YYYY-MM-DD`) of a `<table>_pYYYYMMDD` partition, or null for another name. */
+export function partitionDay(name: string): string | null {
+  const match = PARTITION_SUFFIX.exec(name);
+  return match ? `${match[1]}-${match[2]}-${match[3]}` : null;
+}
+
+export function addDays(day: string, days: number): string {
   return utcDay(Date.parse(`${day}T00:00:00Z`) + days * DAY_MS);
 }
 
@@ -110,10 +116,8 @@ export class PartitionManager {
 
     const dropped: string[] = [];
     for (const { parent, child } of rows) {
-      const match = PARTITION_SUFFIX.exec(child);
-      if (!match) continue;
-      const day = `${match[1]}-${match[2]}-${match[3]}`;
-      if (day >= cutoffDay) continue;
+      const day = partitionDay(child);
+      if (day === null || day >= cutoffDay) continue;
       try {
         // DETACH CONCURRENTLY avoids blocking ingest and queries on the parent.
         await sql

@@ -40,7 +40,7 @@
             "name": "from",
             "required": false,
             "in": "query",
-            "description": "Window start (ISO 8601).",
+            "description": "Window start (ISO 8601 date-time with a time zone), inclusive.",
             "schema": {
               "format": "date-time",
               "type": "string"
@@ -50,7 +50,7 @@
             "name": "to",
             "required": false,
             "in": "query",
-            "description": "Window end (ISO 8601), defaults to now.",
+            "description": "Window end (ISO 8601 date-time with a time zone), exclusive; defaults to now.",
             "schema": {
               "format": "date-time",
               "type": "string"
@@ -197,7 +197,7 @@
             "description": ""
           }
         },
-        "summary": "Rename a project or change its description (the slug is kept)",
+        "summary": "Rename a project, change its description or its three range presets (the slug is kept)",
         "tags": [
           "projects"
         ]
@@ -253,7 +253,7 @@
             "name": "from",
             "required": false,
             "in": "query",
-            "description": "Window start (ISO 8601).",
+            "description": "Window start (ISO 8601 date-time with a time zone), inclusive.",
             "schema": {
               "format": "date-time",
               "type": "string"
@@ -263,7 +263,7 @@
             "name": "to",
             "required": false,
             "in": "query",
-            "description": "Window end (ISO 8601), defaults to now.",
+            "description": "Window end (ISO 8601 date-time with a time zone), exclusive; defaults to now.",
             "schema": {
               "format": "date-time",
               "type": "string"
@@ -745,7 +745,7 @@
             "name": "from",
             "required": false,
             "in": "query",
-            "description": "Window start (ISO 8601).",
+            "description": "Window start (ISO 8601 date-time with a time zone), inclusive.",
             "schema": {
               "format": "date-time",
               "type": "string"
@@ -755,7 +755,7 @@
             "name": "to",
             "required": false,
             "in": "query",
-            "description": "Window end (ISO 8601), defaults to now.",
+            "description": "Window end (ISO 8601 date-time with a time zone), exclusive; defaults to now.",
             "schema": {
               "format": "date-time",
               "type": "string"
@@ -857,7 +857,7 @@
             "name": "from",
             "required": false,
             "in": "query",
-            "description": "Window start (ISO 8601).",
+            "description": "Window start (ISO 8601 date-time with a time zone), inclusive.",
             "schema": {
               "format": "date-time",
               "type": "string"
@@ -867,7 +867,7 @@
             "name": "to",
             "required": false,
             "in": "query",
-            "description": "Window end (ISO 8601), defaults to now.",
+            "description": "Window end (ISO 8601 date-time with a time zone), exclusive; defaults to now.",
             "schema": {
               "format": "date-time",
               "type": "string"
@@ -942,7 +942,7 @@
             "name": "from",
             "required": false,
             "in": "query",
-            "description": "Window start (ISO 8601).",
+            "description": "Window start (ISO 8601 date-time with a time zone), inclusive.",
             "schema": {
               "format": "date-time",
               "type": "string"
@@ -952,7 +952,7 @@
             "name": "to",
             "required": false,
             "in": "query",
-            "description": "Window end (ISO 8601), defaults to now.",
+            "description": "Window end (ISO 8601 date-time with a time zone), exclusive; defaults to now.",
             "schema": {
               "format": "date-time",
               "type": "string"
@@ -1147,7 +1147,7 @@
             "name": "from",
             "required": false,
             "in": "query",
-            "description": "Window start (ISO 8601).",
+            "description": "Window start (ISO 8601 date-time with a time zone), inclusive.",
             "schema": {
               "format": "date-time",
               "type": "string"
@@ -1157,7 +1157,7 @@
             "name": "to",
             "required": false,
             "in": "query",
-            "description": "Window end (ISO 8601), defaults to now.",
+            "description": "Window end (ISO 8601 date-time with a time zone), exclusive; defaults to now.",
             "schema": {
               "format": "date-time",
               "type": "string"
@@ -1232,7 +1232,7 @@
             "name": "from",
             "required": false,
             "in": "query",
-            "description": "Window start (ISO 8601).",
+            "description": "Window start (ISO 8601 date-time with a time zone), inclusive.",
             "schema": {
               "format": "date-time",
               "type": "string"
@@ -1242,7 +1242,7 @@
             "name": "to",
             "required": false,
             "in": "query",
-            "description": "Window end (ISO 8601), defaults to now.",
+            "description": "Window end (ISO 8601 date-time with a time zone), exclusive; defaults to now.",
             "schema": {
               "format": "date-time",
               "type": "string"
@@ -1425,7 +1425,7 @@
             "name": "from",
             "required": false,
             "in": "query",
-            "description": "Window start (ISO 8601).",
+            "description": "Window start (ISO 8601 date-time with a time zone), inclusive.",
             "schema": {
               "format": "date-time",
               "type": "string"
@@ -1435,7 +1435,7 @@
             "name": "to",
             "required": false,
             "in": "query",
-            "description": "Window end (ISO 8601), defaults to now.",
+            "description": "Window end (ISO 8601 date-time with a time zone), exclusive; defaults to now.",
             "schema": {
               "format": "date-time",
               "type": "string"
@@ -1555,7 +1555,7 @@
             "name": "from",
             "required": false,
             "in": "query",
-            "description": "Window start (ISO 8601).",
+            "description": "Window start (ISO 8601 date-time with a time zone), inclusive.",
             "schema": {
               "format": "date-time",
               "type": "string"
@@ -1565,7 +1565,7 @@
             "name": "to",
             "required": false,
             "in": "query",
-            "description": "Window end (ISO 8601), defaults to now.",
+            "description": "Window end (ISO 8601 date-time with a time zone), exclusive; defaults to now.",
             "schema": {
               "format": "date-time",
               "type": "string"
@@ -1640,7 +1640,7 @@
             "name": "from",
             "required": false,
             "in": "query",
-            "description": "Window start (ISO 8601).",
+            "description": "Window start (ISO 8601 date-time with a time zone), inclusive.",
             "schema": {
               "format": "date-time",
               "type": "string"
@@ -1650,7 +1650,7 @@
             "name": "to",
             "required": false,
             "in": "query",
-            "description": "Window end (ISO 8601), defaults to now.",
+            "description": "Window end (ISO 8601 date-time with a time zone), exclusive; defaults to now.",
             "schema": {
               "format": "date-time",
               "type": "string"
@@ -1825,7 +1825,7 @@
             "name": "from",
             "required": false,
             "in": "query",
-            "description": "Window start (ISO 8601).",
+            "description": "Window start (ISO 8601 date-time with a time zone), inclusive.",
             "schema": {
               "format": "date-time",
               "type": "string"
@@ -1835,7 +1835,7 @@
             "name": "to",
             "required": false,
             "in": "query",
-            "description": "Window end (ISO 8601), defaults to now.",
+            "description": "Window end (ISO 8601 date-time with a time zone), exclusive; defaults to now.",
             "schema": {
               "format": "date-time",
               "type": "string"
@@ -1910,7 +1910,7 @@
             "name": "from",
             "required": false,
             "in": "query",
-            "description": "Window start (ISO 8601).",
+            "description": "Window start (ISO 8601 date-time with a time zone), inclusive.",
             "schema": {
               "format": "date-time",
               "type": "string"
@@ -1920,7 +1920,7 @@
             "name": "to",
             "required": false,
             "in": "query",
-            "description": "Window end (ISO 8601), defaults to now.",
+            "description": "Window end (ISO 8601 date-time with a time zone), exclusive; defaults to now.",
             "schema": {
               "format": "date-time",
               "type": "string"
@@ -1999,7 +1999,7 @@
             "name": "from",
             "required": false,
             "in": "query",
-            "description": "Window start (ISO 8601).",
+            "description": "Window start (ISO 8601 date-time with a time zone), inclusive.",
             "schema": {
               "format": "date-time",
               "type": "string"
@@ -2009,7 +2009,7 @@
             "name": "to",
             "required": false,
             "in": "query",
-            "description": "Window end (ISO 8601), defaults to now.",
+            "description": "Window end (ISO 8601 date-time with a time zone), exclusive; defaults to now.",
             "schema": {
               "format": "date-time",
               "type": "string"
@@ -2115,7 +2115,7 @@
             "name": "from",
             "required": false,
             "in": "query",
-            "description": "Window start (ISO 8601).",
+            "description": "Window start (ISO 8601 date-time with a time zone), inclusive.",
             "schema": {
               "format": "date-time",
               "type": "string"
@@ -2125,7 +2125,7 @@
             "name": "to",
             "required": false,
             "in": "query",
-            "description": "Window end (ISO 8601), defaults to now.",
+            "description": "Window end (ISO 8601 date-time with a time zone), exclusive; defaults to now.",
             "schema": {
               "format": "date-time",
               "type": "string"
@@ -2204,7 +2204,7 @@
             "name": "from",
             "required": false,
             "in": "query",
-            "description": "Window start (ISO 8601).",
+            "description": "Window start (ISO 8601 date-time with a time zone), inclusive.",
             "schema": {
               "format": "date-time",
               "type": "string"
@@ -2214,7 +2214,7 @@
             "name": "to",
             "required": false,
             "in": "query",
-            "description": "Window end (ISO 8601), defaults to now.",
+            "description": "Window end (ISO 8601 date-time with a time zone), exclusive; defaults to now.",
             "schema": {
               "format": "date-time",
               "type": "string"
@@ -2326,7 +2326,7 @@
             "name": "from",
             "required": false,
             "in": "query",
-            "description": "Window start (ISO 8601).",
+            "description": "Window start (ISO 8601 date-time with a time zone), inclusive.",
             "schema": {
               "format": "date-time",
               "type": "string"
@@ -2336,7 +2336,7 @@
             "name": "to",
             "required": false,
             "in": "query",
-            "description": "Window end (ISO 8601), defaults to now.",
+            "description": "Window end (ISO 8601 date-time with a time zone), exclusive; defaults to now.",
             "schema": {
               "format": "date-time",
               "type": "string"
@@ -2452,6 +2452,457 @@
           "services"
         ]
       }
+    },
+    "/api/releases": {
+      "get": {
+        "operationId": "listReleases",
+        "parameters": [
+          {
+            "name": "application",
+            "required": false,
+            "in": "query",
+            "description": "Application id (must belong to the project). Omit for the whole project.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "range",
+            "required": false,
+            "in": "query",
+            "description": "Relative window ending now (default `1h`). Ignored when `from` is given.",
+            "schema": {
+              "$ref": "#/components/schemas/TimeRange"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Window start (ISO 8601 date-time with a time zone), inclusive.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Window end (ISO 8601 date-time with a time zone), exclusive; defaults to now.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "window",
+            "required": false,
+            "in": "query",
+            "description": "Default `30m`.",
+            "schema": {
+              "$ref": "#/components/schemas/ReleaseWindow"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Page size (default 20, max 100: every row runs a comparison).",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Opaque cursor: pass `nextCursor` from the previous page.",
+            "schema": {
+              "maxLength": 1024,
+              "type": "string"
+            }
+          },
+          {
+            "name": "project",
+            "required": true,
+            "in": "query",
+            "description": "Project id or slug.",
+            "schema": {
+              "maxLength": 64,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleasePageDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Releases whose boundary falls in the range (default 7d), newest first, with a before/after comparison",
+        "tags": [
+          "releases"
+        ]
+      }
+    },
+    "/api/release-markers": {
+      "get": {
+        "operationId": "listReleaseMarkers",
+        "parameters": [
+          {
+            "name": "application",
+            "required": false,
+            "in": "query",
+            "description": "Application id (must belong to the project). Omit for the whole project.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "range",
+            "required": false,
+            "in": "query",
+            "description": "Relative window ending now (default `1h`). Ignored when `from` is given.",
+            "schema": {
+              "$ref": "#/components/schemas/TimeRange"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Window start (ISO 8601 date-time with a time zone), inclusive.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Window end (ISO 8601 date-time with a time zone), exclusive; defaults to now.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "instance",
+            "required": false,
+            "in": "query",
+            "description": "Filter by instance: the `serviceId` an agent reports.",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "project",
+            "required": true,
+            "in": "query",
+            "description": "Project id or slug.",
+            "schema": {
+              "maxLength": 64,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReleaseMarkerDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Release boundaries in the range (or the version switches of one instance), oldest first, for timelines",
+        "tags": [
+          "releases"
+        ]
+      }
+    },
+    "/api/releases/{version}": {
+      "get": {
+        "operationId": "getRelease",
+        "parameters": [
+          {
+            "name": "version",
+            "required": true,
+            "in": "path",
+            "description": "The service version (URL-encoded).",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "application",
+            "required": false,
+            "in": "query",
+            "description": "Application id (must belong to the project). Omit for the whole project.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "window",
+            "required": false,
+            "in": "query",
+            "description": "Default `30m`.",
+            "schema": {
+              "$ref": "#/components/schemas/ReleaseWindow"
+            }
+          },
+          {
+            "name": "project",
+            "required": true,
+            "in": "query",
+            "description": "Project id or slug.",
+            "schema": {
+              "maxLength": 64,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseDetailDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Several applications of the project reported this version: pass `application`"
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "One release: comparison, per-operation and per-job impact, new error groups and instances",
+        "tags": [
+          "releases"
+        ]
+      }
+    },
+    "/api/projects/{project}/data-days": {
+      "get": {
+        "description": "A day counts when it has raw telemetry (from the ingest usage counts) or per-minute request or job rollups. Raw rows are kept for RETENTION_DAYS and rollups for AGGREGATE_RETENTION_DAYS, so older days may only have charts and stats. Covers today - AGGREGATE_RETENTION_DAYS through tomorrow (events up to 1 day ahead are accepted). `:project` is the project id or slug.",
+        "operationId": "listDataDays",
+        "parameters": [
+          {
+            "name": "project",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "application",
+            "required": false,
+            "in": "query",
+            "description": "Narrow to one application of the project.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataDaysDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "UTC days on which the project (or one application) has telemetry, within the retention window",
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/storage": {
+      "get": {
+        "description": "Table and partition sizes are real (`pg_total_relation_size`: indexes and TOAST included). Project sizes are estimates. Each day partition is split between applications by the payload bytes counted at ingest.",
+        "operationId": "getStorageOverview",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageOverviewDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Database size, size per table and per day partition, raw telemetry per project, and the retention settings",
+        "tags": [
+          "storage"
+        ]
+      }
+    },
+    "/api/projects/{project}/storage": {
+      "get": {
+        "description": "Rows are exact (counted at ingest); bytes estimate the on-disk size. Each day partition is split between applications by the payload bytes counted at ingest. Rollups and error groups are not counted. `:project` is the project id or slug.",
+        "operationId": "getProjectStorage",
+        "parameters": [
+          {
+            "name": "project",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "application",
+            "required": false,
+            "in": "query",
+            "description": "Narrow the totals, the table split and the daily trend to one application of the project.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectStorageDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Raw telemetry stored by a project: total, per application, per table and per day, with pending trims",
+        "tags": [
+          "storage"
+        ]
+      }
+    },
+    "/api/projects/{project}/storage/trims": {
+      "get": {
+        "operationId": "listStorageTrims",
+        "parameters": [
+          {
+            "name": "project",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StorageTrimDto"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Pending and running trims of a project, oldest request first",
+        "tags": [
+          "storage"
+        ]
+      },
+      "post": {
+        "description": "Runs in the background: poll `listStorageTrims` (or the `trims` of `getProjectStorage`) until the trim is gone. Deletes requests, jobs, logs, error occurrences, runtime and custom metrics and profiles before the cutoff day; rollups (charts and stats) and error groups keep their own retention. A pending trim of the same target is reused and moved to the later cutoff. Deleted rows free their space for reuse by new telemetry right away; the VACUUM run after each partition gives only the empty pages at its end back to the OS, so the database shrinks partly until the partitions age out of RETENTION_DAYS.",
+        "operationId": "createStorageTrim",
+        "parameters": [
+          {
+            "name": "project",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateStorageTrimDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageTrimDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`keepDays` is not below RETENTION_DAYS"
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Delete the raw telemetry of a project or one application older than the last `keepDays` days",
+        "tags": [
+          "storage"
+        ]
+      }
     }
   },
   "info": {
@@ -2482,8 +2933,13 @@
         "type": "string",
         "enum": [
           "1h",
+          "3h",
+          "6h",
+          "12h",
           "24h",
-          "7d"
+          "3d",
+          "7d",
+          "15d"
         ]
       },
       "ActivityBucketDto": {
@@ -2523,6 +2979,15 @@
             "type": "string",
             "nullable": true
           },
+          "rangePresets": {
+            "type": "array",
+            "description": "The three ranges of the header's range control, shortest first (default 1h, 24h, 7d).",
+            "items": {
+              "$ref": "#/components/schemas/TimeRange"
+            },
+            "minItems": 3,
+            "maxItems": 3
+          },
           "lastSeenAt": {
             "type": "string",
             "nullable": true,
@@ -2561,6 +3026,7 @@
         "required": [
           "id",
           "description",
+          "rangePresets",
           "lastSeenAt",
           "avgDurationMs",
           "activity",
@@ -2601,6 +3067,15 @@
             "type": "string",
             "nullable": true
           },
+          "rangePresets": {
+            "type": "array",
+            "description": "The three ranges of the header's range control, shortest first (default 1h, 24h, 7d).",
+            "items": {
+              "$ref": "#/components/schemas/TimeRange"
+            },
+            "minItems": 3,
+            "maxItems": 3
+          },
           "slug": {
             "type": "string",
             "description": "URL-safe and unique; generated from the name at creation and never changed."
@@ -2618,6 +3093,7 @@
         "required": [
           "id",
           "description",
+          "rangePresets",
           "slug",
           "name",
           "createdAt",
@@ -2649,6 +3125,16 @@
             "nullable": true,
             "description": "null or an empty string clears it.",
             "maxLength": 500
+          },
+          "rangePresets": {
+            "type": "array",
+            "description": "Exactly three distinct ranges, in any order; they are stored shortest first.",
+            "uniqueItems": true,
+            "minItems": 3,
+            "maxItems": 3,
+            "items": {
+              "$ref": "#/components/schemas/TimeRange"
+            }
           },
           "name": {
             "type": "string",
@@ -3754,6 +4240,11 @@
             "type": "number",
             "nullable": true
           },
+          "serviceVersion": {
+            "type": "string",
+            "nullable": true,
+            "description": "Version the instance reported when it ran the job."
+          },
           "enqueuedAt": {
             "type": "string",
             "nullable": true
@@ -3825,6 +4316,7 @@
           "waitMs",
           "attemptsMade",
           "maxAttempts",
+          "serviceVersion",
           "enqueuedAt",
           "tags",
           "error",
@@ -4729,6 +5221,940 @@
           "serviceId",
           "durationMs",
           "calledAt"
+        ]
+      },
+      "ReleaseWindow": {
+        "type": "string",
+        "enum": [
+          "15m",
+          "30m",
+          "1h",
+          "3h"
+        ]
+      },
+      "ReleaseVerdict": {
+        "type": "string",
+        "enum": [
+          "regression",
+          "improving",
+          "stable",
+          "insufficient_data"
+        ],
+        "description": "Worst verdict of `requests` and `jobs` among those with enough data."
+      },
+      "TimeSpanDto": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "description": "Inclusive start (ISO)."
+          },
+          "to": {
+            "type": "string",
+            "description": "Exclusive end (ISO)."
+          }
+        },
+        "required": [
+          "from",
+          "to"
+        ]
+      },
+      "ReleaseSignal": {
+        "type": "string",
+        "enum": [
+          "error_rate_up",
+          "error_rate_down",
+          "p95_up",
+          "p95_down"
+        ],
+        "description": "Thresholds crossed (`error_rate_*` is the failure rate for jobs)."
+      },
+      "ExecutionStatsDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number"
+          },
+          "errors": {
+            "type": "number"
+          },
+          "errorRate": {
+            "type": "number",
+            "description": "Ratio 0..1."
+          },
+          "avgMs": {
+            "type": "number",
+            "description": "Mean duration (ms)."
+          },
+          "p95Ms": {
+            "type": "number",
+            "description": "From the rollups' latency histograms (ms)."
+          }
+        },
+        "required": [
+          "count",
+          "errors",
+          "errorRate",
+          "avgMs",
+          "p95Ms"
+        ]
+      },
+      "ComparisonDto": {
+        "type": "object",
+        "properties": {
+          "verdict": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReleaseVerdict"
+              }
+            ]
+          },
+          "signals": {
+            "type": "array",
+            "description": "Thresholds crossed (`error_rate_*` is the failure rate for jobs).",
+            "items": {
+              "$ref": "#/components/schemas/ReleaseSignal"
+            }
+          },
+          "before": {
+            "$ref": "#/components/schemas/ExecutionStatsDto"
+          },
+          "after": {
+            "$ref": "#/components/schemas/ExecutionStatsDto"
+          }
+        },
+        "required": [
+          "verdict",
+          "signals",
+          "before",
+          "after"
+        ]
+      },
+      "ReleaseSummaryDto": {
+        "type": "object",
+        "properties": {
+          "previousVersion": {
+            "type": "string",
+            "nullable": true,
+            "description": "Version of the application with the latest boundary before this one."
+          },
+          "window": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReleaseWindow"
+              }
+            ]
+          },
+          "verdict": {
+            "description": "Worst verdict of `requests` and `jobs` among those with enough data.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReleaseVerdict"
+              }
+            ]
+          },
+          "applicationId": {
+            "type": "string"
+          },
+          "applicationName": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "firstSeenAt": {
+            "type": "string",
+            "description": "The release boundary: earliest first sighting of the version across instances."
+          },
+          "lastSeenAt": {
+            "type": "string",
+            "description": "Latest sighting across instances."
+          },
+          "instanceCount": {
+            "type": "number",
+            "description": "Instances that ever reported the version."
+          },
+          "activeInstances": {
+            "type": "number",
+            "description": "Instances whose latest version this is and that reported in the last 5 minutes."
+          },
+          "before": {
+            "description": "Whole minutes before the boundary minute.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TimeSpanDto"
+              }
+            ]
+          },
+          "after": {
+            "description": "Whole minutes after the boundary minute (`to` may be in the future).",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TimeSpanDto"
+              }
+            ]
+          },
+          "complete": {
+            "type": "boolean",
+            "description": "False while the after window has not fully elapsed."
+          },
+          "requests": {
+            "description": "Every request of the application (not only the new version's) on each side.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ComparisonDto"
+              }
+            ]
+          },
+          "jobs": {
+            "description": "Every job run of the application on each side.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ComparisonDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "previousVersion",
+          "window",
+          "verdict",
+          "applicationId",
+          "applicationName",
+          "version",
+          "firstSeenAt",
+          "lastSeenAt",
+          "instanceCount",
+          "activeInstances",
+          "before",
+          "after",
+          "complete",
+          "requests",
+          "jobs"
+        ]
+      },
+      "ReleasePageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReleaseSummaryDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
+      "ReleaseMarkerDto": {
+        "type": "object",
+        "properties": {
+          "serviceId": {
+            "type": "string",
+            "nullable": true,
+            "description": "The instance, when the markers were asked for one."
+          },
+          "applicationId": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "description": "Release boundary, or the instance's switch time when `instance` was given."
+          }
+        },
+        "required": [
+          "serviceId",
+          "applicationId",
+          "version",
+          "at"
+        ]
+      },
+      "OperationImpactDto": {
+        "type": "object",
+        "properties": {
+          "method": {
+            "type": "string",
+            "nullable": true
+          },
+          "operationId": {
+            "type": "string"
+          },
+          "protocol": {
+            "type": "string"
+          },
+          "before": {
+            "$ref": "#/components/schemas/ExecutionStatsDto"
+          },
+          "after": {
+            "$ref": "#/components/schemas/ExecutionStatsDto"
+          }
+        },
+        "required": [
+          "method",
+          "operationId",
+          "protocol",
+          "before",
+          "after"
+        ]
+      },
+      "JobImpactDto": {
+        "type": "object",
+        "properties": {
+          "queue": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "before": {
+            "$ref": "#/components/schemas/ExecutionStatsDto"
+          },
+          "after": {
+            "$ref": "#/components/schemas/ExecutionStatsDto"
+          }
+        },
+        "required": [
+          "queue",
+          "name",
+          "before",
+          "after"
+        ]
+      },
+      "NewErrorGroupDto": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ErrorSource"
+              }
+            ]
+          },
+          "errorClass": {
+            "type": "string",
+            "nullable": true
+          },
+          "id": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "count": {
+            "type": "number",
+            "description": "All-time occurrences of the group."
+          },
+          "firstSeenAt": {
+            "type": "string"
+          },
+          "lastSeenAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "errorClass",
+          "id",
+          "message",
+          "count",
+          "firstSeenAt",
+          "lastSeenAt"
+        ]
+      },
+      "ReleaseInstanceDto": {
+        "type": "object",
+        "properties": {
+          "serviceId": {
+            "type": "string",
+            "description": "The agent's serviceId."
+          },
+          "firstSeenAt": {
+            "type": "string",
+            "description": "When this instance first and last reported the version."
+          },
+          "lastSeenAt": {
+            "type": "string"
+          },
+          "active": {
+            "type": "boolean",
+            "description": "Still running it: its latest version, reported in the last 5 minutes."
+          }
+        },
+        "required": [
+          "serviceId",
+          "firstSeenAt",
+          "lastSeenAt",
+          "active"
+        ]
+      },
+      "ReleaseDetailDto": {
+        "type": "object",
+        "properties": {
+          "previousVersion": {
+            "type": "string",
+            "nullable": true,
+            "description": "Version of the application with the latest boundary before this one."
+          },
+          "window": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReleaseWindow"
+              }
+            ]
+          },
+          "verdict": {
+            "description": "Worst verdict of `requests` and `jobs` among those with enough data.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReleaseVerdict"
+              }
+            ]
+          },
+          "operations": {
+            "description": "Top operations by requests on both sides (at most 10). `requests` is the all-traffic\nrow.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OperationImpactDto"
+            }
+          },
+          "jobImpact": {
+            "description": "Top jobs by runs on both sides (at most 10).",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JobImpactDto"
+            }
+          },
+          "newErrorGroups": {
+            "description": "At most 50, oldest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NewErrorGroupDto"
+            }
+          },
+          "instances": {
+            "description": "Instances that reported the version, active first (at most 200).",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReleaseInstanceDto"
+            }
+          },
+          "applicationId": {
+            "type": "string"
+          },
+          "applicationName": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "firstSeenAt": {
+            "type": "string",
+            "description": "The release boundary: earliest first sighting of the version across instances."
+          },
+          "lastSeenAt": {
+            "type": "string",
+            "description": "Latest sighting across instances."
+          },
+          "instanceCount": {
+            "type": "number",
+            "description": "Instances that ever reported the version."
+          },
+          "activeInstances": {
+            "type": "number",
+            "description": "Instances whose latest version this is and that reported in the last 5 minutes."
+          },
+          "before": {
+            "description": "Whole minutes before the boundary minute.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TimeSpanDto"
+              }
+            ]
+          },
+          "after": {
+            "description": "Whole minutes after the boundary minute (`to` may be in the future).",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TimeSpanDto"
+              }
+            ]
+          },
+          "complete": {
+            "type": "boolean",
+            "description": "False while the after window has not fully elapsed."
+          },
+          "requests": {
+            "description": "Every request of the application (not only the new version's) on each side.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ComparisonDto"
+              }
+            ]
+          },
+          "jobs": {
+            "description": "Every job run of the application on each side.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ComparisonDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "previousVersion",
+          "window",
+          "verdict",
+          "operations",
+          "jobImpact",
+          "newErrorGroups",
+          "instances",
+          "applicationId",
+          "applicationName",
+          "version",
+          "firstSeenAt",
+          "lastSeenAt",
+          "instanceCount",
+          "activeInstances",
+          "before",
+          "after",
+          "complete",
+          "requests",
+          "jobs"
+        ]
+      },
+      "DataDaysDto": {
+        "type": "object",
+        "properties": {
+          "days": {
+            "description": "UTC days (`YYYY-MM-DD`) with telemetry, ascending.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          "oldest": {
+            "type": "string",
+            "nullable": true,
+            "description": "First entry of `days`, null when there is none.",
+            "format": "date"
+          },
+          "newest": {
+            "type": "string",
+            "nullable": true,
+            "description": "Last entry of `days`, null when there is none.",
+            "format": "date"
+          }
+        },
+        "required": [
+          "days",
+          "oldest",
+          "newest"
+        ]
+      },
+      "StorageTableKind": {
+        "type": "string",
+        "enum": [
+          "raw",
+          "rollup",
+          "other"
+        ],
+        "description": "`raw`: telemetry kept RETENTION_DAYS; `rollup`: AGGREGATE_RETENTION_DAYS; `other`: management, error groups, usage."
+      },
+      "StorageTableSizeDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "description": "`raw`: telemetry kept RETENTION_DAYS; `rollup`: AGGREGATE_RETENTION_DAYS; `other`: management, error groups, usage.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StorageTableKind"
+              }
+            ]
+          },
+          "approxRows": {
+            "type": "number",
+            "nullable": true,
+            "description": "Planner estimate of the rows (null before the first ANALYZE)."
+          },
+          "table": {
+            "type": "string",
+            "description": "Table name; partitioned tables are summed over their partitions."
+          },
+          "bytes": {
+            "type": "number",
+            "description": "Real on-disk size: heap, TOAST and indexes."
+          },
+          "partitions": {
+            "type": "number",
+            "description": "Day partitions (0 for a plain table)."
+          }
+        },
+        "required": [
+          "kind",
+          "approxRows",
+          "table",
+          "bytes",
+          "partitions"
+        ]
+      },
+      "StoragePartitionSizeDto": {
+        "type": "object",
+        "properties": {
+          "day": {
+            "type": "string",
+            "format": "date"
+          },
+          "approxRows": {
+            "type": "number",
+            "nullable": true
+          },
+          "table": {
+            "type": "string"
+          },
+          "partition": {
+            "type": "string"
+          },
+          "bytes": {
+            "type": "number",
+            "description": "Real on-disk size: heap, TOAST and indexes."
+          }
+        },
+        "required": [
+          "day",
+          "approxRows",
+          "table",
+          "partition",
+          "bytes"
+        ]
+      },
+      "ProjectStorageSummaryDto": {
+        "type": "object",
+        "properties": {
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "bytes": {
+            "type": "number",
+            "description": "Estimated on-disk bytes: the real size of each day partition (heap, TOAST and indexes) split between applications in proportion to the payload bytes counted at ingest."
+          },
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "rows": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "projectId",
+          "bytes",
+          "slug",
+          "name",
+          "rows"
+        ]
+      },
+      "StorageOverviewDto": {
+        "type": "object",
+        "properties": {
+          "tables": {
+            "description": "Every table, largest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StorageTableSizeDto"
+            }
+          },
+          "partitions": {
+            "description": "Day partitions of the partitioned tables, by table then day.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StoragePartitionSizeDto"
+            }
+          },
+          "projects": {
+            "description": "Raw telemetry per project, largest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectStorageSummaryDto"
+            }
+          },
+          "databaseBytes": {
+            "type": "number",
+            "description": "`pg_database_size`: everything, including free space inside tables."
+          },
+          "retentionDays": {
+            "type": "number"
+          },
+          "aggregateRetentionDays": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "tables",
+          "partitions",
+          "projects",
+          "databaseBytes",
+          "retentionDays",
+          "aggregateRetentionDays"
+        ]
+      },
+      "StorageUsageTable": {
+        "type": "string",
+        "enum": [
+          "requests",
+          "jobs",
+          "error_occurrences",
+          "logs",
+          "runtime_metrics",
+          "custom_metrics",
+          "profiles"
+        ]
+      },
+      "TableUsageDto": {
+        "type": "object",
+        "properties": {
+          "table": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StorageUsageTable"
+              }
+            ]
+          },
+          "bytes": {
+            "type": "number",
+            "description": "Estimated on-disk bytes: the real size of each day partition (heap, TOAST and indexes) split between applications in proportion to the payload bytes counted at ingest."
+          },
+          "rows": {
+            "type": "number",
+            "description": "Rows stored (exact, counted at ingest)."
+          }
+        },
+        "required": [
+          "table",
+          "bytes",
+          "rows"
+        ]
+      },
+      "DayUsageDto": {
+        "type": "object",
+        "properties": {
+          "day": {
+            "type": "string",
+            "format": "date"
+          },
+          "bytes": {
+            "type": "number",
+            "description": "Estimated on-disk bytes: the real size of each day partition (heap, TOAST and indexes) split between applications in proportion to the payload bytes counted at ingest."
+          },
+          "tables": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TableUsageDto"
+            }
+          },
+          "rows": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "day",
+          "bytes",
+          "tables",
+          "rows"
+        ]
+      },
+      "ApplicationUsageDto": {
+        "type": "object",
+        "properties": {
+          "applicationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "bytes": {
+            "type": "number",
+            "description": "Estimated on-disk bytes: the real size of each day partition (heap, TOAST and indexes) split between applications in proportion to the payload bytes counted at ingest."
+          },
+          "tables": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TableUsageDto"
+            }
+          },
+          "name": {
+            "type": "string"
+          },
+          "rows": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "applicationId",
+          "bytes",
+          "tables",
+          "name",
+          "rows"
+        ]
+      },
+      "StorageTrimStatus": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "running"
+        ]
+      },
+      "StorageTrimDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "applicationId": {
+            "type": "string",
+            "nullable": true,
+            "description": "The trimmed application; null when the trim covers the whole project.",
+            "format": "uuid"
+          },
+          "cutoffDay": {
+            "type": "string",
+            "description": "Rows before this UTC day are deleted.",
+            "format": "date"
+          },
+          "requestedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "startedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StorageTrimStatus"
+              }
+            ]
+          },
+          "totalSteps": {
+            "type": "number",
+            "nullable": true,
+            "description": "Tables and partitions to process; null until the trim starts."
+          },
+          "keepDays": {
+            "type": "number"
+          },
+          "doneSteps": {
+            "type": "number",
+            "description": "Tables and partitions processed so far."
+          }
+        },
+        "required": [
+          "id",
+          "applicationId",
+          "cutoffDay",
+          "requestedAt",
+          "startedAt",
+          "status",
+          "totalSteps",
+          "keepDays",
+          "doneSteps"
+        ]
+      },
+      "ProjectStorageDto": {
+        "type": "object",
+        "properties": {
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "applicationId": {
+            "type": "string",
+            "nullable": true,
+            "description": "The application the totals, tables and days are narrowed to, if any.",
+            "format": "uuid"
+          },
+          "bytes": {
+            "type": "number",
+            "description": "Estimated on-disk bytes: the real size of each day partition (heap, TOAST and indexes) split between applications in proportion to the payload bytes counted at ingest."
+          },
+          "tables": {
+            "description": "Split by table, largest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TableUsageDto"
+            }
+          },
+          "days": {
+            "description": "Daily trend, oldest first (days with stored rows only).",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DayUsageDto"
+            }
+          },
+          "applications": {
+            "description": "Every application of the project, largest first (not narrowed by `application`).",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApplicationUsageDto"
+            }
+          },
+          "trims": {
+            "description": "Pending and running trims of the project, oldest request first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StorageTrimDto"
+            }
+          },
+          "retentionDays": {
+            "type": "number",
+            "description": "RETENTION_DAYS: raw days kept; a trim keeps fewer (`keepDays` below this)."
+          },
+          "rows": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "projectId",
+          "applicationId",
+          "bytes",
+          "tables",
+          "days",
+          "applications",
+          "trims",
+          "retentionDays",
+          "rows"
+        ]
+      },
+      "CreateStorageTrimDto": {
+        "type": "object",
+        "properties": {
+          "keepDays": {
+            "type": "integer",
+            "description": "Keep today and the `keepDays` previous UTC days, delete older rows (1 to RETENTION_DAYS - 1).\nWith 14 days stored, 7 deletes the days 8 to 14 days ago.",
+            "minimum": 1,
+            "maximum": 3650
+          },
+          "application": {
+            "type": "string",
+            "description": "Trim one application of the project. Omit to trim every application of the project.",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "keepDays"
         ]
       }
     }
