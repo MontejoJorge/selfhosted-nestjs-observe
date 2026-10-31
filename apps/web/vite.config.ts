@@ -6,6 +6,8 @@ import { defineConfig } from 'vite';
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Serve from a sub-path when set (the demo on GitHub Pages: `/<repo>/`).
+  base: process.env.BASE_PATH ?? '/',
   plugins: [
     react(),
     tailwindcss(),

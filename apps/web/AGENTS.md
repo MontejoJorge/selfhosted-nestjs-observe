@@ -150,3 +150,7 @@ pnpm --filter web dev:demo       # dev server on generated data
 pnpm --filter web build:demo     # static build in dist-demo/ (deployable to any static host)
 pnpm --filter web preview:demo
 ```
+
+`BASE_PATH` sets Vite's `base` (and the router's basename) to serve from a sub-path. The
+`Demo (GitHub Pages)` workflow builds with `BASE_PATH=/<repo>/` and publishes on every push to `main`
+(or on demand).
