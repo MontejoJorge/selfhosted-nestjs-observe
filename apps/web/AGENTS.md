@@ -137,3 +137,16 @@ pnpm --filter web test         # api:client, then the unit tests (Vitest); test:
 pnpm --filter web api:client   # regenerate src/lib/api/generated from apps/api/openapi.json
 ```
 
+## Demo mode
+
+`--mode demo` (`.env.demo`: `VITE_DEMO=true`) runs the dashboard with no backend: `main.tsx` starts a
+Mock Service Worker (`src/demo/`) that answers every `/api/*` call with generated telemetry before the
+router is created. `src/demo/world.ts` defines the fictional projects, apps, operations, jobs, errors and
+releases; `store.ts` generates the history and keeps extending it; `handlers/` mirrors the query API. When
+the API adds or changes an endpoint, update its handler. Normal builds never include `src/demo` or MSW.
+
+```sh
+pnpm --filter web dev:demo       # dev server on generated data
+pnpm --filter web build:demo     # static build in dist-demo/ (deployable to any static host)
+pnpm --filter web preview:demo
+```

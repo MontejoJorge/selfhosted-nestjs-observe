@@ -184,6 +184,9 @@ importers:
       jsdom:
         specifier: ^30.1.3
         version: 30.1.3
+      msw:
+        specifier: ^3.0.3
+        version: 3.0.3(@types/node@24.19.2)(typescript@7.0.2)(vite@8.3.5(@types/node@24.19.2)(jiti@2.7.0)(yaml@2.9.1))
       oxlint:
         specifier: ^1.89.0
         version: 1.90.0(oxlint-tsgolint@7.0.2005)
@@ -5373,8 +5376,7 @@ snapshots:
       '@modelcontextprotocol/core': 2.4.0
       zod: 4.6.7
 
-  '@msw/url@0.1.2':
-    optional: true
+  '@msw/url@0.1.2': {}
 
   '@mswjs/interceptors@0.45.10':
     dependencies:
@@ -5386,7 +5388,6 @@ snapshots:
       rettime: 0.11.12
     transitivePeerDependencies:
       - supports-color
-    optional: true
 
   '@nestjs/cli@12.0.11(@swc/core@1.16.21)(@types/node@24.19.2)(prettier@3.9.10)':
     dependencies:
@@ -5537,8 +5538,7 @@ snapshots:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.20.3
 
-  '@open-draft/until@3.0.1':
-    optional: true
+  '@open-draft/until@3.0.1': {}
 
   '@oxc-project/types@0.155.0': {}
 
@@ -6691,7 +6691,6 @@ snapshots:
   '@types/debug@4.1.13':
     dependencies:
       '@types/ms': 2.1.0
-    optional: true
 
   '@types/deep-eql@4.0.2': {}
 
@@ -6716,8 +6715,7 @@ snapshots:
 
   '@types/luxon@3.7.6': {}
 
-  '@types/ms@2.1.0':
-    optional: true
+  '@types/ms@2.1.0': {}
 
   '@types/node@24.19.2':
     dependencies:
@@ -6753,7 +6751,6 @@ snapshots:
   '@types/set-cookie-parser@2.4.10':
     dependencies:
       '@types/node': 24.19.2
-    optional: true
 
   '@types/swagger-schema-official@2.0.25': {}
 
@@ -6899,8 +6896,7 @@ snapshots:
 
   ansi-styles@5.2.0: {}
 
-  ansi-styles@6.2.3:
-    optional: true
+  ansi-styles@6.2.3: {}
 
   ansis@4.4.0: {}
 
@@ -7102,7 +7098,6 @@ snapshots:
       string-width: 7.2.0
       strip-ansi: 7.2.0
       wrap-ansi: 9.0.2
-    optional: true
 
   clone@1.0.4: {}
 
@@ -7168,8 +7163,7 @@ snapshots:
 
   cookie@1.1.1: {}
 
-  cookie@2.0.1:
-    optional: true
+  cookie@2.0.1: {}
 
   cors@2.8.6:
     dependencies:
@@ -7611,7 +7605,6 @@ snapshots:
     dependencies:
       '@types/set-cookie-parser': 2.4.10
       set-cookie-parser: 3.2.2
-    optional: true
 
   html-encoding-sniffer@7.0.0:
     dependencies:
@@ -7704,8 +7697,7 @@ snapshots:
 
   is-interactive@2.0.0: {}
 
-  is-node-process@1.2.0:
-    optional: true
+  is-node-process@1.2.0: {}
 
   is-number@7.0.0: {}
 
@@ -8045,7 +8037,6 @@ snapshots:
     transitivePeerDependencies:
       - '@types/node'
       - supports-color
-    optional: true
 
   multer@2.5.0:
     dependencies:
@@ -8213,8 +8204,7 @@ snapshots:
 
   os-tmpdir@1.0.2: {}
 
-  outvariant@1.4.3:
-    optional: true
+  outvariant@1.4.3: {}
 
   oxlint-tsgolint@7.0.2005:
     optionalDependencies:
@@ -8598,8 +8588,7 @@ snapshots:
       onetime: 7.0.0
       signal-exit: 4.1.0
 
-  rettime@0.11.12:
-    optional: true
+  rettime@0.11.12: {}
 
   reusify@1.1.0: {}
 
@@ -8687,8 +8676,7 @@ snapshots:
 
   set-cookie-parser@2.7.3: {}
 
-  set-cookie-parser@3.2.2:
-    optional: true
+  set-cookie-parser@3.2.2: {}
 
   setprototypeof@1.2.0: {}
 
@@ -9099,8 +9087,7 @@ snapshots:
       rolldown: 1.2.15
       vite: 8.3.5(@types/node@24.19.2)(jiti@2.7.0)(yaml@2.9.1)
 
-  until-async@3.0.2:
-    optional: true
+  until-async@3.0.2: {}
 
   update-browserslist-db@1.3.4(browserslist@4.29.5):
     dependencies:
@@ -9265,7 +9252,6 @@ snapshots:
       ansi-styles: 6.2.3
       string-width: 7.2.0
       strip-ansi: 7.2.0
-    optional: true
 
   wrappy@1.0.2: {}
 
@@ -9290,8 +9276,7 @@ snapshots:
 
   yargs-parser@21.1.1: {}
 
-  yargs-parser@22.0.0:
-    optional: true
+  yargs-parser@22.0.0: {}
 
   yargs@17.7.3:
     dependencies:
@@ -9311,7 +9296,6 @@ snapshots:
       string-width: 8.3.0
       y18n: 5.0.8
       yargs-parser: 22.0.0
-    optional: true
 
   yocto-spinner@1.2.2:
     dependencies:
