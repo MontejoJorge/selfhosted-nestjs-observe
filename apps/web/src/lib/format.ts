@@ -60,11 +60,12 @@ export function formatPercent(value: number | null | undefined): string {
 export function formatDuration(ms: number | null | undefined): string {
   if (ms === null || ms === undefined || Number.isNaN(ms)) return '–';
   if (ms === 0) return '0 ms';
-  if (ms < 1) return `${ms.toFixed(2)} ms`;
-  if (ms < 100) return `${ms.toFixed(1)} ms`;
-  if (ms < 1000) return `${Math.round(ms)} ms`;
-  if (ms < 60_000) return `${(ms / 1000).toFixed(2)} s`;
-  if (ms < 3_600_000) return `${(ms / 60_000).toFixed(1)} min`;
+  // Each bound is where rounding would reach the next unit (999.6 ms is "1.00 s").
+  if (ms < 0.995) return `${ms.toFixed(2)} ms`;
+  if (ms < 99.95) return `${ms.toFixed(1)} ms`;
+  if (ms < 999.5) return `${Math.round(ms)} ms`;
+  if (ms < 59_995) return `${(ms / 1000).toFixed(2)} s`;
+  if (ms < 3_597_000) return `${(ms / 60_000).toFixed(1)} min`;
   return `${(ms / 3_600_000).toFixed(1)} h`;
 }
 

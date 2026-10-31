@@ -70,11 +70,17 @@ describe('formatDuration', () => {
     expect(formatDuration(ms)).toBe(expected);
   });
 
-  // BUG (cosmetic): values that round up to the next unit keep the smaller unit,
-  // e.g. 999.6 ms reads "1000 ms" instead of "1.00 s" and 59 999 ms reads "60.00 s".
-  it.fails('switches unit when rounding reaches the next one', () => {
-    expect(formatDuration(999.6)).toBe('1.00 s');
-  });
+  it.each([
+    [99.96, '100 ms'],
+    [999.6, '1.00 s'],
+    [59_999, '1.0 min'],
+    [3_599_000, '1.0 h'],
+  ])(
+    'switches unit when rounding reaches the next one: %s as %s',
+    (ms, expected) => {
+      expect(formatDuration(ms)).toBe(expected);
+    },
+  );
 });
 
 describe('formatMegabytes', () => {
