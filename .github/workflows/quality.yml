@@ -1,0 +1,49 @@
+name: Code quality
+
+# Reusable: lint, typecheck and unit tests per app, plus the Prettier check,
+# each as its own matrix job. Called by ci.yml and by the demo deploy.
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: Node.js version
+        type: string
+        default: '22'
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: ${{ matrix.check }}${{ matrix.app && format(' ({0})', matrix.app) || '' }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        check: [lint, typecheck, test]
+        app: [api, web]
+        include:
+          # Prettier runs once over the whole repo.
+          - check: format:check
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: pnpm ${{ matrix.check }}
+        run: |
+          if [ -n "$APP" ]; then
+            pnpm --filter "$APP" "$CHECK"
+          else
+            pnpm "$CHECK"
+          fi
+        env:
+          APP: ${{ matrix.app }}
+          CHECK: ${{ matrix.check }}

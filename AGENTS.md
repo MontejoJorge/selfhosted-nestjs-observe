@@ -51,6 +51,12 @@ Filter to one app with `pnpm --filter api <script>` or `pnpm --filter web <scrip
 - Use [Conventional Commits](https://www.conventionalcommits.org) (`feat(api): ...`, `fix(web): ...`).
 - Work on `develop`. `main` is for releases.
 
+## CI
+
+`.github/workflows/quality.yml` is a reusable workflow: lint, typecheck and test for each app plus
+`format:check`, as matrix jobs. `ci.yml` runs it on pushes to `develop`/`main` and on pull requests;
+`demo.yml` runs it before publishing the dashboard demo to GitHub Pages. Keep the four checks green.
+
 ## Skills
 
 Load the matching skill before writing code:
