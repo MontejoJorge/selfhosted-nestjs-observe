@@ -59,7 +59,7 @@ the stack and keeps the data (`down -v` deletes it).
 | Variable                   | Default  | Description                                            |
 | -------------------------- | -------- | ------------------------------------------------------ |
 | `POSTGRES_PASSWORD`        | (none)   | **Required.** Database password.                       |
-| `OBSERVE_VERSION`          | `latest` | Image tag, for example `v0.1.0`.                       |
+| `OBSERVE_VERSION`          | `latest` | Image tag, for example `v1.0.0`.                       |
 | `OBSERVE_PORT`             | `3000`   | `[host_ip:]port` for the dashboard and ingest.         |
 | `RETENTION_DAYS`           | `14`     | Days of telemetry to keep.                             |
 | `AGGREGATE_RETENTION_DAYS` | `90`     | Days of charts and stats to keep (per-minute rollups). |
@@ -120,12 +120,16 @@ pnpm db:up     # PostgreSQL on localhost:5432
 pnpm dev       # API on :3000 (Swagger at /api/docs), dashboard on :5173
 ```
 
-Other scripts: `pnpm build`, `pnpm lint`, `pnpm typecheck`, `pnpm format` and `pnpm api:generate`
+Other scripts: `pnpm build`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm format` and `pnpm api:generate`
 (regenerates `openapi.json` and the dashboard's client). Conventions for contributors and coding agents are
 in [AGENTS.md](AGENTS.md).
 
-Pushing a `v*` tag such as `v0.1.0` (or running the **Docker image** workflow by hand) builds the image
+Pushing a `v*` tag such as `v1.0.0` (or running the **Docker image** workflow by hand) builds the image
 for amd64 and arm64 and publishes it as that tag, `v` included, and as `latest`.
+
+`pnpm --filter web dev:demo` runs the dashboard with no backend, on generated data (see
+[apps/web/AGENTS.md](apps/web/AGENTS.md#demo-mode)). The **Demo** workflow publishes it to GitHub Pages
+from `main`.
 
 ## Docs
 
