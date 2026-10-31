@@ -221,22 +221,22 @@ describe('mapTelemetryBatch', () => {
       expect(record.customMetrics).toEqual([]);
     });
 
-    // BUG: the execution id (uuidV7) is generated before the acceptance window is
-    // checked, and uuidV7 throws ERR_OUT_OF_RANGE for timestamps of 2^48 ms or more
-    // (year 10889). One snapshot with such a `ct` makes the whole batch fail with a
-    // 500 instead of the item being dropped like any other out-of-window event.
-    it.fails(
-      'drops a request dated beyond year 10889 instead of throwing',
-      () => {
-        const { requests } = map({
-          snapshots: [snapshot({ ct: '+100000-01-01T00:00:00Z' }), snapshot()],
-        });
-        expect(requests).toHaveLength(1);
-      },
-    );
+    // uuidV7 throws past 2^48 ms (year 10889): such an event is dropped, the batch is kept.
+    it('drops a request dated beyond year 10889 instead of throwing', () => {
+      const { requests } = map({
+        snapshots: [snapshot({ ct: '+100000-01-01T00:00:00Z' }), snapshot()],
+      });
+      expect(requests).toHaveLength(1);
+    });
 
-    // BUG: same as above for logs, whose timestamp is epoch ms.
-    it.fails('drops a log with an absurd timestamp instead of throwing', () => {
+    it('drops a job dated beyond year 10889 instead of throwing', () => {
+      const { jobs } = map({
+        jobs: [jobSnapshot({ c: '+100000-01-01T00:00:00Z' }), jobSnapshot()],
+      });
+      expect(jobs).toHaveLength(1);
+    });
+
+    it('drops a log with an absurd timestamp instead of throwing', () => {
       const { logs } = map({
         logs: [
           { timestamp: 1e15, text: 'far future' },

@@ -80,8 +80,14 @@ export function mapTelemetryBatch(
 
   const requests: RequestExecution[] = [];
   for (const snapshot of batch.snapshots ?? []) {
-    const request = mapRequest(snapshot, serviceId, serviceVersion, receivedAt);
-    if (!request || !inWindow(request.calledAt, window)) continue;
+    const request = mapRequest(
+      snapshot,
+      serviceId,
+      serviceVersion,
+      receivedAt,
+      window,
+    );
+    if (!request) continue;
     requests.push(request);
     spans.push(
       ...flattenTrace(
@@ -105,8 +111,8 @@ export function mapTelemetryBatch(
 
   const jobs: JobExecution[] = [];
   for (const snapshot of batch.jobs ?? []) {
-    const job = mapJob(snapshot, serviceId, serviceVersion, receivedAt);
-    if (!job || !inWindow(job.calledAt, window)) continue;
+    const job = mapJob(snapshot, serviceId, serviceVersion, receivedAt, window);
+    if (!job) continue;
     jobs.push(job);
     spans.push(
       ...flattenTrace(
@@ -129,8 +135,8 @@ export function mapTelemetryBatch(
 
   const logs: LogRecord[] = [];
   for (const entry of batch.logs ?? []) {
-    const log = mapLog(entry, serviceId);
-    if (log && inWindow(log.timestamp, window)) logs.push(log);
+    const log = mapLog(entry, serviceId, window);
+    if (log) logs.push(log);
   }
 
   const customMetrics: CustomMetricSample[] = [];
@@ -217,11 +223,18 @@ function occurrence(
   };
 }
 
+/*
+ * The request, job and log mappers check the acceptance window before generating
+ * the UUIDv7 id: uuidV7 throws for timestamps past 2^48 ms, and one absurd
+ * timestamp must drop its event, not fail the whole batch.
+ */
+
 function mapRequest(
   snapshot: WireRequestSnapshot,
   serviceId: string,
   serviceVersion: string | null,
   receivedAt: Date,
+  window: AcceptanceWindow,
 ): RequestExecution | null {
   if (!isRecord(snapshot)) return null;
   const traceId = asString(snapshot.ti);
@@ -229,6 +242,7 @@ function mapRequest(
   if (!traceId || !operationId) return null;
 
   const calledAt = asDate(snapshot.ct, receivedAt);
+  if (!inWindow(calledAt, window)) return null;
   const attributes = asRecord(snapshot.a) ?? {};
   const statusCode = asNumber(attributes.sc);
   const error = asError(snapshot.e);
@@ -258,6 +272,7 @@ function mapJob(
   serviceId: string,
   serviceVersion: string | null,
   receivedAt: Date,
+  window: AcceptanceWindow,
 ): JobExecution | null {
   if (!isRecord(snapshot)) return null;
   const traceId = asString(snapshot.ti);
@@ -267,6 +282,7 @@ function mapJob(
   if (!traceId || !jobId) return null;
 
   const calledAt = asDate(snapshot.c, receivedAt);
+  if (!inWindow(calledAt, window)) return null;
   const status =
     snapshot.s === 'completed' || snapshot.s === 'failed' ? snapshot.s : null;
   const error = asError(snapshot.e);
@@ -299,11 +315,16 @@ function asInteger(value: unknown): number | null {
   return number === null ? null : Math.trunc(number);
 }
 
-function mapLog(entry: WireLogEntry, serviceId: string): LogRecord | null {
+function mapLog(
+  entry: WireLogEntry,
+  serviceId: string,
+  window: AcceptanceWindow,
+): LogRecord | null {
   if (!isRecord(entry) || typeof entry.text !== 'string') return null;
   const timestampMs = asNumber(entry.timestamp);
   if (timestampMs === null) return null;
   const timestamp = new Date(timestampMs);
+  if (!inWindow(timestamp, window)) return null;
   return {
     id: uuidV7(timestampMs),
     timestamp,
