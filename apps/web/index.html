@@ -25,6 +25,31 @@
     </script>
   </head>
   <body>
+    <noscript>
+      <div
+        style="
+          display: flex;
+          min-height: 100vh;
+          align-items: center;
+          justify-content: center;
+          padding: 24px;
+          font-family: system-ui, sans-serif;
+          background: #0a0a0a;
+          color: #e5e5e5;
+        "
+      >
+        <div style="max-width: 28rem">
+          <h1 style="font-size: 1.125rem; margin: 0 0 8px">
+            JavaScript is turned off
+          </h1>
+          <p style="margin: 0; color: #a3a3a3; line-height: 1.5">
+            This dashboard needs JavaScript. Allow it for this site in your
+            browser settings (or the extension that blocks it) and reload the
+            page.
+          </p>
+        </div>
+      </div>
+    </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
