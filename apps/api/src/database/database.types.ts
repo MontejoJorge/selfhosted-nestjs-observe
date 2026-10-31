@@ -15,6 +15,8 @@ export interface ProjectsTable {
   name: string;
   description: string | null;
   created_at: ColumnType<Date, Date | string | undefined, Date | string>;
+  /** Three `TimeRange` values, sorted by duration; default `{1h,24h,7d}`. */
+  range_presets: ColumnType<string[], string[] | undefined, string[]>;
 }
 
 export interface ApplicationsTable {
@@ -42,10 +44,51 @@ export interface ApplicationPurgesTable {
   requested_at: ColumnType<Date, Date | string | undefined, Date | string>;
 }
 
+/**
+ * Rows and estimated payload bytes written per application, UTC day and raw table
+ * (`USAGE_TABLES`), counted at ingest. Apportions the real size of each day partition
+ * between the applications in it (see `storage/domain/apportion.ts`).
+ */
+export interface ApplicationUsageTable {
+  application_id: string;
+  /** `YYYY-MM-DD` (UTC) */
+  day: ColumnType<string, string, string>;
+  table_name: UsageTable;
+  rows: number;
+  bytes: number;
+}
+
+/** Pending "delete data older than N days" requests, processed by `StorageTrimmer`. */
+export interface StorageTrimsTable {
+  id: Generated<string>;
+  project_id: string;
+  /** null: every application of the project */
+  application_id: string | null;
+  keep_days: number;
+  /** rows before this UTC day (`YYYY-MM-DD`) are deleted */
+  cutoff_day: ColumnType<string, string, string>;
+  requested_at: ColumnType<Date, Date | string | undefined, Date | string>;
+  started_at: Timestamp | null;
+  done_steps: ColumnType<number, number | undefined, number>;
+  total_steps: number | null;
+}
+
 export interface ServicesTable {
   application_id: string;
   service_id: string;
   service_version: string | null;
+  first_seen_at: Timestamp;
+  last_seen_at: Timestamp;
+}
+
+/**
+ * Versions each instance reported, with the first and last time it did (ADR 0006).
+ * Upserted at ingest; a release starts at the earliest `first_seen_at` of a version.
+ */
+export interface ServiceVersionsTable {
+  application_id: string;
+  service_id: string;
+  service_version: string;
   first_seen_at: Timestamp;
   last_seen_at: Timestamp;
 }
@@ -190,29 +233,6 @@ export interface SpanStatsTable {
   last_called_at: Timestamp;
 }
 
-export interface SpansTable {
-  application_id: string;
-  execution_id: string;
-  called_at: Timestamp;
-  source: string;
-  service_id: string;
-  trace_id: string;
-  position: number;
-  parent_position: number | null;
-  depth: number;
-  span_id: string | null;
-  parent_span_id: string | null;
-  name: string | null;
-  origin: string;
-  class_name: string;
-  method_name: string;
-  duration_ms: number | null;
-  start_offset_ms: number | null;
-  has_error: boolean;
-  tags: Json | null;
-  error: Json | null;
-}
-
 export interface ErrorGroupsTable {
   id: Generated<number>;
   application_id: string;
@@ -308,7 +328,10 @@ export interface Database {
   applications: ApplicationsTable;
   api_keys: ApiKeysTable;
   application_purges: ApplicationPurgesTable;
+  application_usage: ApplicationUsageTable;
+  storage_trims: StorageTrimsTable;
   services: ServicesTable;
+  service_versions: ServiceVersionsTable;
   requests: RequestsTable;
   jobs: JobsTable;
   requests_1m: RequestsMinuteTable;
@@ -316,7 +339,6 @@ export interface Database {
   users_1h: UsersHourTable;
   user_presence_15m: UserPresenceTable;
   span_stats_5m: SpanStatsTable;
-  spans: SpansTable;
   error_groups: ErrorGroupsTable;
   error_group_culprits: ErrorGroupCulpritsTable;
   error_occurrences: ErrorOccurrencesTable;
@@ -331,7 +353,10 @@ export type Db = Kysely<Database>;
 /** Injection token for the shared Kysely instance. */
 export const KYSELY = Symbol('KYSELY');
 
-/** Telemetry tables carrying `application_id`, purged when an application is deleted. */
+/**
+ * Tables carrying `application_id`, purged when an application is deleted (telemetry, then
+ * its usage counters).
+ */
 export const APPLICATION_SCOPED_TABLES = [
   'requests',
   'jobs',
@@ -340,21 +365,21 @@ export const APPLICATION_SCOPED_TABLES = [
   'users_1h',
   'user_presence_15m',
   'span_stats_5m',
-  'spans',
   'error_occurrences',
   'logs',
   'runtime_metrics',
   'custom_metrics',
   'error_groups',
   'services',
+  'service_versions',
   'profiles',
+  'application_usage',
 ] as const satisfies readonly (keyof Database)[];
 
 /** Day-partitioned tables and their partition key. */
 export const PARTITIONED_TABLES = {
   requests: 'called_at',
   jobs: 'called_at',
-  spans: 'called_at',
   error_occurrences: 'occurred_at',
   logs: 'timestamp',
   runtime_metrics: 'sampled_at',
@@ -376,3 +401,20 @@ export const ROLLUP_TABLES = [
   'user_presence_15m',
   'span_stats_5m',
 ] as const satisfies readonly PartitionedTable[];
+
+/**
+ * Raw, application-scoped tables whose rows are counted per application and day in
+ * `application_usage` at ingest, and that a storage trim deletes from, with their time
+ * column. All are day-partitioned except `profiles`.
+ */
+export const USAGE_TABLES = {
+  requests: 'called_at',
+  jobs: 'called_at',
+  error_occurrences: 'occurred_at',
+  logs: 'timestamp',
+  runtime_metrics: 'sampled_at',
+  custom_metrics: 'recorded_at',
+  profiles: 'received_at',
+} as const satisfies Partial<Record<keyof Database, string>>;
+
+export type UsageTable = keyof typeof USAGE_TABLES;

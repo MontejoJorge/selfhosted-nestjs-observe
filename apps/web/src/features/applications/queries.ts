@@ -1,21 +1,21 @@
 import { api } from '@/lib/api/client';
 import type {
   CreateApplicationDto,
-  TimeRange,
   UpdateApplicationDto,
 } from '@/lib/api/generated/api';
+import { pickWindow, type TimeWindow } from '@/lib/api/scope';
 import { mutationOptions, queryOptions } from '@tanstack/react-query';
 
 /** Projects hold a handful of apps; one page covers them. */
 const APPLICATIONS_LIMIT = 100;
 
-/** Applications with their activity stats for the range. */
-export const applicationsQueryOptions = (project: string, range: TimeRange) =>
+/** Applications with their activity stats for the time window (a Scope works too). */
+export const applicationsQueryOptions = (project: string, window: TimeWindow) =>
   queryOptions({
-    queryKey: ['applications', 'list', project, range],
+    queryKey: ['applications', 'list', project, pickWindow(window)],
     queryFn: ({ signal }) =>
       api.projects.listApplications(
-        { project, range, limit: APPLICATIONS_LIMIT },
+        { project, ...pickWindow(window), limit: APPLICATIONS_LIMIT },
         { signal },
       ),
   });

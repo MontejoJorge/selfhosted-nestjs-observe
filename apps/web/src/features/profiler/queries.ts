@@ -1,13 +1,12 @@
 import { api } from '@/lib/api/client';
-import type { TimeRange } from '@/lib/api/generated/api';
+import { pickWindow, type TimeWindow } from '@/lib/api/scope';
 import { previousWindow } from '@/lib/stats';
 import { queryOptions } from '@tanstack/react-query';
 
 /** Runtime metrics are per application; `instance` narrows to one node. */
-export interface RuntimeScope {
+export interface RuntimeScope extends TimeWindow {
   project: string;
   application: string;
-  range: TimeRange;
   instance?: string;
 }
 
@@ -15,13 +14,19 @@ export interface RuntimeScope {
 export const runtimeInstancesQueryOptions = ({
   project,
   application,
-  range,
+  ...window
 }: Omit<RuntimeScope, 'instance'>) =>
   queryOptions({
-    queryKey: ['profiler', 'instances', project, application, range],
+    queryKey: [
+      'profiler',
+      'instances',
+      project,
+      application,
+      pickWindow(window),
+    ],
     queryFn: ({ signal }) =>
       api.metrics.listRuntimeInstances(
-        { project, application, range },
+        { project, application, ...pickWindow(window) },
         { signal },
       ),
   });
@@ -39,7 +44,7 @@ export const previousRuntimeMetricsQueryOptions = (scope: RuntimeScope) =>
     queryKey: ['profiler', 'metrics', 'previous', scope],
     queryFn: ({ signal }) =>
       api.metrics.getRuntimeMetrics(
-        { ...scope, ...previousWindow(scope.range) },
+        { ...scope, ...previousWindow(scope) },
         { signal },
       ),
     staleTime: 5 * 60_000,

@@ -59,7 +59,7 @@ export function ErrorGroupsPage() {
   return (
     <Page>
       <PageHeader>
-        <ProjectTitle subtitle="Analytics and insights on errors within your project.">
+        <ProjectTitle subtitle="What is failing, how often and since when.">
           Errors
         </ProjectTitle>
         <ScopeControls />

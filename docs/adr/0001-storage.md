@@ -27,12 +27,14 @@ Use PostgreSQL as the single store, behind repository ports, so a columnar
 backend (ClickHouse) can be added later without touching the domain or the
 ingest pipeline.
 
-- Time-series tables (`requests`, `jobs`, `spans`, `logs`, `runtime_metrics`,
-  `custom_metrics`) are range-partitioned by day. Retention drops whole
+- Time-series tables (`requests`, `jobs`, `logs`, `runtime_metrics`,
+  `custom_metrics`, and `spans` until migration 0009) are range-partitioned by day. Retention drops whole
   partitions, which is cheap and avoids `DELETE` bloat.
 - Span trees are flattened on ingest into `spans` rows with `parent_span_id`
   and `depth`. The original tree is kept as `jsonb` on the execution row, so
-  the trace view needs one read.
+  the trace view needs one read. (Revised: no view came to read `spans`, so
+  migration 0009 dropped it; the flattened tree only feeds the `span_stats_5m`
+  rollup now. See ADR 0004.)
 - Errors are fingerprinted on ingest (class, normalized message, top stack
   frame) into `error_groups`. The issues view never scans raw rows.
 - Batches are written with multi-row inserts in a single transaction per batch.

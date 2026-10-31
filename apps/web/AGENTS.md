@@ -105,7 +105,13 @@ Import DTO and enum types (`RequestDetailDto`, `TimeRange`, `LogLevel`, ...) fro
   `LinkRow`; other links in the row need `relative z-10`.
 - **shadcn/ui.** Add components with `pnpm dlx shadcn@latest add <name>` from `apps/web`. Do not
   hand-write them.
-- No tests (repo rule). Everything in English.
+- **Tests.** Vitest (`vitest.config.ts`, which reuses `vite.config.ts` and pins `TZ=UTC`). Specs are
+  co-located `*.spec.ts` files (`*.spec.tsx` for hooks); a spec covering several sibling modules sits in
+  their parent folder (`features/search-schemas.spec.ts`). Pure modules run in node; hook specs start
+  with `// @vitest-environment jsdom` and render the hook with `@testing-library/react` under a
+  `createMemoryRouter`. Test `lib/` helpers, the zod search schemas and the `*-math.ts` modules; do not
+  test shadcn/ui components or mock the generated client.
+- Everything in English.
 
 ## Add a page
 
@@ -127,5 +133,24 @@ pnpm --filter web dev          # http://localhost:5173 (the API's CORS default a
 pnpm --filter web build        # api:client, tsc -b, vite build
 pnpm --filter web typecheck
 pnpm --filter web lint         # oxlint
+pnpm --filter web test         # api:client, then the unit tests (Vitest); test:watch to re-run on change
 pnpm --filter web api:client   # regenerate src/lib/api/generated from apps/api/openapi.json
 ```
+
+## Demo mode
+
+`--mode demo` (`.env.demo`: `VITE_DEMO=true`) runs the dashboard with no backend: `main.tsx` starts a
+Mock Service Worker (`src/demo/`) that answers every `/api/*` call with generated telemetry before the
+router is created. `src/demo/world.ts` defines the fictional projects, apps, operations, jobs, errors and
+releases; `store.ts` generates the history and keeps extending it; `handlers/` mirrors the query API. When
+the API adds or changes an endpoint, update its handler. Normal builds never include `src/demo` or MSW.
+
+```sh
+pnpm --filter web dev:demo       # dev server on generated data
+pnpm --filter web build:demo     # static build in dist-demo/ (deployable to any static host)
+pnpm --filter web preview:demo
+```
+
+`BASE_PATH` sets Vite's `base` (and the router's basename) to serve from a sub-path. The
+`Demo (GitHub Pages)` workflow builds with `BASE_PATH=/<repo>/` and publishes on every push to `main`
+(or on demand).

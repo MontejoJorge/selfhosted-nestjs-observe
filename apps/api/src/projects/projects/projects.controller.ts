@@ -74,7 +74,8 @@ export class ProjectsController {
   @Patch(':project')
   @ApiOperation({
     operationId: 'updateProject',
-    summary: 'Rename a project or change its description (the slug is kept)',
+    summary:
+      'Rename a project, change its description or its three range presets (the slug is kept)',
   })
   @ApiOkResponse({ type: ProjectDto })
   @ApiNotFoundResponse()

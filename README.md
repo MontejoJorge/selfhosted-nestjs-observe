@@ -5,12 +5,13 @@
 <h1 align="center">selfhosted-nestjs-observe</h1>
 
 <p align="center">
-  A self-hosted collector and dashboard for <a href="https://www.npmjs.com/package/@nestjs/observe"><code>@nestjs/observe</code></a>.<br />
+  A self-hosted collector and dashboard for <a href="https://github.com/nestjs/observe"><code>@nestjs/observe</code></a>.<br />
   Keep your NestJS requests, jobs, errors, logs, traces and metrics on your own infrastructure, with no plan limits.
 </p>
 
 <p align="center">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0%20%2B%20Commons%20Clause-blue.svg" alt="License: AGPL-3.0 + Commons Clause" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT" /></a>
+  <a href="https://github.com/nestjs/observe"><img src="https://img.shields.io/badge/%40nestjs%2Fobserve-%E2%89%A4%200.3.20-red.svg" alt="@nestjs/observe 0.3.20 or earlier" /></a>
 </p>
 
 > [!NOTE]
@@ -18,9 +19,17 @@
 > team. It is built with AI: most of the code and docs were written by AI coding agents, reviewed and
 > directed by the maintainer.
 
+> [!IMPORTANT]
+> This project only works with **`@nestjs/observe` 0.3.20 or earlier**. Later releases may not work correctly
+> with this collector, and they ship under the NestJS Observe Agent License, which only allows sending
+> telemetry to NestJS Observe: pointing them at this collector would breach that license. See
+> [issue #1](https://github.com/MontejoJorge/selfhosted-nestjs-observe/issues/1).
+
+![Requests page: request rate and status split, latency over time, and the slowest operations](docs/assets/screenshots/requests.png)
+
 ## Features
 
-- **Drop-in collector** for the `@nestjs/observe` agent: you only change its `endpoint`.
+- **Drop-in collector** for the `@nestjs/observe` agent up to 0.3.20: you only change its `endpoint`.
 - **Requests and jobs** with latency percentiles, error rates and a trace waterfall per execution.
 - **Errors** grouped, **logs** linked to their traces, and **runtime metrics** (CPU, memory, GC, event
   loop) per instance.
@@ -50,7 +59,7 @@ the stack and keeps the data (`down -v` deletes it).
 | Variable                   | Default  | Description                                            |
 | -------------------------- | -------- | ------------------------------------------------------ |
 | `POSTGRES_PASSWORD`        | (none)   | **Required.** Database password.                       |
-| `OBSERVE_VERSION`          | `latest` | Image tag, for example `v0.1.0`.                       |
+| `OBSERVE_VERSION`          | `latest` | Image tag, for example `v1.0.0`.                       |
 | `OBSERVE_PORT`             | `3000`   | `[host_ip:]port` for the dashboard and ingest.         |
 | `RETENTION_DAYS`           | `14`     | Days of telemetry to keep.                             |
 | `AGGREGATE_RETENTION_DAYS` | `90`     | Days of charts and stats to keep (per-minute rollups). |
@@ -111,12 +120,16 @@ pnpm db:up     # PostgreSQL on localhost:5432
 pnpm dev       # API on :3000 (Swagger at /api/docs), dashboard on :5173
 ```
 
-Other scripts: `pnpm build`, `pnpm lint`, `pnpm typecheck`, `pnpm format` and `pnpm api:generate`
+Other scripts: `pnpm build`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm format` and `pnpm api:generate`
 (regenerates `openapi.json` and the dashboard's client). Conventions for contributors and coding agents are
 in [AGENTS.md](AGENTS.md).
 
-Pushing a `v*` tag such as `v0.1.0` (or running the **Docker image** workflow by hand) builds the image
+Pushing a `v*` tag such as `v1.0.0` (or running the **Docker image** workflow by hand) builds the image
 for amd64 and arm64 and publishes it as that tag, `v` included, and as `latest`.
+
+`pnpm --filter web dev:demo` runs the dashboard with no backend, on generated data (see
+[apps/web/AGENTS.md](apps/web/AGENTS.md#demo-mode)). The **Demo** workflow publishes it to GitHub Pages
+from `main`.
 
 ## Docs
 
@@ -126,6 +139,4 @@ for amd64 and arm64 and publishes it as that tag, `v` included, and as `latest`.
 
 ## License
 
-[AGPL-3.0 with the Commons Clause](LICENSE). You may use, modify and self-host it. If you distribute it or
-offer a modified version over a network, you must publish your source under the same terms. You may not
-sell it, or sell hosting or support whose value comes from it.
+[MIT](LICENSE).

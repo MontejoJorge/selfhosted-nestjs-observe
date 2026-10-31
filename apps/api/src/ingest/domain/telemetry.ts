@@ -20,6 +20,14 @@ export interface ServiceSighting {
   seenAt: Date;
 }
 
+/** An instance running a version, over the time span of one batch (ADR 0006). */
+export interface VersionSighting {
+  serviceId: string;
+  serviceVersion: string;
+  firstSeenAt: Date;
+  lastSeenAt: Date;
+}
+
 export interface RequestExecution {
   id: string;
   calledAt: Date;
@@ -61,7 +69,10 @@ export interface JobExecution {
   trace: WireTraceNode[];
 }
 
-/** One node of an execution's span tree, flattened in depth-first order. */
+/**
+ * One node of an execution's span tree, flattened in depth-first order. Only rolled up
+ * (`rollUpSpans`); spans are not stored one by one.
+ */
 export interface SpanRecord {
   executionId: string;
   calledAt: Date;
@@ -157,6 +168,8 @@ export interface TelemetryBatchRecord {
   /** Application the batch was authenticated for; stamped on every stored row. */
   applicationId: string;
   service: ServiceSighting;
+  /** null when the agent reports no version */
+  version: VersionSighting | null;
   requests: RequestExecution[];
   jobs: JobExecution[];
   /** `requests` and `jobs` summed per minute, ordered by key */
@@ -168,7 +181,6 @@ export interface TelemetryBatchRecord {
   userPresence: UserPresence[];
   /** spans summed per 5 minutes, instance, operation and class method, ordered by key */
   spanRollups: SpanRollup[];
-  spans: SpanRecord[];
   errors: ErrorOccurrence[];
   logs: LogRecord[];
   runtime: RuntimeSample | null;

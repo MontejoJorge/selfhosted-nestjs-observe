@@ -10,9 +10,11 @@ import { Page, PageActions, PageHeader, PageTitle } from '@/components/page';
 import { CountBadge } from '@/components/panel';
 import { EmptyState } from '@/components/states';
 import type { ProjectSummaryDto } from '@/lib/api/generated/api';
+import type { TimeWindow } from '@/lib/api/scope';
 import { formatDuration, formatRelative } from '@/lib/format';
 import { paths } from '@/lib/paths';
-import { useRange } from '@/lib/scope-hooks';
+import { useTimeWindow } from '@/lib/scope-hooks';
+import { windowPhrase } from '@/lib/time-window';
 import { cn } from '@/lib/utils';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
@@ -36,21 +38,22 @@ const STATUS_OPTIONS = [
   { value: 'inactive', label: 'Inactive' },
 ] as const;
 
-const SPARK_POINTS = 12;
+const SPARK_POINTS = 24;
 
-/** Averages the avg-duration buckets into a dozen points: a calm trend line. */
-function smooth(activity: ProjectSummaryDto['activity']): (number | null)[] {
+/**
+ * Requests per bucket, summed into about two dozen points. Volume rather than
+ * latency: a bucket without traffic is a real zero, so a quiet project still
+ * draws a line across the whole range instead of one with holes.
+ */
+function requestSeries(activity: ProjectSummaryDto['activity']): number[] {
   const size = Math.max(1, Math.ceil(activity.length / SPARK_POINTS));
-  const points: (number | null)[] = [];
+  const points: number[] = [];
   for (let i = 0; i < activity.length; i += size) {
-    let sum = 0;
-    let weight = 0;
-    for (const bucket of activity.slice(i, i + size)) {
-      if (bucket.avgDurationMs === null) continue;
-      sum += bucket.avgDurationMs * bucket.count;
-      weight += bucket.count;
-    }
-    points.push(weight > 0 ? sum / weight : null);
+    points.push(
+      activity
+        .slice(i, i + size)
+        .reduce((total, bucket) => total + bucket.count, 0),
+    );
   }
   return points;
 }
@@ -58,13 +61,18 @@ function smooth(activity: ProjectSummaryDto['activity']): (number | null)[] {
 function ProjectCard({
   project,
   active,
+  timeWindow,
 }: {
   project: ProjectSummaryDto;
   active: boolean;
+  timeWindow: TimeWindow;
 }) {
   const [value, unit] = formatDuration(project.avgDurationMs).split(' ');
-  const series = useMemo(() => smooth(project.activity), [project.activity]);
-  const hasActivity = series.some((v) => v !== null);
+  const series = useMemo(
+    () => requestSeries(project.activity),
+    [project.activity],
+  );
+  const hasActivity = series.some((count) => count > 0);
 
   return (
     <article className="relative flex min-h-[370px] flex-col overflow-hidden rounded-2xl border bg-linear-to-b from-card-header to-card transition-colors hover:border-foreground/20">
@@ -117,7 +125,12 @@ function ProjectCard({
         </p>
       </div>
       {hasActivity ? (
-        <Sparkline values={series} endDot className="mt-auto h-40" />
+        <div className="mt-auto flex flex-col gap-2">
+          <p className="px-5 font-mono text-[10px] tracking-wider text-muted-foreground uppercase">
+            Requests · {windowPhrase(timeWindow)}
+          </p>
+          <Sparkline values={series} className="h-36" />
+        </div>
       ) : (
         <p className="mt-auto px-5 pb-6 font-mono text-xs text-muted-foreground">
           No requests in this time range.
@@ -128,10 +141,10 @@ function ProjectCard({
 }
 
 export function ProjectsPage() {
-  const range = useRange();
+  const timeWindow = useTimeWindow();
   // When the data was fetched: the reference for "active".
   const { data, dataUpdatedAt: now } = useSuspenseQuery(
-    projectsQueryOptions(range),
+    projectsQueryOptions(timeWindow),
   );
   const [name, setName] = useState<string>();
   const [status, setStatus] = useState<'active' | 'inactive'>();
@@ -147,7 +160,7 @@ export function ProjectsPage() {
   return (
     <Page>
       <PageHeader>
-        <PageTitle subtitle="Group your applications into projects to manage them more effectively.">
+        <PageTitle subtitle="One project per environment or product, each with its own applications.">
           My projects <CountBadge>{data.items.length}</CountBadge>
         </PageTitle>
         {data.items.length > 0 ? (
@@ -194,6 +207,7 @@ export function ProjectsPage() {
                   key={project.id}
                   project={project}
                   active={isActive(project, now)}
+                  timeWindow={timeWindow}
                 />
               ))}
             </div>

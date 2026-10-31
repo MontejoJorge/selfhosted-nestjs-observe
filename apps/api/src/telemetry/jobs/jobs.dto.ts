@@ -71,6 +71,9 @@ export class JobListItemDto {
 }
 
 export class JobDetailDto extends JobListItemDto {
+  /** Version the instance reported when it ran the job. */
+  @ApiProperty({ type: String, nullable: true })
+  serviceVersion: string | null;
   @ApiProperty({ type: String, nullable: true })
   enqueuedAt: string | null;
   @ApiProperty(TAGS_SCHEMA)

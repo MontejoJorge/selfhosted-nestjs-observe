@@ -5,8 +5,9 @@ import { applicationsQueryOptions } from './queries';
 
 /** id → name for the current project's applications (empty until loaded). */
 export function useApplicationNames(): ReadonlyMap<string, string> {
-  const { project, range } = useScope();
-  const { data } = useQuery(applicationsQueryOptions(project, range));
+  const scope = useScope();
+  const { project } = scope;
+  const { data } = useQuery(applicationsQueryOptions(project, scope));
   return useMemo(
     () => new Map((data?.items ?? []).map((app) => [app.id, app.name])),
     [data],

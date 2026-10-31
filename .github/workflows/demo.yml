@@ -1,0 +1,60 @@
+name: Demo (GitHub Pages)
+
+# Publishes the backend-less dashboard demo (`apps/web`, `--mode demo`) to GitHub Pages.
+# Requires Settings > Pages > Source: "GitHub Actions".
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One deployment at a time; a newer run waits instead of cancelling a live deploy.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  quality:
+    uses: ./.github/workflows/quality.yml
+
+  build:
+    needs: quality
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Pages serves the project site under /<repo>/.
+      - run: pnpm --filter web build:demo
+        env:
+          BASE_PATH: /${{ github.event.repository.name }}/
+
+      # Pages has no SPA fallback: unknown paths get 404.html, so make it the app.
+      - run: cp apps/web/dist-demo/index.html apps/web/dist-demo/404.html
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/web/dist-demo
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

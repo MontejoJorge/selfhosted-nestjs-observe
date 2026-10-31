@@ -14,11 +14,13 @@ import { ErrorPanel } from '@/components/trace/error-panel';
 import { TraceWaterfall } from '@/components/trace/trace-waterfall';
 import { Button } from '@/components/ui/button';
 import { useApplicationNames } from '@/features/applications/use-application-names';
+import { useLiveHold } from '@/features/live/live-context';
 import { ProjectTitle } from '@/features/projects/project-title';
-import { TIME_RANGE_LABELS } from '@/lib/api/scope';
+import { VersionLink } from '@/features/releases/version-link';
 import { formatDuration, formatRelative } from '@/lib/format';
 import { paths } from '@/lib/paths';
 import { useScope } from '@/lib/scope-hooks';
+import { windowPhrase } from '@/lib/time-window';
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { SquareTerminalIcon } from 'lucide-react';
 import { useParams } from 'react-router';
@@ -27,6 +29,7 @@ import { jobDetailQueryOptions, jobStatsQueryOptions } from './queries';
 export function JobDetailPage() {
   const scope = useScope();
   const { jobId = '' } = useParams();
+  useLiveHold();
   const { data: job } = useSuspenseQuery(
     jobDetailQueryOptions(scope.project, jobId),
   );
@@ -41,7 +44,7 @@ export function JobDetailPage() {
   return (
     <Page>
       <PageHeader>
-        <ProjectTitle subtitle="View and analyze jobs processed by your applications.">
+        <ProjectTitle subtitle="Queue and cron runs: duration, wait time and failures.">
           Jobs
         </ProjectTitle>
         <PageActions>
@@ -97,6 +100,9 @@ export function JobDetailPage() {
               {names.get(job.applicationId) ?? job.serviceId}
             </KeyValue>
             <KeyValue label="Instance">{job.serviceId}</KeyValue>
+            <KeyValue label="Version">
+              <VersionLink version={job.serviceVersion} />
+            </KeyValue>
             <KeyValue label="Enqueued at">{job.enqueuedAt ?? '-'}</KeyValue>
             <KeyValue label="Started at">
               {job.calledAt}
@@ -119,7 +125,7 @@ export function JobDetailPage() {
           avg={stats.latency.avg}
           p95={stats.latency.p95}
           count={stats.count}
-          rangeLabel={TIME_RANGE_LABELS[scope.range]}
+          rangePhrase={windowPhrase(scope)}
         />
       ) : null}
 

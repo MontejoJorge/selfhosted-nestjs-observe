@@ -4,7 +4,9 @@ import { formatCount, formatDuration } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useId, useMemo } from 'react';
 import { Area, AreaChart, Bar, BarChart, Line, XAxis, YAxis } from 'recharts';
+import { ChartMarkers } from './chart-markers';
 import { chartTooltip } from './chart-tooltip';
+import { MARKER_MARGIN_TOP, type ChartMarker } from './marker-placement';
 
 const requestConfig: ChartConfig = {
   ok: { label: '1/2/3xx', color: 'var(--bar)' },
@@ -18,9 +20,12 @@ const requestConfig: ChartConfig = {
 /** Dense thin bars per bucket: grey for 1/2/3xx, red segments on top for 4xx and 5xx. */
 export function RequestBarsChart({
   buckets,
+  markers,
   className,
 }: {
   buckets: readonly TimeBucketDto[];
+  /** Deploys drawn as vertical lines. */
+  markers?: readonly ChartMarker[];
   className?: string;
 }) {
   const data = useMemo(
@@ -41,7 +46,12 @@ export function RequestBarsChart({
       <BarChart
         data={data}
         barCategoryGap="30%"
-        margin={{ top: 4, right: 0, bottom: 0, left: 0 }}
+        margin={{
+          top: markers?.length ? MARKER_MARGIN_TOP : 4,
+          right: 0,
+          bottom: 0,
+          left: 0,
+        }}
       >
         <XAxis dataKey="t" hide />
         <YAxis hide />
@@ -65,6 +75,7 @@ export function RequestBarsChart({
           radius={[2, 2, 0, 0]}
           isAnimationActive={false}
         />
+        <ChartMarkers buckets={buckets} markers={markers} />
       </BarChart>
     </ChartContainer>
   );
@@ -78,9 +89,12 @@ const jobConfig: ChartConfig = {
 /** Job runs per bucket, failed runs in red. */
 export function JobBarsChart({
   buckets,
+  markers,
   className,
 }: {
   buckets: readonly TimeBucketDto[];
+  /** Deploys drawn as vertical lines. */
+  markers?: readonly ChartMarker[];
   className?: string;
 }) {
   const data = useMemo(
@@ -100,7 +114,12 @@ export function JobBarsChart({
       <BarChart
         data={data}
         barCategoryGap="30%"
-        margin={{ top: 4, right: 0, bottom: 0, left: 0 }}
+        margin={{
+          top: markers?.length ? MARKER_MARGIN_TOP : 4,
+          right: 0,
+          bottom: 0,
+          left: 0,
+        }}
       >
         <XAxis dataKey="t" hide />
         <YAxis hide />
@@ -118,6 +137,7 @@ export function JobBarsChart({
           radius={[2, 2, 0, 0]}
           isAnimationActive={false}
         />
+        <ChartMarkers buckets={buckets} markers={markers} />
       </BarChart>
     </ChartContainer>
   );
@@ -131,9 +151,12 @@ const durationConfig: ChartConfig = {
 /** p95 as a red area with a gradient fill, the mean as a dashed line. Both are ms on one axis. */
 export function DurationChart({
   buckets,
+  markers,
   className,
 }: {
   buckets: readonly TimeBucketDto[];
+  /** Deploys drawn as vertical lines. */
+  markers?: readonly ChartMarker[];
   className?: string;
 }) {
   const gradientId = `duration-${useId().replace(/:/g, '')}`;
@@ -151,7 +174,15 @@ export function DurationChart({
       config={durationConfig}
       className={cn('aspect-auto h-36 w-full', className)}
     >
-      <AreaChart data={data} margin={{ top: 6, right: 6, bottom: 2, left: 6 }}>
+      <AreaChart
+        data={data}
+        margin={{
+          top: markers?.length ? MARKER_MARGIN_TOP : 6,
+          right: 6,
+          bottom: 2,
+          left: 6,
+        }}
+      >
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.4} />
@@ -183,6 +214,7 @@ export function DurationChart({
           dot={false}
           isAnimationActive={false}
         />
+        <ChartMarkers buckets={buckets} markers={markers} />
       </AreaChart>
     </ChartContainer>
   );

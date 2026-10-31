@@ -7,6 +7,7 @@ import {
   type Page,
   type TextKeysetCursor,
 } from '../../telemetry/common/cursor.js';
+import type { TimeRange } from '../../telemetry/common/query.dto.js';
 import type { TimeWindow } from '../../telemetry/common/time-window.js';
 import { emptyActivity, requestActivity } from '../activity.js';
 import { isUniqueViolation } from '../pg-errors.js';
@@ -24,6 +25,7 @@ const COLUMNS = [
   'p.name',
   'p.description',
   'p.created_at',
+  'p.range_presets',
 ] as const;
 
 interface ProjectRow {
@@ -32,6 +34,7 @@ interface ProjectRow {
   name: string;
   description: string | null;
   created_at: Date;
+  range_presets: string[];
   application_count: number;
 }
 
@@ -149,7 +152,14 @@ export class PostgresProjectsRepository extends ProjectsRepository {
       const row = await this.db
         .insertInto('projects')
         .values(project)
-        .returning(['id', 'slug', 'name', 'description', 'created_at'])
+        .returning([
+          'id',
+          'slug',
+          'name',
+          'description',
+          'created_at',
+          'range_presets',
+        ])
         .executeTakeFirstOrThrow();
       return toProject({ ...row, application_count: 0 });
     } catch (error) {
@@ -160,10 +170,15 @@ export class PostgresProjectsRepository extends ProjectsRepository {
   }
 
   async update(id: string, patch: ProjectPatch): Promise<ProjectDto | null> {
-    if (patch.name !== undefined || patch.description !== undefined) {
+    const { rangePresets, ...rest } = patch;
+    const set = {
+      ...rest,
+      ...(rangePresets && { range_presets: rangePresets }),
+    };
+    if (Object.values(set).some((value) => value !== undefined)) {
       const updated = await this.db
         .updateTable('projects')
-        .set(patch)
+        .set(set)
         .where('id', '=', id)
         .executeTakeFirst();
       if (updated.numUpdatedRows === 0n) return null;
@@ -205,5 +220,6 @@ function toProject(row: ProjectRow): ProjectDto {
     description: row.description,
     createdAt: row.created_at.toISOString(),
     applicationCount: row.application_count,
+    rangePresets: row.range_presets as TimeRange[],
   };
 }

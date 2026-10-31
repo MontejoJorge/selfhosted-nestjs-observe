@@ -276,9 +276,9 @@ export class PostgresUsersRepository extends UsersRepository {
 
   /**
    * Distinct users per timeline bucket can't be summed from finer buckets, so each
-   * bucket width reads the grain that divides it: hourly rows for 3 h buckets (7d),
-   * 15-minute presence rows for 15 min buckets (24h), raw requests for 1 min buckets
-   * (1h). Request counts come from `requests_1m`. Distinct counts group by
+   * bucket width reads the grain that divides it: hourly rows for buckets of 1 h or more
+   * (3d, 7d, 15d), 15-minute presence rows for 15 and 30 min buckets (12h, 24h), raw
+   * requests for 1 and 5 min buckets (1h, 3h, 6h). Request counts come from `requests_1m`. Distinct counts group by
    * `(bucket, user)` first: a hash aggregate, 5-15x faster than `count(distinct)`.
    */
   private async activity(
@@ -326,8 +326,8 @@ export class PostgresUsersRepository extends UsersRepository {
   }
 
   /**
-   * Timeline buckets of 3 h or more are whole hours, so they read the rollup plus the
-   * edges; finer ones (1h and 24h ranges) read the user's raw requests, one range of
+   * Timeline buckets of 1 h or more (3d and longer) are whole hours, so they read the
+   * rollup plus the edges; finer ones (up to 24h) read the user's raw requests, one range of
    * the `(application_id, user_id, called_at)` index per partition.
    */
   async findById(

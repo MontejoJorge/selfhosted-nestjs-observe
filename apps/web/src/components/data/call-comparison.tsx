@@ -11,13 +11,14 @@ export function CallComparison({
   avg,
   p95,
   count,
-  rangeLabel,
+  rangePhrase,
 }: {
   durationMs: number;
   avg: number;
   p95: number;
   count: number;
-  rangeLabel: string;
+  /** The time window inside a sentence (`windowPhrase`). */
+  rangePhrase: string;
 }) {
   const max = Math.max(p95 * 1.15, durationMs * 1.05, 1);
   const at = (ms: number) => `${Math.min(100, (ms / max) * 100)}%`;
@@ -54,7 +55,7 @@ export function CallComparison({
         }
       >
         <span className="font-mono text-xs text-muted-foreground">
-          {formatCount(count)} calls · {rangeLabel.toLowerCase()}
+          {formatCount(count)} calls · {rangePhrase}
         </span>
       </PanelHeader>
       <PanelBody>

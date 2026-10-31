@@ -13,9 +13,9 @@ import {
 import { ProjectTitle } from '@/features/projects/project-title';
 import { RequestTable } from '@/features/requests/request-table';
 import type { TimeBucketDto, UserDetailDto } from '@/lib/api/generated/api';
-import { TIME_RANGE_LABELS } from '@/lib/api/scope';
 import { formatCount, formatDuration, formatRelative } from '@/lib/format';
 import { useScope, useTypedSearch } from '@/lib/scope-hooks';
+import { windowPhrase } from '@/lib/time-window';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { useParams } from 'react-router';
@@ -48,7 +48,7 @@ export function UserPage() {
   return (
     <Page>
       <PageHeader>
-        <ProjectTitle subtitle="An overview of users interacting with your project.">
+        <ProjectTitle subtitle="Who is calling your services and how their requests perform.">
           Users
         </ProjectTitle>
         <ScopeControls />
@@ -58,8 +58,8 @@ export function UserPage() {
         <UserOverview userId={userId} user={user} />
       ) : (
         <EmptyState title={`No requests from ${userId} in this time range`}>
-          Nothing in the {TIME_RANGE_LABELS[scope.range].toLowerCase()}. Pick a
-          wider range to find their requests.
+          Nothing in the selected range ({windowPhrase(scope)}). Pick a wider
+          range to find their requests.
         </EmptyState>
       )}
 
@@ -90,7 +90,7 @@ function UserOverview({
   userId: string;
   user: UserDetailDto;
 }) {
-  const { range } = useScope();
+  const scope = useScope();
   const totals = useMemo(() => statusTotals(user.timeline), [user.timeline]);
 
   return (
@@ -136,7 +136,7 @@ function UserOverview({
           requests={{ count: user.requestCount, ...totals }}
           previousCount={undefined}
           timeline={user.timeline}
-          range={range}
+          timeWindow={scope}
           layout="header"
         />
         <DurationPanelView

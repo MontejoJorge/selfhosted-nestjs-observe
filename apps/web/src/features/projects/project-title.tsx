@@ -9,9 +9,12 @@ import { projectQueryOptions } from './queries';
 export function ProjectTitle({
   children,
   subtitle,
+  eyebrow,
 }: {
   children: ReactNode;
   subtitle?: ReactNode;
+  /** A breadcrumb above the title, for pages below another one. */
+  eyebrow?: ReactNode;
 }) {
   const { data: project } = useSuspenseQuery(
     projectQueryOptions(useProjectRef()),
@@ -20,6 +23,7 @@ export function ProjectTitle({
     <PageTitle
       avatar={<ProjectAvatar name={project.name} />}
       subtitle={subtitle}
+      eyebrow={eyebrow}
     >
       {children}
     </PageTitle>

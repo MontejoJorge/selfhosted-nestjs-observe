@@ -14,11 +14,13 @@ import { EmptyState } from '@/components/states';
 import { Button } from '@/components/ui/button';
 import { applicationsQueryOptions } from '@/features/applications/queries';
 import { ProjectTitle } from '@/features/projects/project-title';
+import { VersionLink } from '@/features/releases/version-link';
 import type {
   RuntimeInstanceDto,
   RuntimeMetricsDto,
   RuntimeSeriesPointDto,
 } from '@/lib/api/generated/api';
+import { pickWindow } from '@/lib/api/scope';
 import {
   formatCount,
   formatDuration,
@@ -284,33 +286,35 @@ function InstanceRow({
   selected: boolean;
   onSelect: () => void;
 }) {
+  // The name button covers the row (::after); the version link sits above it.
   return (
-    <button
-      type="button"
-      aria-pressed={selected}
-      onClick={onSelect}
+    <div
       className={cn(
-        'flex min-h-12 w-full flex-wrap items-center gap-x-8 gap-y-1 rounded-lg border px-4 py-2.5 text-left transition-colors',
+        'relative flex min-h-12 w-full flex-wrap items-center gap-x-8 gap-y-1 rounded-lg border px-4 py-2.5 text-left transition-colors',
         selected
           ? 'border-primary/50 bg-linear-to-r from-primary/15 to-primary/5'
           : 'border-transparent bg-foreground/[0.02] hover:bg-foreground/[0.05]',
       )}
     >
-      <span className="flex min-w-0 flex-1 items-baseline gap-2">
-        <span
+      <span className="flex min-w-0 flex-1 basis-full flex-wrap items-baseline gap-x-2 gap-y-0.5 sm:basis-0">
+        <button
+          type="button"
+          aria-pressed={selected}
+          onClick={onSelect}
           className={cn(
-            'truncate font-mono text-sm font-semibold',
+            'max-w-full min-w-0 truncate text-left font-mono text-sm font-semibold outline-none after:absolute after:inset-0 after:rounded-lg after:content-[""] focus-visible:after:ring-2 focus-visible:after:ring-ring',
             selected && 'text-primary',
           )}
         >
           {instance.serviceId}
-        </span>
+        </button>
         {instance.serviceVersion ? (
-          <span className="font-mono text-xs text-muted-foreground">
-            {instance.serviceVersion}
-          </span>
+          <VersionLink
+            version={instance.serviceVersion}
+            className="z-10 font-mono text-xs text-muted-foreground hover:text-foreground"
+          />
         ) : null}
-        <span className="text-xs text-muted-foreground">
+        <span className="text-xs whitespace-nowrap text-muted-foreground">
           {formatRelative(instance.lastSeenAt)}
         </span>
       </span>
@@ -331,7 +335,7 @@ function InstanceRow({
           <span className="text-sm font-semibold tabular-nums">{value}</span>
         </span>
       ))}
-    </button>
+    </div>
   );
 }
 
@@ -477,7 +481,7 @@ export function ProfilerPage() {
   const scope = useScope();
   const [search] = useTypedSearch(profilerSearch);
   const { data: applications } = useSuspenseQuery(
-    applicationsQueryOptions(scope.project, scope.range),
+    applicationsQueryOptions(scope.project, scope),
   );
   // Runtime metrics are per application: default to the first one.
   const application = scope.application ?? applications.items[0]?.id;
@@ -485,7 +489,7 @@ export function ProfilerPage() {
   return (
     <Page>
       <PageHeader>
-        <ProjectTitle subtitle="Monitor your application's performance and resource usage.">
+        <ProjectTitle subtitle="Runtime metrics from each running instance.">
           Profiler
         </ProjectTitle>
         <ScopeControls defaultApplication={application} />
@@ -493,9 +497,9 @@ export function ProfilerPage() {
       {application ? (
         <ProfilerBody
           scope={{
+            ...pickWindow(scope),
             project: scope.project,
             application,
-            range: scope.range,
             instance: search.instance,
           }}
         />

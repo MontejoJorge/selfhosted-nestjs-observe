@@ -6,6 +6,13 @@ import {
 } from '@/components/data/use-sorted-rows';
 import { Button } from '@/components/ui/button';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Table,
   TableBody,
   TableCell,
@@ -22,9 +29,8 @@ import {
   ChevronRightIcon,
 } from 'lucide-react';
 import { Fragment, useState, type ReactNode } from 'react';
-import { avgOwnMs } from './search';
+import { avgOwnMs, PAGE_SIZES } from './search';
 
-export const SERVICES_PAGE_SIZE = 8;
 const COLUMNS = 7;
 
 type SortKey =
@@ -85,6 +91,35 @@ function Errors({ count }: { count: number }) {
   );
 }
 
+function PageSizeSelect({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (pageSize: number) => void;
+}) {
+  return (
+    <label className="flex items-center gap-2 text-sm text-muted-foreground">
+      Rows per page
+      <Select
+        value={String(value)}
+        onValueChange={(next) => onChange(Number(next))}
+      >
+        <SelectTrigger size="sm" className="w-20">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {PAGE_SIZES.map((size) => (
+            <SelectItem key={size} value={size}>
+              {size}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </label>
+  );
+}
+
 /**
  * Classes by own time with client-side pages; a row expands into its methods.
  * Remount with a `key` to go back to the first page when the rows change.
@@ -92,9 +127,13 @@ function Errors({ count }: { count: number }) {
 export function ServicesTable({
   services,
   emptyMessage,
+  pageSize,
+  onPageSizeChange,
 }: {
   services: readonly ServiceDto[];
   emptyMessage: ReactNode;
+  pageSize: number;
+  onPageSizeChange: (pageSize: number) => void;
 }) {
   const { sorted, sort, toggle } = useSortedRows(services, accessors, {
     key: 'own',
@@ -102,12 +141,9 @@ export function ServicesTable({
   });
   const [page, setPage] = useState(0);
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
-  const pageCount = Math.max(1, Math.ceil(sorted.length / SERVICES_PAGE_SIZE));
+  const pageCount = Math.max(1, Math.ceil(sorted.length / pageSize));
   const current = Math.min(page, pageCount - 1);
-  const rows = sorted.slice(
-    current * SERVICES_PAGE_SIZE,
-    (current + 1) * SERVICES_PAGE_SIZE,
-  );
+  const rows = sorted.slice(current * pageSize, (current + 1) * pageSize);
   const maxOwnMs = services.reduce(
     (max, service) => Math.max(max, service.selfMs),
     0,
@@ -122,27 +158,30 @@ export function ServicesTable({
   return (
     <TableFrame
       footer={
-        pageCount > 1 ? (
+        sorted.length > Number(PAGE_SIZES[0]) ? (
           <>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={current === 0}
-              onClick={() => setPage(current - 1)}
-            >
-              <ChevronLeftIcon /> Previous
-            </Button>
-            <span className="text-sm">
-              Page {current + 1} of {pageCount}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={current >= pageCount - 1}
-              onClick={() => setPage(current + 1)}
-            >
-              Next <ChevronRightIcon />
-            </Button>
+            <PageSizeSelect value={pageSize} onChange={onPageSizeChange} />
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={current === 0}
+                onClick={() => setPage(current - 1)}
+              >
+                <ChevronLeftIcon /> Previous
+              </Button>
+              <span className="text-sm">
+                Page {current + 1} of {pageCount}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={current >= pageCount - 1}
+                onClick={() => setPage(current + 1)}
+              >
+                Next <ChevronRightIcon />
+              </Button>
+            </div>
           </>
         ) : undefined
       }

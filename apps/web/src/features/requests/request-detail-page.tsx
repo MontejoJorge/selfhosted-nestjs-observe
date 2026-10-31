@@ -15,11 +15,13 @@ import { ErrorPanel } from '@/components/trace/error-panel';
 import { TraceWaterfall } from '@/components/trace/trace-waterfall';
 import { Button } from '@/components/ui/button';
 import { useApplicationNames } from '@/features/applications/use-application-names';
+import { useLiveHold } from '@/features/live/live-context';
 import { ProjectTitle } from '@/features/projects/project-title';
-import { TIME_RANGE_LABELS } from '@/lib/api/scope';
+import { VersionLink } from '@/features/releases/version-link';
 import { formatDuration, formatRelative } from '@/lib/format';
 import { paths } from '@/lib/paths';
 import { useScope } from '@/lib/scope-hooks';
+import { windowPhrase } from '@/lib/time-window';
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { SquareTerminalIcon } from 'lucide-react';
 import { useParams } from 'react-router';
@@ -28,6 +30,7 @@ import { operationsQueryOptions, requestDetailQueryOptions } from './queries';
 export function RequestDetailPage() {
   const scope = useScope();
   const { requestId = '' } = useParams();
+  useLiveHold();
   const { data: request } = useSuspenseQuery(
     requestDetailQueryOptions(scope.project, requestId),
   );
@@ -43,7 +46,7 @@ export function RequestDetailPage() {
   return (
     <Page>
       <PageHeader>
-        <ProjectTitle subtitle="View and analyze requests made to your applications.">
+        <ProjectTitle subtitle="Throughput, latency and failures per operation.">
           Requests
         </ProjectTitle>
         <PageActions>
@@ -104,13 +107,9 @@ export function RequestDetailPage() {
             <KeyValue label="Application">
               {names.get(request.applicationId) ?? request.serviceId}
             </KeyValue>
-            <KeyValue label="Instance">
-              {request.serviceId}
-              {request.serviceVersion ? (
-                <span className="text-muted-foreground">
-                  @{request.serviceVersion}
-                </span>
-              ) : null}
+            <KeyValue label="Instance">{request.serviceId}</KeyValue>
+            <KeyValue label="Version">
+              <VersionLink version={request.serviceVersion} />
             </KeyValue>
             <KeyValue label="Called at">
               {request.calledAt}
@@ -136,7 +135,7 @@ export function RequestDetailPage() {
           avg={stats.latency.avg}
           p95={stats.latency.p95}
           count={stats.count}
-          rangeLabel={TIME_RANGE_LABELS[scope.range]}
+          rangePhrase={windowPhrase(scope)}
         />
       ) : null}
 

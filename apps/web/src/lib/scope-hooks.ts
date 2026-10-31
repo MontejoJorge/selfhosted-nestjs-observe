@@ -3,10 +3,11 @@ import { useNavigate, useParams, useSearchParams } from 'react-router';
 import type { z } from 'zod';
 import type { TimeRange } from './api/generated/api';
 import {
-  rangeFromParams,
   SCOPE_KEYS,
   scopeFromParams,
+  windowFromParams,
   type Scope,
+  type TimeWindow,
 } from './api/scope';
 import {
   applySearchPatch,
@@ -23,33 +24,60 @@ export function useProjectRef(): string {
   return projectId;
 }
 
-/** The project from the path plus application + time range from the URL. */
-export function useScope(): Scope {
-  const project = useProjectRef();
+/** The `:projectId` route param, or undefined outside /projects/:projectId. */
+export function useOptionalProjectRef(): string | undefined {
+  return useParams().projectId;
+}
+
+/** The raw scope params of the URL, joined: a stable dependency for memos. */
+function useScopeParamsKey(): string {
   const [params] = useSearchParams();
-  const application = params.get('application');
-  const range = params.get('range');
-  // Depend on the raw strings so unrelated param changes keep the same object.
-  return useMemo(
-    () =>
-      scopeFromParams(
-        project,
-        new URLSearchParams({
-          application: application ?? '',
-          range: range ?? '',
-        }),
-      ),
-    [project, application, range],
+  return JSON.stringify(SCOPE_KEYS.map((key) => params.get(key) ?? ''));
+}
+
+function paramsOfKey(key: string): URLSearchParams {
+  const values = JSON.parse(key) as string[];
+  return new URLSearchParams(
+    SCOPE_KEYS.map((name, i) => [name, values[i] ?? '']),
   );
 }
 
-/** The time range alone, for pages outside a project. */
-export function useRange(): TimeRange {
-  const [params] = useSearchParams();
-  const range = params.get('range');
+/** The project from the path plus application + time window from the URL. */
+export function useScope(): Scope {
+  const project = useProjectRef();
+  const key = useScopeParamsKey();
+  // Depend on the raw strings so unrelated param changes keep the same object.
   return useMemo(
-    () => rangeFromParams(new URLSearchParams({ range: range ?? '' })),
-    [range],
+    () => scopeFromParams(project, paramsOfKey(key)),
+    [project, key],
+  );
+}
+
+/** The time window alone (`range`, or a custom `from`/`to`), also outside a project. */
+export function useTimeWindow(): TimeWindow {
+  const key = useScopeParamsKey();
+  return useMemo(() => windowFromParams(paramsOfKey(key)), [key]);
+}
+
+/** Switches the URL between a preset and a custom window (one excludes the other). */
+export function useSetTimeWindow() {
+  const [, setParams] = useSearchParams();
+  return useMemo(
+    () => ({
+      preset: (range: TimeRange) =>
+        setParams((prev) =>
+          applySearchPatch(prev, { range, from: undefined, to: undefined }),
+        ),
+      custom: (from: string, to: string) =>
+        setParams((prev) =>
+          applySearchPatch(prev, { range: undefined, from, to }),
+        ),
+      clearCustom: () =>
+        setParams((prev) =>
+          applySearchPatch(prev, { from: undefined, to: undefined }),
+        ),
+    }),
+    [setParams],
   );
 }
 
@@ -67,28 +95,24 @@ export function useTypedSearch<S extends SearchSchema>(schema: S) {
   return [search, setSearch] as const;
 }
 
-/** Builds `path?…` keeping the current application and range, plus `search`. */
+/** Builds `path?…` keeping the current application and time window, plus `search`. */
 export function useScopedHref() {
-  const [params] = useSearchParams();
-  const application = params.get('application');
-  const range = params.get('range');
+  const key = useScopeParamsKey();
   return useCallback(
     (path: string, search?: SearchPatch) => {
       const next = new URLSearchParams();
-      const scope = { application, range };
-      for (const key of SCOPE_KEYS) {
-        const value = scope[key];
-        if (value) next.set(key, value);
+      for (const [name, value] of paramsOfKey(key)) {
+        if (value) next.set(name, value);
       }
       const merged = applySearchPatch(next, search ?? {});
       const query = merged.toString();
       return query ? `${path}?${query}` : path;
     },
-    [application, range],
+    [key],
   );
 }
 
-/** `navigate()` that keeps the current application and range. */
+/** `navigate()` that keeps the current application and time window. */
 export function useScopedNavigate() {
   const navigate = useNavigate();
   const href = useScopedHref();

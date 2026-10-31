@@ -5,7 +5,7 @@ import { useScope, useTypedSearch } from '@/lib/scope-hooks';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { servicesQueryOptions } from './queries';
-import { filterServices, servicesSearch } from './search';
+import { filterServices, PAGE_SIZES, servicesSearch } from './search';
 import { ServicesFilters } from './services-filters';
 import { ServicesTable } from './services-table';
 
@@ -26,7 +26,7 @@ export function ServicesPage() {
   return (
     <Page>
       <PageHeader>
-        <ProjectTitle subtitle="Which of your NestJS classes actually burn the time.">
+        <ProjectTitle subtitle="Find the classes and methods your executions spend the most time in.">
           Services
         </ProjectTitle>
         <ScopeControls />
@@ -42,6 +42,13 @@ export function ServicesPage() {
         <ServicesTable
           key={JSON.stringify([scope, search])}
           services={services}
+          pageSize={Number(search.pageSize ?? PAGE_SIZES[0])}
+          onPageSizeChange={(pageSize) =>
+            setSearch({
+              pageSize:
+                pageSize === Number(PAGE_SIZES[0]) ? undefined : pageSize,
+            })
+          }
           emptyMessage={
             filtered
               ? 'No class matches these filters.'

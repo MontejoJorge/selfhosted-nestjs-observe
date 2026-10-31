@@ -4,6 +4,7 @@ import {
   JobBarsChart,
   RequestBarsChart,
 } from '@/components/charts/bucket-charts';
+import type { ChartMarker } from '@/components/charts/marker-placement';
 import {
   BigNumber,
   ChartCaption,
@@ -17,7 +18,7 @@ import {
   Trend,
 } from '@/components/panel';
 import type { OverviewDto, TimeBucketDto } from '@/lib/api/generated/api';
-import type { Scope } from '@/lib/api/scope';
+import type { TimeWindow } from '@/lib/api/scope';
 import { formatCount, formatDuration } from '@/lib/format';
 import {
   bucketSpread,
@@ -102,21 +103,24 @@ export interface RequestCounts {
 export function RequestsPanel({
   overview,
   previous,
-  range,
+  timeWindow,
   layout,
+  markers,
 }: {
   overview: OverviewDto;
   previous: OverviewDto | undefined;
-  range: Scope['range'];
+  timeWindow: TimeWindow;
   layout: PanelLayout;
+  markers?: readonly ChartMarker[];
 }) {
   return (
     <RequestsPanelView
       requests={overview.requests}
       previousCount={previous?.requests.count}
       timeline={overview.timeline}
-      range={range}
+      timeWindow={timeWindow}
       layout={layout}
+      markers={markers}
     />
   );
 }
@@ -126,14 +130,17 @@ export function RequestsPanelView({
   requests,
   previousCount,
   timeline,
-  range,
+  timeWindow,
   layout,
+  markers,
 }: {
   requests: RequestCounts;
   previousCount: number | undefined;
   timeline: readonly TimeBucketDto[];
-  range: Scope['range'];
+  timeWindow: TimeWindow;
   layout: PanelLayout;
+  /** Deploys drawn on the chart. */
+  markers?: readonly ChartMarker[];
 }) {
   const okCount = requests.count - requests.status4xx - requests.status5xx;
   const trend = (
@@ -182,7 +189,7 @@ export function RequestsPanelView({
           <>
             <CountBadge>{formatCount(requests.count)}</CountBadge>
             <span className="font-mono text-sm">
-              {formatThroughput(requests.count, range)}
+              {formatThroughput(requests.count, timeWindow)}
             </span>
             {trend}
           </>
@@ -193,13 +200,14 @@ export function RequestsPanelView({
           <div className="mb-6">
             <BigNumber value={requests.count.toLocaleString('en-US')} />
             <FigureDetail>
-              <span>{formatThroughput(requests.count, range)}</span>
+              <span>{formatThroughput(requests.count, timeWindow)}</span>
               {trend}
             </FigureDetail>
           </div>
         ) : null}
         <RequestBarsChart
           buckets={timeline}
+          markers={markers}
           className={layout === 'figure' ? 'h-56' : undefined}
         />
         <ChartCaption>{peakCaption(timeline, 'requests')}</ChartCaption>
@@ -217,6 +225,7 @@ export function DurationPanelView({
   previousAvg,
   buckets,
   layout,
+  markers,
 }: {
   title: string;
   avg: number;
@@ -224,6 +233,8 @@ export function DurationPanelView({
   previousAvg: number | undefined;
   buckets: readonly TimeBucketDto[];
   layout: PanelLayout;
+  /** Deploys drawn on the chart. */
+  markers?: readonly ChartMarker[];
 }) {
   const [value, unit] = splitDuration(avg);
   const trend = (
@@ -266,6 +277,7 @@ export function DurationPanelView({
         ) : null}
         <DurationChart
           buckets={buckets}
+          markers={markers}
           className={layout === 'figure' ? 'h-56' : undefined}
         />
         <ChartCaption>{durationCaption(buckets)}</ChartCaption>
@@ -279,10 +291,12 @@ export function DurationPanel({
   overview,
   previous,
   layout,
+  markers,
 }: {
   overview: OverviewDto;
   previous: OverviewDto | undefined;
   layout: PanelLayout;
+  markers?: readonly ChartMarker[];
 }) {
   return (
     <DurationPanelView
@@ -292,6 +306,7 @@ export function DurationPanel({
       previousAvg={previous?.requests.latency.avg}
       buckets={overview.timeline}
       layout={layout}
+      markers={markers}
     />
   );
 }
@@ -300,10 +315,12 @@ export function JobsDurationPanel({
   overview,
   previous,
   layout,
+  markers,
 }: {
   overview: OverviewDto;
   previous: OverviewDto | undefined;
   layout: PanelLayout;
+  markers?: readonly ChartMarker[];
 }) {
   return (
     <DurationPanelView
@@ -313,6 +330,7 @@ export function JobsDurationPanel({
       previousAvg={previous?.jobs.latency.avg}
       buckets={overview.jobsTimeline}
       layout={layout}
+      markers={markers}
     />
   );
 }
@@ -321,10 +339,12 @@ export function JobsPanel({
   overview,
   previous,
   layout,
+  markers,
 }: {
   overview: OverviewDto;
   previous: OverviewDto | undefined;
   layout: PanelLayout;
+  markers?: readonly ChartMarker[];
 }) {
   const { jobs, jobsTimeline } = overview;
   const failed = jobs.failed;
@@ -373,7 +393,7 @@ export function JobsPanel({
             </FigureDetail>
           </div>
         ) : null}
-        <JobBarsChart buckets={jobsTimeline} />
+        <JobBarsChart buckets={jobsTimeline} markers={markers} />
         <ChartCaption>{peakCaption(jobsTimeline, 'runs')}</ChartCaption>
         <TimeRangeFooter buckets={jobsTimeline} />
       </PanelBody>

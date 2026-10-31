@@ -33,6 +33,7 @@ import {
 import { overviewQueryOptions } from '@/features/overview/queries';
 import { usePreviousOverview } from '@/features/overview/use-previous-overview';
 import { ProjectTitle } from '@/features/projects/project-title';
+import { useReleaseMarkers } from '@/features/releases/use-release-markers';
 import { formatCount, formatDuration, formatRelative } from '@/lib/format';
 import { paths } from '@/lib/paths';
 import { useScope, useTypedSearch } from '@/lib/scope-hooks';
@@ -62,6 +63,7 @@ export function JobGroupPage() {
     overviewQueryOptions(scope, filters),
   );
   const previous = usePreviousOverview(scope, filters);
+  const markers = useReleaseMarkers(scope);
   const { data: groups } = useSuspenseQuery(jobStatsQueryOptions(scope));
   const stats = groups.find((g) => g.queue === queue && g.name === name);
   const failed = overview.jobs.failed;
@@ -69,7 +71,7 @@ export function JobGroupPage() {
   return (
     <Page>
       <PageHeader>
-        <ProjectTitle subtitle="View and analyze jobs processed by your applications.">
+        <ProjectTitle subtitle="Queue and cron runs: duration, wait time and failures.">
           Jobs
         </ProjectTitle>
         <ScopeControls />
@@ -107,11 +109,17 @@ export function JobGroupPage() {
           </PanelBody>
         </Panel>
         <div className="flex min-w-0 flex-col gap-6">
-          <JobsPanel overview={overview} previous={previous} layout="header" />
+          <JobsPanel
+            overview={overview}
+            previous={previous}
+            layout="header"
+            markers={markers}
+          />
           <JobsDurationPanel
             overview={overview}
             previous={previous}
             layout="header"
+            markers={markers}
           />
         </div>
       </div>

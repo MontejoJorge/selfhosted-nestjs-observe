@@ -5,9 +5,13 @@ import { z } from 'zod';
 export const COMPARISONS = ['gte', 'lte'] as const;
 export type Comparison = (typeof COMPARISONS)[number];
 
+/** Rows per page of the services table; the first one is the default. */
+export const PAGE_SIZES = ['8', '25', '50', '100'] as const;
+
 /**
  * /services: one class, and thresholds on the average own and total time per call
- * (`ownMs` with `ownOp`, `totalMs` with `totalOp`; the operator defaults to ≥).
+ * (`ownMs` with `ownOp`, `totalMs` with `totalOp`; the operator defaults to ≥), and the
+ * table's rows per page (`pageSize`).
  */
 export const servicesSearch = z.object({
   className: optionalString,
@@ -15,6 +19,7 @@ export const servicesSearch = z.object({
   ownMs: optionalNumber,
   totalOp: optionalEnum(COMPARISONS),
   totalMs: optionalNumber,
+  pageSize: optionalEnum(PAGE_SIZES),
 });
 
 export type ServicesSearch = z.output<typeof servicesSearch>;

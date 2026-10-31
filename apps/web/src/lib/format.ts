@@ -60,11 +60,12 @@ export function formatPercent(value: number | null | undefined): string {
 export function formatDuration(ms: number | null | undefined): string {
   if (ms === null || ms === undefined || Number.isNaN(ms)) return '–';
   if (ms === 0) return '0 ms';
-  if (ms < 1) return `${ms.toFixed(2)} ms`;
-  if (ms < 100) return `${ms.toFixed(1)} ms`;
-  if (ms < 1000) return `${Math.round(ms)} ms`;
-  if (ms < 60_000) return `${(ms / 1000).toFixed(2)} s`;
-  if (ms < 3_600_000) return `${(ms / 60_000).toFixed(1)} min`;
+  // Each bound is where rounding would reach the next unit (999.6 ms is "1.00 s").
+  if (ms < 0.995) return `${ms.toFixed(2)} ms`;
+  if (ms < 99.95) return `${ms.toFixed(1)} ms`;
+  if (ms < 999.5) return `${Math.round(ms)} ms`;
+  if (ms < 59_995) return `${(ms / 1000).toFixed(2)} s`;
+  if (ms < 3_597_000) return `${(ms / 60_000).toFixed(1)} min`;
   return `${(ms / 3_600_000).toFixed(1)} h`;
 }
 
@@ -73,6 +74,45 @@ export function formatMegabytes(mb: number | null | undefined): string {
   if (mb === null || mb === undefined) return '–';
   if (mb >= 1024) return `${(mb / 1024).toFixed(2)} GB`;
   return `${mb.toFixed(mb < 10 ? 1 : 0)} MB`;
+}
+
+const BYTE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB'] as const;
+
+/** Formats a byte count with binary multiples (1 KB = 1024 B): "1.93 GB". */
+export function formatBytes(bytes: number | null | undefined): string {
+  if (bytes === null || bytes === undefined || Number.isNaN(bytes)) return '–';
+  let value = Math.max(0, bytes);
+  let unit = 0;
+  while (value >= 1024 && unit < BYTE_UNITS.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
+  if (unit === 0) return `${Math.round(value)} B`;
+  const digits = value < 10 ? 2 : value < 100 ? 1 : 0;
+  return `${value.toFixed(digits)} ${BYTE_UNITS[unit]}`;
+}
+
+const dayFormat = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+  timeZone: 'UTC',
+});
+const longDayFormat = new Intl.DateTimeFormat('en-US', {
+  weekday: 'short',
+  month: 'short',
+  day: 'numeric',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
+
+/** A UTC calendar day (`YYYY-MM-DD`) as "Oct 29". */
+export function formatDay(day: string): string {
+  return dayFormat.format(new Date(`${day}T00:00:00Z`));
+}
+
+/** A UTC calendar day (`YYYY-MM-DD`) as "Thu, Oct 29, 2026". */
+export function formatLongDay(day: string): string {
+  return longDayFormat.format(new Date(`${day}T00:00:00Z`));
 }
 
 export function formatDateTime(iso: string): string {
