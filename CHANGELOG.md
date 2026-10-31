@@ -36,7 +36,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   pages, and LIVE is off while it is shown.
 - **Demo mode**: `pnpm --filter web dev:demo` (or `build:demo`) runs the dashboard with no backend, on
   generated telemetry for two fictional projects, with releases, errors, traces and runtime metrics.
-  It is published to GitHub Pages on every release. `BASE_PATH` serves the dashboard from a sub-path.
+  A manual workflow publishes it to GitHub Pages. `BASE_PATH` serves the dashboard from a sub-path.
 - Unit tests for the API and the dashboard (`pnpm test`), and a CI workflow that runs lint, typecheck,
   tests and the format check on every push and pull request.
 
