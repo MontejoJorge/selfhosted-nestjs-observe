@@ -15,6 +15,8 @@
     "start:prod": "node dist/main",
     "lint": "oxlint --type-aware src/",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "db:migrate": "nest build && node dist/database/migrate.js",
     "openapi:generate": "nest build && node dist/openapi/generate.js"
   },
@@ -37,12 +39,15 @@
     "@nestjs/cli": "^12.0.0",
     "@nestjs/mau": "^0.2.6",
     "@nestjs/schematics": "^12.0.0",
+    "@swc/core": "^1.16.21",
     "@types/express": "^5.0.0",
     "@types/node": "^24.0.0",
     "@types/pg": "^8.23.1",
     "oxlint": "^1.58.0",
     "oxlint-tsgolint": "^7.0.2001",
     "source-map-support": "^0.5.21",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.2",
+    "unplugin-swc": "^2.0.0",
+    "vitest": "^5.0.5"
   }
 }

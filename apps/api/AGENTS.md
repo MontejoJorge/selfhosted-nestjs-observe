@@ -13,6 +13,7 @@ pnpm db:up                          # PostgreSQL via docker compose (or point DA
 pnpm --filter api db:migrate        # build, then apply pending migrations
 pnpm --filter api start:dev         # watch mode (also migrates on start, see DATABASE_MIGRATE_ON_START)
 pnpm --filter api build | typecheck | lint
+pnpm --filter api test              # unit tests (Vitest); test:watch to re-run on change
 pnpm api:generate                   # regenerate apps/api/openapi.json and the web client
 ```
 
@@ -232,5 +233,11 @@ The dashboard's client is generated from `apps/api/openapi.json`, which is commi
 ## Conventions
 
 - ESM: relative imports end in `.js`. Use `import type` for type-only imports.
-- No tests (maintainer's decision). Verify with build/typecheck/lint and by running the app.
+- Unit tests (Vitest, `vitest.config.ts`): `src/**/*.spec.ts`, next to the file they cover, excluded from
+  `nest build` by `tsconfig.build.json`. SWC compiles them with decorator metadata (like `nest build`) and
+  `reflect-metadata` is preloaded, so DTOs and env classes validate as in the app. No database: test the
+  domain and helpers directly, use cases and guards with in-memory fakes of their ports (subclass the
+  abstract port, e.g. `class FakeTelemetryWriter extends TelemetryWriter`), and DTOs with
+  `plainToInstance` + `validateSync` using the global `ValidationPipe` options. Never mock Kysely: a
+  Postgres adapter is covered by running the app. Also verify with build/typecheck/lint and by running the app.
 - Wire-format changes: edit `src/ingest/domain/wire.ts` and `docs/protocol.md` together.

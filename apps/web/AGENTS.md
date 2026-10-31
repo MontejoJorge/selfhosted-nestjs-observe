@@ -105,7 +105,13 @@ Import DTO and enum types (`RequestDetailDto`, `TimeRange`, `LogLevel`, ...) fro
   `LinkRow`; other links in the row need `relative z-10`.
 - **shadcn/ui.** Add components with `pnpm dlx shadcn@latest add <name>` from `apps/web`. Do not
   hand-write them.
-- No tests (repo rule). Everything in English.
+- **Tests.** Vitest (`vitest.config.ts`, which reuses `vite.config.ts` and pins `TZ=UTC`). Specs are
+  co-located `*.spec.ts` files (`*.spec.tsx` for hooks); a spec covering several sibling modules sits in
+  their parent folder (`features/search-schemas.spec.ts`). Pure modules run in node; hook specs start
+  with `// @vitest-environment jsdom` and render the hook with `@testing-library/react` under a
+  `createMemoryRouter`. Test `lib/` helpers, the zod search schemas and the `*-math.ts` modules; do not
+  test shadcn/ui components or mock the generated client.
+- Everything in English.
 
 ## Add a page
 
@@ -127,5 +133,7 @@ pnpm --filter web dev          # http://localhost:5173 (the API's CORS default a
 pnpm --filter web build        # api:client, tsc -b, vite build
 pnpm --filter web typecheck
 pnpm --filter web lint         # oxlint
+pnpm --filter web test         # api:client, then the unit tests (Vitest); test:watch to re-run on change
 pnpm --filter web api:client   # regenerate src/lib/api/generated from apps/api/openapi.json
 ```
+

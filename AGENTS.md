@@ -29,6 +29,7 @@ pnpm dev            # api + web in watch mode
 pnpm build
 pnpm lint
 pnpm typecheck
+pnpm test           # unit tests of both apps (Vitest)
 pnpm format
 ```
 
@@ -37,7 +38,11 @@ Filter to one app with `pnpm --filter api <script>` or `pnpm --filter web <scrip
 ## Rules
 
 - Everything in the repo is in **English**: code, comments, commits, docs, UI copy.
-- **No tests for now.** Do not add test files, test runners or test dependencies until the maintainer asks.
+- **Unit tests only**, with [Vitest](https://vitest.dev) in both apps. Specs are co-located with the code they
+  cover and named `*.spec.ts` (`*.spec.tsx` for React hooks). They never need PostgreSQL, Docker or a running
+  server: test pure modules directly and use cases with in-memory fakes of their ports. When a spec reveals a
+  bug you are not fixing, keep it as `it.fails(...)` with a comment explaining the bug. Run `pnpm test`
+  together with `pnpm typecheck` and `pnpm lint` before committing.
 - Prettier config lives at the root (`.prettierrc`, with organize-imports). Run `pnpm format` before committing.
 - Wire-format types live in `apps/api/src/ingest/domain/wire.ts`. The query API's shapes are the DTO classes in
   `apps/api` and reach the dashboard through `apps/api/openapi.json`.
