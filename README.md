@@ -20,9 +20,8 @@
 </p>
 
 > [!NOTE]
-> Early development: expect breaking changes. This is a community project, not affiliated with the NestJS
-> team. It is built with AI: most of the code and docs were written by AI coding agents, reviewed and
-> directed by the maintainer.
+> This is a community project, not affiliated with the NestJS team. It is built with AI: most of the code
+> and docs were written by AI coding agents, reviewed and directed by the maintainer.
 
 > [!IMPORTANT]
 > This project only works with **`@nestjs/observe` 0.3.20 or earlier**. Later releases may not work correctly
