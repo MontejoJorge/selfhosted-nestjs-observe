@@ -12,6 +12,11 @@
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT" /></a>
   <a href="https://github.com/nestjs/observe"><img src="https://img.shields.io/badge/%40nestjs%2Fobserve-%E2%89%A4%200.3.20-red.svg" alt="@nestjs/observe 0.3.20 or earlier" /></a>
+  <a href="https://montejojorge.github.io/selfhosted-nestjs-observe/"><img src="https://img.shields.io/badge/demo-live-brightgreen.svg" alt="Live demo" /></a>
+</p>
+
+<p align="center">
+  <a href="https://montejojorge.github.io/selfhosted-nestjs-observe/"><strong>Try the live demo</strong></a>: the dashboard running in your browser on generated data, no backend.
 </p>
 
 > [!NOTE]
@@ -25,7 +30,7 @@
 > telemetry to NestJS Observe: pointing them at this collector would breach that license. See
 > [issue #1](https://github.com/MontejoJorge/selfhosted-nestjs-observe/issues/1).
 
-![Requests page: request rate and status split, latency over time, and the slowest operations](docs/assets/screenshots/requests.png)
+[![Requests page of the live demo: request rate and status split, latency with a release marker, and the operations table](docs/assets/screenshots/requests.png)](https://montejojorge.github.io/selfhosted-nestjs-observe/)
 
 ## Features
 
