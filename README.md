@@ -128,8 +128,8 @@ Pushing a `v*` tag such as `v1.0.0` (or running the **Docker image** workflow by
 for amd64 and arm64 and publishes it as that tag, `v` included, and as `latest`.
 
 `pnpm --filter web dev:demo` runs the dashboard with no backend, on generated data (see
-[apps/web/AGENTS.md](apps/web/AGENTS.md#demo-mode)). The **Demo** workflow publishes it to GitHub Pages
-from `main`.
+[apps/web/AGENTS.md](apps/web/AGENTS.md#demo-mode)). Running the **Demo** workflow by hand publishes it to
+GitHub Pages.
 
 ## Docs
 

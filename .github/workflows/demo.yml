@@ -1,10 +1,8 @@
 name: Demo (GitHub Pages)
 
 # Publishes the backend-less dashboard demo (`apps/web`, `--mode demo`) to GitHub Pages.
-# Requires Settings > Pages > Source: "GitHub Actions".
+# Manual only: run it from the Actions tab. Requires Settings > Pages > Source: "GitHub Actions".
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
