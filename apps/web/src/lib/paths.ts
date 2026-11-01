@@ -6,7 +6,7 @@ export const paths = {
   projects: '/projects',
   /** Database size, tables, projects and day partitions of the whole instance. */
   storage: '/storage',
-  /** Settings of the whole collector (update check). */
+  /** Settings of the whole collector (update check, self-observe). */
   instanceSettings: '/settings',
   project,
   applications: (p: string) => `${project(p)}/applications`,

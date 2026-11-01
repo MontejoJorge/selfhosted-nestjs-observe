@@ -37,6 +37,7 @@ import {
   requestListQueryOptions,
 } from '@/features/requests/queries';
 import { operationSearch } from '@/features/requests/search';
+import { selfObserveQueryOptions } from '@/features/self-observe/queries';
 import { servicesQueryOptions } from '@/features/services/queries';
 import {
   projectStorageQueryOptions,
@@ -136,7 +137,10 @@ export const router = createBrowserRouter(
             {
               path: 'settings',
               loader: async () => {
-                await queryClient.ensureQueryData(updateStatusQueryOptions());
+                await Promise.all([
+                  queryClient.ensureQueryData(updateStatusQueryOptions()),
+                  queryClient.ensureQueryData(selfObserveQueryOptions()),
+                ]);
               },
               lazy: async () => ({
                 Component: (

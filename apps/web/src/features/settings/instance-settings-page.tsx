@@ -1,4 +1,5 @@
 import { Page, PageHeader, PageTitle } from '@/components/page';
+import { SelfObservePanel } from '@/features/self-observe/self-observe-panel';
 import { UpdatesPanel } from '@/features/updates/updates-panel';
 
 /** Settings of the whole collector, outside any project. */
@@ -11,6 +12,7 @@ export function InstanceSettingsPage() {
         </PageTitle>
       </PageHeader>
       <UpdatesPanel />
+      <SelfObservePanel />
     </Page>
   );
 }

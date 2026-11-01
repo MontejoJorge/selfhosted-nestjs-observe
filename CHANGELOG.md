@@ -14,6 +14,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   **Collector settings** page (`/settings`, in the far-left rail) shows the latest release and the
   last check, turns the check off and checks right away. `UPDATE_CHECK=false` turns it off for good.
   Migration `0013` adds `update_check`.
+- **Self-observe** on the Collector settings page: one switch makes the collector report its own
+  requests, jobs, errors, logs and runtime metrics to a "Self" project with a "collector (self)"
+  application, with no API key (the credentials are generated in memory at each start). Off by
+  default; changes apply after a restart, which the page says. `OBSERVE_APP_KEY` and
+  `OBSERVE_APP_SECRET` still take precedence. Migration `0014` adds `self_observe`.
 - Tagging `v*` now also publishes a GitHub release, with the notes of its changelog section.
 - The Storage page says how to change the retention days.
 
