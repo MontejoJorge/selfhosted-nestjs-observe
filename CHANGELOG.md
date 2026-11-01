@@ -9,18 +9,42 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- **Update check**: every 12 hours the API asks GitHub for the collector's latest release. The
-  sidebar shows the running version and, when a newer one is out, a link to its release. A new
-  **Collector settings** page (`/settings`, in the far-left rail) shows the latest release and the
-  last check, turns the check off and checks right away. `UPDATE_CHECK=false` turns it off for good.
-  Migration `0013` adds `update_check`.
-- **Self-observe** on the Collector settings page: one switch makes the collector report its own
-  requests, jobs, errors, logs and runtime metrics to an "Observe collector (self)" project with an
-  "ingester (self)" application, with no API key (the credentials are generated in memory at each start). Off by
-  default; changes apply after a restart, which the page says. `OBSERVE_APP_KEY` and
-  `OBSERVE_APP_SECRET` still take precedence. Migration `0014` adds `self_observe`.
-- Tagging `v*` now also publishes a GitHub release, with the notes of its changelog section.
-- The Storage page says how to change the retention days.
+- **Update check**: every 12 hours the collector asks GitHub for its latest release. The request is
+  made by the API, never by the browser, and the result is stored. The sidebar shows the running
+  version and, when a newer one is out, links to its release. Set `UPDATE_CHECK=false` (new, `true`
+  by default, also in `deploy/.env.example` and the Compose file) to never contact GitHub; the
+  dashboard can't turn it back on. A collector without internet access logs a warning every 12 hours
+  until you do. Migration `0013` adds `update_check`.
+- **Collector settings page** (`/settings`, in the far-left rail): the update check switch, the latest
+  release, when it was last checked and the last error, and a button to check right away. It also
+  holds the self-observe switch.
+- **Self-observe** switch on Collector settings: the collector reports its own requests, jobs,
+  errors, logs and runtime metrics with no API key to create or copy. Turning it on creates an
+  "Observe collector (self)" project with an "ingester (self)" application; the agent's credentials
+  are generated in memory at each start and never stored or shown. Off by default. Turning it on
+  takes effect after a restart, which the page says (the collector does not restart itself); turning
+  it off stops storing the collector's batches at once. It reports to `OBSERVE_ENDPOINT`, or to the
+  collector itself when unset. Deleting the self project stops the reporting until the switch is
+  turned on again and the collector restarted. Migration `0014` adds `self_observe`.
+- **Reorder projects**: a Reorder button on the projects page sets their order by dragging or with
+  arrows. New projects go last. Migration `0015` adds `projects.position`; existing projects keep
+  their alphabetical order.
+- The Storage page says how long raw telemetry and rollups are kept and that `RETENTION_DAYS` and
+  `AGGREGATE_RETENTION_DAYS` change it after a restart.
+- With JavaScript turned off, the dashboard (and the demo) explains how to allow it instead of
+  showing a blank page.
+
+### Changed
+
+- `OBSERVE_APP_KEY` and `OBSERVE_APP_SECRET` are no longer needed for self-observation. They still
+  work as before and take precedence over the switch, which the page then shows locked.
+- **Releases**: a `v*` tag now also publishes a GitHub release, the one the update check reads, with
+  the tag's changelog section as notes. The tag must match the version in `apps/api/package.json`,
+  which the collector reports as its own: bump it (with the root and `apps/web` ones) before tagging,
+  or the release job fails after the image is pushed.
+- The README links the [live demo](https://montejojorge.github.io/selfhosted-nestjs-observe/) and
+  shows how to pin the agent to exactly 0.3.20 in your app:
+  `pnpm add @nestjs/observe@0.3.20 --save-exact`.
 
 ## [1.0.0] - 2026-10-31
 
@@ -92,5 +116,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 First release. A drop-in collector and dashboard for the `@nestjs/observe` agent: requests, jobs,
 errors, logs, traces and runtime metrics in a single PostgreSQL database, shipped as a Docker image.
 
+[Unreleased]: https://github.com/MontejoJorge/selfhosted-nestjs-observe/compare/v1.0.0...HEAD
 [1.0.0]: https://github.com/MontejoJorge/selfhosted-nestjs-observe/compare/v0.1.0...v1.0.0
 [0.1.0]: https://github.com/MontejoJorge/selfhosted-nestjs-observe/releases/tag/v0.1.0
