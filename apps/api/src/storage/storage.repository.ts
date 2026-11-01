@@ -65,6 +65,8 @@ export abstract class StorageRepository {
   abstract projects(): Promise<ProjectRef[]>;
   abstract applicationsOf(projectId: string): Promise<ApplicationRef[]>;
   abstract trimsOf(projectId: string): Promise<StorageTrim[]>;
+  /** Applications of the project whose whole telemetry is queued for deletion. */
+  abstract purgingOf(projectId: string): Promise<string[]>;
 }
 
 /** Write port: the queue of storage trims processed by `StorageTrimmer`. */
@@ -74,4 +76,9 @@ export abstract class StorageTrimQueue {
    * cutoff (the request deleting more wins), so repeated clicks do not pile up.
    */
   abstract enqueue(request: TrimRequest): Promise<StorageTrim>;
+  /**
+   * Queues the deletion of all the telemetry of these applications, which stay
+   * (`application_purges`, processed by `ApplicationPurger`). Already queued ones are kept.
+   */
+  abstract enqueuePurge(applicationIds: string[]): Promise<void>;
 }

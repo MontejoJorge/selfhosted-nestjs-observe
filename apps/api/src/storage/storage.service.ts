@@ -1,16 +1,19 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Env } from '../config/env.js';
+import { ApplicationPurger } from '../maintenance/application-purger.js';
 import { StorageTrimmer } from '../maintenance/storage-trimmer.js';
 import { ScopeResolver } from '../telemetry/common/scope.js';
 import { apportion, type EstimatedCell } from './domain/apportion.js';
 import { InvalidTrimError, trimCutoffDay } from './domain/trim.js';
 import type {
   ApplicationUsageDto,
+  CreateStoragePurgeDto,
   CreateStorageTrimDto,
   DayUsageDto,
   ProjectStorageDto,
   StorageOverviewDto,
+  StoragePurgeDto,
   StorageTrimDto,
   TableUsageDto,
 } from './storage.dto.js';
@@ -83,6 +86,7 @@ export class StorageService {
     private readonly storage: StorageRepository,
     private readonly queue: StorageTrimQueue,
     private readonly trimmer: StorageTrimmer,
+    private readonly purger: ApplicationPurger,
     private readonly scopes: ScopeResolver,
     config: ConfigService<Env, true>,
   ) {
@@ -127,11 +131,12 @@ export class StorageService {
     application?: string,
   ): Promise<ProjectStorageDto> {
     const scope = await this.scopes.resolve({ project, application });
-    const [applications, sizes, totals, trims] = await Promise.all([
+    const [applications, sizes, totals, trims, purging] = await Promise.all([
       this.storage.applicationsOf(scope.projectId),
       this.storage.usageRelationSizes(),
       this.storage.dayTotals(),
       this.storage.trimsOf(scope.projectId),
+      this.storage.purgingOf(scope.projectId),
     ]);
     const cells = apportion(
       await this.storage.applicationCells(applications.map((a) => a.id)),
@@ -167,6 +172,7 @@ export class StorageService {
       days,
       applications: applicationUsage,
       trims: trims.map(toTrimDto),
+      purging,
     };
   }
 
@@ -200,5 +206,26 @@ export class StorageService {
     });
     this.trimmer.trigger();
     return toTrimDto(trim);
+  }
+
+  /**
+   * Queues the deletion of all the telemetry of one application or every application of
+   * the project, rollups and error groups included; the applications and keys stay.
+   * Runs in the background (`ApplicationPurger`).
+   */
+  async requestPurge(
+    project: string,
+    input: CreateStoragePurgeDto,
+  ): Promise<StoragePurgeDto> {
+    const scope = await this.scopes.resolve({
+      project,
+      application: input.application,
+    });
+    const applicationIds = input.application
+      ? [input.application]
+      : (await this.storage.applicationsOf(scope.projectId)).map((a) => a.id);
+    await this.queue.enqueuePurge(applicationIds);
+    this.purger.trigger();
+    return { applicationIds };
   }
 }

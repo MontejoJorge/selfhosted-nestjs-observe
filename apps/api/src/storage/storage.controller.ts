@@ -16,10 +16,12 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import {
+  CreateStoragePurgeDto,
   CreateStorageTrimDto,
   ProjectStorageDto,
   ProjectStorageQueryDto,
   StorageOverviewDto,
+  StoragePurgeDto,
   StorageTrimDto,
 } from './storage.dto.js';
 import { StorageService } from './storage.service.js';
@@ -104,5 +106,26 @@ export class StorageController {
     @Body() body: CreateStorageTrimDto,
   ): Promise<StorageTrimDto> {
     return this.storage.requestTrim(project, body);
+  }
+
+  @Post('projects/:project/storage/purge')
+  @HttpCode(202)
+  @ApiOperation({
+    operationId: 'createStoragePurge',
+    summary:
+      'Delete all the telemetry of a project or one application, keeping the applications',
+    description:
+      'Runs in the background: the project storage lists the applications still being ' +
+      'deleted in `purging`. Deletes every table, rollups (charts and stats), error ' +
+      'groups, instances and versions included; the applications and their API keys stay, ' +
+      `so their agents keep sending. ${FREED_SPACE}`,
+  })
+  @ApiAcceptedResponse({ type: StoragePurgeDto })
+  @ApiNotFoundResponse()
+  createPurge(
+    @Param('project') project: string,
+    @Body() body: CreateStoragePurgeDto,
+  ): Promise<StoragePurgeDto> {
+    return this.storage.requestPurge(project, body);
   }
 }

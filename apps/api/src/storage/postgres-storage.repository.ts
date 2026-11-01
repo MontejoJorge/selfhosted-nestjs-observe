@@ -220,6 +220,17 @@ export class PostgresStorageRepository extends StorageRepository {
       .execute();
     return rows.map(toTrim);
   }
+
+  async purgingOf(projectId: string): Promise<string[]> {
+    const rows = await this.db
+      .selectFrom('application_purges as ap')
+      .innerJoin('applications as a', 'a.id', 'ap.application_id')
+      .select('ap.application_id')
+      .where('a.project_id', '=', projectId)
+      .orderBy('ap.requested_at')
+      .execute();
+    return rows.map((row) => row.application_id);
+  }
 }
 
 @Injectable()
@@ -254,5 +265,14 @@ export class PostgresStorageTrimQueue extends StorageTrimQueue {
       .returningAll()
       .executeTakeFirstOrThrow();
     return toTrim(row);
+  }
+
+  async enqueuePurge(applicationIds: string[]): Promise<void> {
+    if (applicationIds.length === 0) return;
+    await this.db
+      .insertInto('application_purges')
+      .values(applicationIds.map((id) => ({ application_id: id })))
+      .onConflict((oc) => oc.column('application_id').doNothing())
+      .execute();
   }
 }

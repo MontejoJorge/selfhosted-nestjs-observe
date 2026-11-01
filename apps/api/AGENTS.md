@@ -146,6 +146,10 @@ self-observe switch and its application).
   `today - N`) for a project or one application, one queued row per target. `StorageTrimmer` deletes the
   rows of the raw tables before the cutoff partition by partition in batches, `VACUUM`s each partition
   it deleted from and saves its progress; rollups and error groups are not trimmed.
+- **Delete all data** (`POST /projects/:project/storage/purge`) of a project or one application
+  keeps the applications and queues them in `application_purges`, so `ApplicationPurger` deletes
+  every scoped table (rollups, error groups, services and versions included), as for a deleted one.
+  `ProjectStorageDto.purging` lists the applications still being deleted.
 - Error fingerprint = sha1(source, class, normalized message, top stack frame without line/column), per
   application. `error_groups.service_id` is the instance of the most recent occurrence.
   `error_groups.count` is all-time; `error_group_culprits` counts per operationId or `queue/name`.

@@ -126,6 +126,23 @@ export class ProjectStorageDto {
   /** Pending and running trims of the project, oldest request first. */
   @ApiProperty({ type: [StorageTrimDto] })
   trims: StorageTrimDto[];
+  /** Applications whose whole telemetry is being deleted (`createStoragePurge`). */
+  @ApiProperty({ type: String, format: 'uuid', isArray: true })
+  purging: string[];
+}
+
+export class CreateStoragePurgeDto {
+  /** Delete all the data of one application of the project. Omit for every application. */
+  @ApiPropertyOptional({ format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  application?: string;
+}
+
+export class StoragePurgeDto {
+  /** The applications whose whole telemetry is queued for deletion. */
+  @ApiProperty({ type: String, format: 'uuid', isArray: true })
+  applicationIds: string[];
 }
 
 export class StorageTableSizeDto {

@@ -2989,6 +2989,51 @@
         ]
       }
     },
+    "/api/projects/{project}/storage/purge": {
+      "post": {
+        "description": "Runs in the background: the project storage lists the applications still being deleted in `purging`. Deletes every table, rollups (charts and stats), error groups, instances and versions included; the applications and their API keys stay, so their agents keep sending. Deleted rows free their space for reuse by new telemetry right away; the VACUUM run after each partition gives only the empty pages at its end back to the OS, so the database shrinks partly until the partitions age out of RETENTION_DAYS.",
+        "operationId": "createStoragePurge",
+        "parameters": [
+          {
+            "name": "project",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateStoragePurgeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoragePurgeDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Delete all the telemetry of a project or one application, keeping the applications",
+        "tags": [
+          "storage"
+        ]
+      }
+    },
     "/api/updates": {
       "get": {
         "description": "The API looks up the latest GitHub release every 12 hours while the check is on; this route only reads the stored result.",
@@ -6369,6 +6414,14 @@
               "$ref": "#/components/schemas/StorageTrimDto"
             }
           },
+          "purging": {
+            "description": "Applications whose whole telemetry is being deleted (`createStoragePurge`).",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
           "retentionDays": {
             "type": "number",
             "description": "RETENTION_DAYS: raw days kept; a trim keeps fewer (`keepDays` below this)."
@@ -6385,6 +6438,7 @@
           "days",
           "applications",
           "trims",
+          "purging",
           "retentionDays",
           "rows"
         ]
@@ -6406,6 +6460,32 @@
         },
         "required": [
           "keepDays"
+        ]
+      },
+      "CreateStoragePurgeDto": {
+        "type": "object",
+        "properties": {
+          "application": {
+            "type": "string",
+            "description": "Delete all the data of one application of the project. Omit for every application.",
+            "format": "uuid"
+          }
+        }
+      },
+      "StoragePurgeDto": {
+        "type": "object",
+        "properties": {
+          "applicationIds": {
+            "description": "The applications whose whole telemetry is queued for deletion.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "applicationIds"
         ]
       },
       "UpdateStatusDto": {
