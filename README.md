@@ -29,6 +29,12 @@
 > telemetry to NestJS Observe: pointing them at this collector would breach that license. See
 > [issue #1](https://github.com/MontejoJorge/selfhosted-nestjs-observe/issues/1).
 
+Install or downgrade the agent to that exact version, without a `^` range, in your Nest app:
+
+```sh
+pnpm add @nestjs/observe@0.3.20 --save-exact
+```
+
 [![Requests page of the live demo: request rate and status split, latency with a release marker, and the operations table](docs/assets/screenshots/requests.png)](https://montejojorge.github.io/selfhosted-nestjs-observe/)
 
 ## Features
