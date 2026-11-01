@@ -5,6 +5,18 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Update check**: every 12 hours the API asks GitHub for the collector's latest release. The
+  sidebar shows the running version and, when a newer one is out, a link to its release. A new
+  **Collector settings** page (`/settings`, in the far-left rail) shows the latest release and the
+  last check, turns the check off and checks right away. `UPDATE_CHECK=false` turns it off for good.
+  Migration `0013` adds `update_check`.
+- Tagging `v*` now also publishes a GitHub release, with the notes of its changelog section.
+- The Storage page says how to change the retention days.
+
 ## [1.0.0] - 2026-10-31
 
 ### Added

@@ -45,6 +45,7 @@ import {
 } from '@/features/storage/queries';
 import { projectStorageSearch } from '@/features/storage/search';
 import { traceQueryOptions } from '@/features/traces/queries';
+import { updateStatusQueryOptions } from '@/features/updates/queries';
 import { userQueryOptions, usersQueryOptions } from '@/features/users/queries';
 import { userSearch, usersSearch } from '@/features/users/search';
 import { errorStatus } from '@/lib/api/client';
@@ -130,6 +131,17 @@ export const router = createBrowserRouter(
               lazy: async () => ({
                 Component: (await import('@/features/storage/storage-page'))
                   .StoragePage,
+              }),
+            },
+            {
+              path: 'settings',
+              loader: async () => {
+                await queryClient.ensureQueryData(updateStatusQueryOptions());
+              },
+              lazy: async () => ({
+                Component: (
+                  await import('@/features/settings/instance-settings-page')
+                ).InstanceSettingsPage,
               }),
             },
             {

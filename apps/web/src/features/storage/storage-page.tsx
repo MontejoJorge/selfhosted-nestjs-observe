@@ -366,6 +366,14 @@ export function StoragePage() {
         />
       </StorageStats>
 
+      <p className="text-xs text-muted-foreground">
+        Raw telemetry is kept {data.retentionDays} days and rollups{' '}
+        {data.aggregateRetentionDays} days. Change them with the collector's{' '}
+        <code className="font-mono">RETENTION_DAYS</code> and{' '}
+        <code className="font-mono">AGGREGATE_RETENTION_DAYS</code> environment
+        variables; they apply after a restart.
+      </p>
+
       <PanelGrid>
         <DaysPanel data={data} />
         <ProjectsSection data={data} />

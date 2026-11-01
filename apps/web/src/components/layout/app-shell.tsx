@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/sheet';
 import { LiveProvider } from '@/features/live/live-provider';
 import { ThemeToggle } from '@/features/theme/theme-toggle';
+import { VersionLine } from '@/features/updates/version-line';
 import { API_URL } from '@/lib/api/client';
 import { paths } from '@/lib/paths';
 import { cn } from '@/lib/utils';
@@ -15,6 +16,7 @@ import {
   DatabaseIcon,
   FoldersIcon,
   MenuIcon,
+  SettingsIcon,
   type LucideIcon,
 } from 'lucide-react';
 import { Suspense, useState } from 'react';
@@ -56,10 +58,11 @@ function RailLink({
   );
 }
 
-/** Narrow far-left rail: the mark, the projects and storage shortcuts, and the theme toggle. */
+/** Narrow far-left rail: the mark, the projects, storage and settings shortcuts, and the theme toggle. */
 function Rail() {
   const atProjects = useMatch('/projects/*') !== null;
   const atStorage = useMatch('/storage') !== null;
+  const atSettings = useMatch('/settings') !== null;
   return (
     <div className="sticky top-0 hidden h-svh w-[60px] shrink-0 flex-col items-center gap-6 border-r border-sidebar-border bg-rail py-5 lg:flex">
       <Link to={paths.projects} aria-label="All projects">
@@ -77,6 +80,12 @@ function Rail() {
           label="Storage"
           icon={DatabaseIcon}
           active={atStorage}
+        />
+        <RailLink
+          to={paths.instanceSettings}
+          label="Collector settings"
+          icon={SettingsIcon}
+          active={atSettings}
         />
       </div>
       <div className="mt-auto">
@@ -100,6 +109,7 @@ function Sidebar() {
         >
           {API_URL}
         </p>
+        <VersionLine />
       </div>
     </aside>
   );
@@ -124,6 +134,9 @@ function MobileNav() {
           <LogoMark className="size-6" /> Navigation
         </SheetTitle>
         <AppNav onNavigate={() => setOpen(false)} />
+        <div className="mt-auto border-t border-sidebar-border pt-4">
+          <VersionLine />
+        </div>
       </SheetContent>
     </Sheet>
   );

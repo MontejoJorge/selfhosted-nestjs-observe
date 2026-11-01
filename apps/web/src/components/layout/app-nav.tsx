@@ -118,6 +118,13 @@ function RootNav({ onNavigate }: { onNavigate?: () => void }) {
         active={isUnder(pathname, paths.storage)}
         onNavigate={onNavigate}
       />
+      <NavItem
+        to={paths.instanceSettings}
+        label="Settings"
+        icon={SettingsIcon}
+        active={isUnder(pathname, paths.instanceSettings)}
+        onNavigate={onNavigate}
+      />
     </nav>
   );
 }
