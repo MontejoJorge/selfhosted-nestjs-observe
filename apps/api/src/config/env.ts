@@ -77,6 +77,14 @@ export class Env {
   @Max(3650)
   AGGREGATE_RETENTION_DAYS: number = 90;
 
+  /**
+   * Look up the latest release on GitHub every 12 hours (ADR 0008). false: never, and the
+   * dashboard's switch can't turn it on.
+   */
+  @Transform(toBoolean)
+  @IsBoolean()
+  UPDATE_CHECK: boolean = true;
+
   /** Built dashboard to serve from `/` (set in the Docker image). Unset: API only. */
   @IsOptional()
   @IsString()

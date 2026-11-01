@@ -323,6 +323,17 @@ export interface ProfilesTable {
   windows: Json;
 }
 
+/** Single row (`id = 1`): the update check switch and the last result (ADR 0008). */
+export interface UpdateCheckTable {
+  id: ColumnType<number, never, never>;
+  enabled: boolean;
+  latest_version: string | null;
+  latest_url: string | null;
+  latest_published_at: Date | null;
+  checked_at: Date | null;
+  error: string | null;
+}
+
 export interface Database {
   projects: ProjectsTable;
   applications: ApplicationsTable;
@@ -330,6 +341,7 @@ export interface Database {
   application_purges: ApplicationPurgesTable;
   application_usage: ApplicationUsageTable;
   storage_trims: StorageTrimsTable;
+  update_check: UpdateCheckTable;
   services: ServicesTable;
   service_versions: ServiceVersionsTable;
   requests: RequestsTable;

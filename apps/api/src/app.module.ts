@@ -10,6 +10,7 @@ import { SelfObserveModule } from './observe.js';
 import { ProjectsModule } from './projects/projects.module.js';
 import { StorageModule } from './storage/storage.module.js';
 import { TelemetryModule } from './telemetry/telemetry.module.js';
+import { UpdatesModule } from './updates/updates.module.js';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { TelemetryModule } from './telemetry/telemetry.module.js';
     TelemetryModule,
     StorageModule,
     MaintenanceModule,
+    UpdatesModule,
   ],
   controllers: [HealthController],
 })

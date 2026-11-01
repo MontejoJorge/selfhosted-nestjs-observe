@@ -35,6 +35,7 @@ CORS allows every origin.
 | `DATABASE_MIGRATE_ON_START` | `true`      | run pending migrations when the app boots    |
 | `RETENTION_DAYS`            | `14`        | daily partitions older than this are dropped |
 | `AGGREGATE_RETENTION_DAYS`  | `90`        | same for the rollups (min: RETENTION_DAYS)   |
+| `UPDATE_CHECK`              | `true`      | latest GitHub release every 12 h (ADR 0008)  |
 
 ## Layout
 
@@ -76,6 +77,9 @@ src/
   maintenance/                           hourly cron: partitions ahead, retention, purge of deleted applications,
                                          storage trims (StorageTrimmer)
   health/                                GET /api/health
+  updates/                               /api/updates: latest GitHub release vs. the running version, every 12 h
+                                         (ADR 0008); domain (semver, schedule), UpdateChecker, GitHub and
+                                         Postgres adapters
   openapi/                               document builder + generate.ts (writes apps/api/openapi.json)
 ```
 
@@ -89,7 +93,8 @@ Day-partitioned (range on the time column, UTC days, partitions named `<table>_p
 `requests`, `jobs`, `error_occurrences`, `logs`, `runtime_metrics`, `custom_metrics`, and the
 rollups `requests_1m`, `jobs_1m`, `users_1h`, `user_presence_15m` and `span_stats_5m`.
 Plain tables: `services`, `service_versions`, `error_groups`, `error_group_culprits`, `profiles`, `application_usage`, and
-the management tables `projects`, `applications`, `api_keys`, `application_purges`, `storage_trims`.
+the management tables `projects`, `applications`, `api_keys`, `application_purges`, `storage_trims`,
+and `update_check` (one row: the update check switch and last result).
 
 - **Projects -> applications -> API keys.** A project has a unique, immutable `slug`; an application has a
   name unique in its project and up to 3 tags; an API key belongs to one application. Secrets are 32

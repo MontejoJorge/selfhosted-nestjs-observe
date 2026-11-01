@@ -14,7 +14,12 @@ describe('validateEnv', () => {
       DATABASE_MIGRATE_ON_START: true,
       RETENTION_DAYS: 14,
       AGGREGATE_RETENTION_DAYS: 90,
+      UPDATE_CHECK: true,
     });
+  });
+
+  it('turns the update check off with UPDATE_CHECK=false', () => {
+    expect(validateEnv({ UPDATE_CHECK: 'false' }).UPDATE_CHECK).toBe(false);
   });
 
   it('converts numbers from strings', () => {

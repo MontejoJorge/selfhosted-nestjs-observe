@@ -2903,6 +2903,91 @@
           "storage"
         ]
       }
+    },
+    "/api/updates": {
+      "get": {
+        "description": "The API looks up the latest GitHub release every 12 hours while the check is on; this route only reads the stored result.",
+        "operationId": "getUpdateStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateStatusDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Running version, the latest release found on GitHub and whether the check is on",
+        "tags": [
+          "updates"
+        ]
+      }
+    },
+    "/api/updates/settings": {
+      "patch": {
+        "description": "Turning it on looks up the latest release right away when the last check is 12 hours old.",
+        "operationId": "updateUpdateSettings",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSettingsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateStatusDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "UPDATE_CHECK=false"
+          }
+        },
+        "summary": "Turn the update check on or off",
+        "tags": [
+          "updates"
+        ]
+      }
+    },
+    "/api/updates/check": {
+      "post": {
+        "description": "A failed lookup is not an error of this route: it is reported in `error`.",
+        "operationId": "checkForUpdates",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateStatusDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "UPDATE_CHECK=false, or the check is turned off"
+          }
+        },
+        "summary": "Look up the latest release now",
+        "tags": [
+          "updates"
+        ]
+      }
     }
   },
   "info": {
@@ -6155,6 +6240,81 @@
         },
         "required": [
           "keepDays"
+        ]
+      },
+      "UpdateStatusDto": {
+        "type": "object",
+        "properties": {
+          "latestVersion": {
+            "type": "string",
+            "nullable": true,
+            "description": "Tag of the latest release found, e.g. `v1.1.0`; null before the first successful check."
+          },
+          "latestUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "Release page of `latestVersion`."
+          },
+          "latestPublishedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "checkedAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "Last attempt, successful or not.",
+            "format": "date-time"
+          },
+          "error": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why the last attempt failed; null when it succeeded."
+          },
+          "currentVersion": {
+            "type": "string",
+            "description": "Version of the running collector."
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether the latest release is looked up every 12 hours: the switch and UPDATE_CHECK both on."
+          },
+          "disabledByEnv": {
+            "type": "boolean",
+            "description": "UPDATE_CHECK=false: never checks, and the switch can't turn it on."
+          },
+          "updateAvailable": {
+            "type": "boolean",
+            "description": "True when the check is on and `latestVersion` is newer than `currentVersion`."
+          },
+          "releasesUrl": {
+            "type": "string",
+            "description": "Every release of the collector."
+          }
+        },
+        "required": [
+          "latestVersion",
+          "latestUrl",
+          "latestPublishedAt",
+          "checkedAt",
+          "error",
+          "currentVersion",
+          "enabled",
+          "disabledByEnv",
+          "updateAvailable",
+          "releasesUrl"
+        ]
+      },
+      "UpdateSettingsDto": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "Look up the latest release every 12 hours."
+          }
+        },
+        "required": [
+          "enabled"
         ]
       }
     }
