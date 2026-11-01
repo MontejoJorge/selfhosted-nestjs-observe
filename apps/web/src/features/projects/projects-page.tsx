@@ -22,6 +22,7 @@ import { Link } from 'react-router';
 import { CreateProjectDialog } from './create-project-dialog';
 import { ProjectAvatar } from './project-avatar';
 import { projectsQueryOptions } from './queries';
+import { ReorderProjectsDialog } from './reorder-projects-dialog';
 
 /** A project counts as active when one of its apps reported in this window. */
 const ACTIVE_WINDOW_MS = 15 * 60_000;
@@ -165,6 +166,9 @@ export function ProjectsPage() {
         </PageTitle>
         {data.items.length > 0 ? (
           <PageActions>
+            {data.items.length > 1 ? (
+              <ReorderProjectsDialog projects={data.items} />
+            ) : null}
             <CreateProjectDialog />
           </PageActions>
         ) : null}

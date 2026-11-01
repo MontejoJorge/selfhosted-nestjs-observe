@@ -15,6 +15,7 @@ import type {
   ProjectDto,
   ProjectStorageDto,
   ProjectSummaryDto,
+  ReorderProjectsDto,
   StorageOverviewDto,
   StorageTrimDto,
   StorageUsageTable,
@@ -337,6 +338,27 @@ export const managementHandlers = [
       };
       projects.push(project);
       return [201, projectDto(project)];
+    }),
+  ),
+
+  // The list follows the array, so a reorder rearranges it.
+  http.put(
+    '*/api/projects/order',
+    route(async ({ body }) => {
+      const { projectIds } = (await body()) as ReorderProjectsDto;
+      const byId = new Map(projects.map((p) => [p.id, p]));
+      const ordered = projectIds.map((id) => byId.get(id));
+      if (
+        ordered.length !== projects.length ||
+        new Set(projectIds).size !== projectIds.length ||
+        ordered.some((p) => p === undefined)
+      )
+        throw new ApiError(
+          400,
+          'projectIds must list every project exactly once',
+        );
+      projects.splice(0, projects.length, ...(ordered as ProjectState[]));
+      return undefined;
     }),
   ),
 

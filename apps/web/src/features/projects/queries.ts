@@ -54,3 +54,10 @@ export const deleteProjectMutation = (project: string) =>
   mutationOptions({
     mutationFn: () => api.projects.deleteProject({ project }),
   });
+
+/** Every project id once, in the new order of the projects page. */
+export const reorderProjectsMutation = () =>
+  mutationOptions({
+    mutationFn: (projectIds: string[]) =>
+      api.projects.reorderProjects({ projectIds }),
+  });
