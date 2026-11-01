@@ -8,6 +8,7 @@ import { IngestModule } from './ingest/ingest.module.js';
 import { MaintenanceModule } from './maintenance/maintenance.module.js';
 import { SelfObserveModule } from './observe.js';
 import { ProjectsModule } from './projects/projects.module.js';
+import { SelfObserveSwitchModule } from './self-observe/self-observe.module.js';
 import { StorageModule } from './storage/storage.module.js';
 import { TelemetryModule } from './telemetry/telemetry.module.js';
 import { UpdatesModule } from './updates/updates.module.js';
@@ -23,6 +24,7 @@ import { UpdatesModule } from './updates/updates.module.js';
     }),
     // Before ScheduleModule: global modules shut down in reverse order, so the agent
     // still sends what cron jobs finish during shutdown.
+    SelfObserveSwitchModule,
     SelfObserveModule,
     ScheduleModule.forRoot(),
     DatabaseModule,

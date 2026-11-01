@@ -1,9 +1,51 @@
 import { UnauthorizedException, type ExecutionContext } from '@nestjs/common';
 import { describe, expect, it } from 'vitest';
 import type { ApiKeyAuthenticator } from '../../projects/api-keys/api-key-authenticator.js';
+import {
+  SelfObserveRepository,
+  type SelfObserveState,
+} from '../../self-observe/application/ports.js';
+import { SelfObserve } from '../../self-observe/application/self-observe.service.js';
+import {
+  SelfCredentials,
+  type SelfObserveSource,
+} from '../../self-observe/domain/self-observe.js';
 import { IngestAuthGuard } from './ingest-auth.guard.js';
 
 const APP = '0192b8c2-1a2b-7c3d-8e4f-123456789abc';
+const SELF_APP = '0192b8c2-1a2b-7c3d-8e4f-000000000001';
+const credentials = SelfCredentials.generate();
+
+class FakeSelfObserveRepository extends SelfObserveRepository {
+  constructor(private readonly enabled: boolean) {
+    super();
+  }
+  get(): Promise<SelfObserveState> {
+    return Promise.resolve({
+      enabled: this.enabled,
+      applicationId: SELF_APP,
+      target: null,
+    });
+  }
+  enable(): Promise<void> {
+    return Promise.resolve();
+  }
+  disable(): Promise<void> {
+    return Promise.resolve();
+  }
+}
+
+function guard(
+  authenticator: ApiKeyAuthenticator,
+  source: SelfObserveSource = 'off',
+  enabled = source === 'self',
+) {
+  const selfObserve = new SelfObserve(new FakeSelfObserveRepository(enabled), {
+    source,
+    credentials,
+  });
+  return new IngestAuthGuard(authenticator, selfObserve);
+}
 
 /** Accepts one key id + secret pair, and records what it was asked. */
 function fakeAuthenticator() {
@@ -35,9 +77,7 @@ describe('IngestAuthGuard', () => {
       'x-api-key': 'obs_key',
       'x-api-secret': 'obss_secret',
     });
-    await expect(
-      new IngestAuthGuard(authenticator).canActivate(context),
-    ).resolves.toBe(true);
+    await expect(guard(authenticator).canActivate(context)).resolves.toBe(true);
     expect(request.applicationId).toBe(APP);
   });
 
@@ -47,7 +87,7 @@ describe('IngestAuthGuard', () => {
       'x-api-key': ['obs_key', 'obs_other'],
       'x-api-secret': ['obss_secret'],
     });
-    await new IngestAuthGuard(authenticator).canActivate(context);
+    await guard(authenticator).canActivate(context);
     expect(authenticator.calls).toEqual([['obs_key', 'obss_secret']]);
   });
 
@@ -58,8 +98,42 @@ describe('IngestAuthGuard', () => {
   ])('answers 401 for %s', async (_, headers) => {
     const { context, request } = contextFor(headers);
     await expect(
-      new IngestAuthGuard(fakeAuthenticator()).canActivate(context),
+      guard(fakeAuthenticator()).canActivate(context),
     ).rejects.toBeInstanceOf(UnauthorizedException);
     expect(request.applicationId).toBeUndefined();
+  });
+
+  describe('self-observe', () => {
+    const selfHeaders = {
+      'x-api-key': credentials.appKey,
+      'x-api-secret': credentials.appSecret,
+    };
+
+    it("attaches the self application to the collector's own credentials", async () => {
+      const authenticator = fakeAuthenticator();
+      const { context, request } = contextFor(selfHeaders);
+      await expect(
+        guard(authenticator, 'self').canActivate(context),
+      ).resolves.toBe(true);
+      expect(request.applicationId).toBe(SELF_APP);
+      expect(authenticator.calls).toEqual([]);
+    });
+
+    it('answers 401 once the switch is turned off, before the restart', async () => {
+      const { context } = contextFor(selfHeaders);
+      await expect(
+        guard(fakeAuthenticator(), 'self', false).canActivate(context),
+      ).rejects.toBeInstanceOf(UnauthorizedException);
+    });
+
+    it.each<SelfObserveSource>(['off', 'env'])(
+      'ignores them when the agent did not boot in self mode (%s)',
+      async (source) => {
+        const { context } = contextFor(selfHeaders);
+        await expect(
+          guard(fakeAuthenticator(), source, true).canActivate(context),
+        ).rejects.toBeInstanceOf(UnauthorizedException);
+      },
+    );
   });
 });

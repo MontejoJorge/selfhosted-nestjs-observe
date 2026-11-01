@@ -77,6 +77,9 @@ src/
   maintenance/                           hourly cron: partitions ahead, retention, purge of deleted applications,
                                          storage trims (StorageTrimmer)
   health/                                GET /api/health
+  self-observe/                          /api/self-observe: the switch for the collector's own telemetry, the
+                                         boot decision for the agent (observe.ts) and its in-memory ingest
+                                         credentials (ADR 0009)
   updates/                               /api/updates: latest GitHub release vs. the running version, every 12 h
                                          (ADR 0008); domain (semver, schedule), UpdateChecker, GitHub and
                                          Postgres adapters
@@ -94,7 +97,8 @@ Day-partitioned (range on the time column, UTC days, partitions named `<table>_p
 rollups `requests_1m`, `jobs_1m`, `users_1h`, `user_presence_15m` and `span_stats_5m`.
 Plain tables: `services`, `service_versions`, `error_groups`, `error_group_culprits`, `profiles`, `application_usage`, and
 the management tables `projects`, `applications`, `api_keys`, `application_purges`, `storage_trims`,
-and `update_check` (one row: the update check switch and last result).
+`update_check` (one row: the update check switch and last result) and `self_observe` (one row: the
+self-observe switch and its application).
 
 - **Projects -> applications -> API keys.** A project has a unique, immutable `slug`; an application has a
   name unique in its project and up to 3 tags; an API key belongs to one application. Secrets are 32

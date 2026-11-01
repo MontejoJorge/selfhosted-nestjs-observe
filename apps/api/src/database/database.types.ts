@@ -334,6 +334,13 @@ export interface UpdateCheckTable {
   error: string | null;
 }
 
+/** Single row (`id = 1`): the self-observe switch and its application (ADR 0009). */
+export interface SelfObserveTable {
+  id: ColumnType<number, never, never>;
+  enabled: boolean;
+  application_id: string | null;
+}
+
 export interface Database {
   projects: ProjectsTable;
   applications: ApplicationsTable;
@@ -342,6 +349,7 @@ export interface Database {
   application_usage: ApplicationUsageTable;
   storage_trims: StorageTrimsTable;
   update_check: UpdateCheckTable;
+  self_observe: SelfObserveTable;
   services: ServicesTable;
   service_versions: ServiceVersionsTable;
   requests: RequestsTable;

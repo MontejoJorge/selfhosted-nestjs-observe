@@ -23,6 +23,62 @@
         ]
       }
     },
+    "/api/self-observe": {
+      "get": {
+        "operationId": "getSelfObserve",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SelfObserveStatusDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Whether the collector reports its own telemetry, and where",
+        "tags": [
+          "self-observe"
+        ]
+      },
+      "patch": {
+        "description": "On creates the \"Self\" project and its application when missing; no API key is needed. The agent reads the switch when the collector starts, so the change takes effect after a restart (`restartRequired`). Off stops accepting its batches at once.",
+        "operationId": "updateSelfObserve",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSelfObserveDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SelfObserveStatusDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "OBSERVE_APP_KEY and OBSERVE_APP_SECRET are set"
+          }
+        },
+        "summary": "Turn the collector's own telemetry on or off",
+        "tags": [
+          "self-observe"
+        ]
+      }
+    },
     "/api/projects": {
       "get": {
         "operationId": "listProjects",
@@ -3012,6 +3068,69 @@
         },
         "required": [
           "status"
+        ]
+      },
+      "SelfObserveSource": {
+        "type": "string",
+        "enum": [
+          "off",
+          "self",
+          "env"
+        ],
+        "description": "How the collector's agent runs since the last start: `off`, `self` (the switch) or\n`env` (OBSERVE_APP_KEY / OBSERVE_APP_SECRET, which the switch can't change)."
+      },
+      "SelfObserveStatusDto": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "description": "How the collector's agent runs since the last start: `off`, `self` (the switch) or\n`env` (OBSERVE_APP_KEY / OBSERVE_APP_SECRET, which the switch can't change).",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SelfObserveSource"
+              }
+            ]
+          },
+          "projectSlug": {
+            "type": "string",
+            "nullable": true,
+            "description": "Project the collector reports to in self mode; null before the switch is first on."
+          },
+          "projectName": {
+            "type": "string",
+            "nullable": true
+          },
+          "applicationName": {
+            "type": "string",
+            "nullable": true
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "The switch: report the collector's own telemetry to its \"Self\" project."
+          },
+          "restartRequired": {
+            "type": "boolean",
+            "description": "The switch changed since the last start: restart the collector to apply it."
+          }
+        },
+        "required": [
+          "source",
+          "projectSlug",
+          "projectName",
+          "applicationName",
+          "enabled",
+          "restartRequired"
+        ]
+      },
+      "UpdateSelfObserveDto": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "On: creates the \"Self\" project and its application when missing."
+          }
+        },
+        "required": [
+          "enabled"
         ]
       },
       "TimeRange": {

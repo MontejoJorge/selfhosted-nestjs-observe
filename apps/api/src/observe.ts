@@ -2,11 +2,17 @@ import { ConfigService } from '@nestjs/config';
 import { createObserveModule } from '@nestjs/observe';
 import type { Request } from 'express';
 import type { Env } from './config/env.js';
+import {
+  SELF_OBSERVE_BOOT,
+  type SelfObserveBoot,
+} from './self-observe/application/ports.js';
+import { SelfObserveSwitchModule } from './self-observe/self-observe.module.js';
 
 /**
- * The collector observes itself: with OBSERVE_APP_KEY / OBSERVE_APP_SECRET set, its own
- * requests, cron jobs, errors and logs are sent to OBSERVE_ENDPOINT (usually itself).
- * Without credentials the agent is disabled.
+ * The collector observes itself: its own requests, cron jobs, errors and logs are sent to
+ * its own ingest. Decided at boot (ADR 0009): with OBSERVE_APP_KEY / OBSERVE_APP_SECRET it
+ * reports to OBSERVE_ENDPOINT like any application; otherwise the dashboard's self-observe
+ * switch turns it on with credentials generated in memory. Else the agent is disabled.
  */
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -16,15 +22,26 @@ const INGEST_ROUTES = new Set([
 ]);
 
 export const SelfObserveModule = ObserveModule.forRootAsync({
-  inject: [ConfigService],
-  useFactory: (config: ConfigService<Env, true>) => {
-    const appKey = config.get('OBSERVE_APP_KEY', { infer: true });
-    const appSecret = config.get('OBSERVE_APP_SECRET', { infer: true });
+  imports: [SelfObserveSwitchModule],
+  inject: [ConfigService, SELF_OBSERVE_BOOT],
+  useFactory: (config: ConfigService<Env, true>, boot: SelfObserveBoot) => {
+    const fromEnv = boot.source === 'env';
+    const appKey = fromEnv
+      ? (config.get('OBSERVE_APP_KEY', { infer: true }) ?? '')
+      : boot.credentials.appKey;
+    const appSecret = fromEnv
+      ? (config.get('OBSERVE_APP_SECRET', { infer: true }) ?? '')
+      : boot.credentials.appSecret;
     return {
-      enabled: Boolean(appKey && appSecret),
-      appKey: appKey ?? '',
-      appSecret: appSecret ?? '',
-      endpoint: config.get('OBSERVE_ENDPOINT', { infer: true }),
+      enabled: boot.source !== 'off',
+      appKey,
+      appSecret,
+      // Self mode reports to this very process unless told otherwise (empty = unset).
+      endpoint:
+        config.get('OBSERVE_ENDPOINT', { infer: true }) ||
+        (fromEnv
+          ? undefined
+          : `http://127.0.0.1:${config.get('API_PORT', { infer: true })}`),
       serviceId: 'observe-api',
       forwardLogs: true,
       http: {

@@ -91,7 +91,10 @@ export class Env {
   @MinLength(1)
   DASHBOARD_DIR?: string;
 
-  /** Self-observation: the collector's own agent credentials. Unset: disabled. */
+  /**
+   * Self-observation with an API key of your own. Unset: the dashboard's self-observe
+   * switch decides (ADR 0009).
+   */
   @IsOptional()
   @IsString()
   OBSERVE_APP_KEY?: string;
