@@ -55,7 +55,8 @@ Filter to one app with `pnpm --filter api <script>` or `pnpm --filter web <scrip
 
 `.github/workflows/quality.yml` is a reusable workflow: lint, typecheck and test for each app plus
 `format:check`, as matrix jobs. `ci.yml` runs it on pushes to `main` and on pull requests;
-`demo.yml` runs it before publishing the dashboard demo to GitHub Pages. Keep the four checks green.
+`demo.yml` runs it before publishing the dashboard demo to GitHub Pages, and `docker.yml` before
+building the image and the GitHub release of a `v*` tag. Keep the four checks green.
 
 ## Skills
 

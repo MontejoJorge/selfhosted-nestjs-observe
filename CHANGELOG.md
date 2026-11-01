@@ -46,7 +46,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Releases**: a `v*` tag now also publishes a GitHub release, the one the update check reads, with
   the tag's changelog section as notes. The tag must match the version in `apps/api/package.json`,
   which the collector reports as its own: bump it (with the root and `apps/web` ones) before tagging,
-  or the release job fails after the image is pushed.
+  or the release job fails after the image is pushed. Lint, typecheck, unit tests and the format
+  check now run first: when one fails, no image or release is published.
 - The README links the [live demo](https://montejojorge.github.io/selfhosted-nestjs-observe/) and
   shows how to pin the agent to exactly 0.3.20 in your app:
   `pnpm add @nestjs/observe@0.3.20 --save-exact`.
