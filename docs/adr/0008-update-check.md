@@ -20,7 +20,7 @@ compiled module (`/app/package.json` in the image).
 and the result is stored, so the dashboard reads it without leaving the network.
 `GET https://api.github.com/repos/MontejoJorge/selfhosted-nestjs-observe/releases/latest` (no token: 60
 requests per hour per IP; drafts and pre-releases are left out by GitHub), 10 s timeout. The owner and
-repository live in one constant (`GITHUB_REPOSITORY`); GitHub redirects renamed repositories.
+repositories live in one constant (`GITHUB_REPOSITORIES`); GitHub redirects renamed repositories.
 
 **When.** An hourly cron (`@nestjs/schedule`, like maintenance) and the boot run a check only when the
 last attempt is at least 12 hours old, so restarts don't add requests. A failed attempt waits 12 hours
@@ -28,9 +28,11 @@ too and is shown with its error; the previous result is kept. "Check now" (`POST
 asks at once.
 
 **404.** `releases/latest` answers 404 both when nothing is released and when the repository is gone.
-Either way there is nothing to announce: the stored result is cleared, so no update link is shown, and
+The check then asks the next repository of the list, `MontejoJorge/unofficial-selfhosted-nestjs-observe`
+(the name the project may move to), and links to the releases page of whichever answered. When both
+answer 404 there is nothing to announce: the stored result is cleared, so no update link is shown, and
 the settings page says "No release found". The check keeps running every 12 hours, which is harmless;
-the operator can turn it off.
+the operator can turn it off. Any other error stops at the repository that gave it.
 
 **State.** `update_check`, a single-row table (`id = 1`, inserted by migration 0013): the switch and
 the last result (`latest_version`, `latest_url`, `latest_published_at`, `checked_at`, `error`).

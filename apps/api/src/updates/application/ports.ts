@@ -9,8 +9,8 @@ export interface LatestRelease {
 
 /** Port: where the latest release is published (GitHub). */
 export abstract class ReleaseSource {
-  /** Page listing every release, for links when there is no latest one. */
-  abstract readonly releasesUrl: string;
+  /** Page listing every release: the latest one's repository, else the current one. */
+  abstract releasesUrl(latest: LatestRelease | null): string;
   /** Null when nothing has been released yet. Throws when the source can't be read. */
   abstract latest(): Promise<LatestRelease | null>;
 }

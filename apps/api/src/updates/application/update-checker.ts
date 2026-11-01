@@ -129,7 +129,7 @@ export class UpdateChecker implements OnApplicationBootstrap {
         enabled &&
         latest !== null &&
         isNewer(latest.version, this.currentVersion),
-      releasesUrl: this.source.releasesUrl,
+      releasesUrl: this.source.releasesUrl(latest),
       checkedAt: state.checkedAt?.toISOString() ?? null,
       error: state.error,
     };

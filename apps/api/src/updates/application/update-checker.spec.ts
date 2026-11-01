@@ -40,7 +40,9 @@ class FakeRepository extends UpdateCheckRepository {
 }
 
 class FakeSource extends ReleaseSource {
-  readonly releasesUrl = 'https://example.test/releases';
+  releasesUrl(): string {
+    return 'https://example.test/releases';
+  }
   calls = 0;
   next: LatestRelease | null | Error = null;
 
