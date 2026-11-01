@@ -10,6 +10,7 @@ import type {
   CreateApplicationDto,
   CreatedApiKeyDto,
   CreateProjectDto,
+  CreateStoragePurgeDto,
   CreateStorageTrimDto,
   DayUsageDto,
   ProjectDto,
@@ -297,6 +298,24 @@ function advanceTrims(): void {
 
 const trimDto = (trim: TrimState): StorageTrimDto => withoutProject(trim);
 
+/** Applications whose whole telemetry is being deleted, with when it was asked. */
+const purges = new Map<string, number>();
+
+/** A purge deletes everything of its application 4 s after the request. */
+function advancePurges(): void {
+  const now = Date.now();
+  for (const [appId, requestedAt] of purges) {
+    if (now - requestedAt < 4_000) continue;
+    for (const list of [requests, jobs, logs, occurrences] as Array<
+      Array<{ appId: string }>
+    >) {
+      const kept = list.filter((e) => e.appId !== appId);
+      list.splice(0, list.length, ...kept);
+    }
+    purges.delete(appId);
+  }
+}
+
 export const managementHandlers = [
   http.get(
     '*/api/projects',
@@ -367,6 +386,7 @@ export const managementHandlers = [
     route(({ path }) => {
       const project = findProject(path.project!);
       advanceTrims();
+      advancePurges();
       return trims.filter((t) => t.projectId === project.id).map(trimDto);
     }),
   ),
@@ -399,11 +419,26 @@ export const managementHandlers = [
     }),
   ),
 
+  http.post(
+    '*/api/projects/:project/storage/purge',
+    route(async ({ path, body }) => {
+      const project = findProject(path.project!);
+      const input = (await body()) as CreateStoragePurgeDto;
+      const applicationIds = input.application
+        ? [findApplication(project.id, input.application).id]
+        : appsOf(project.id).map((a) => a.id);
+      for (const id of applicationIds)
+        if (!purges.has(id)) purges.set(id, Date.now());
+      return [202, { applicationIds }];
+    }),
+  ),
+
   http.get(
     '*/api/projects/:project/storage',
     route(({ params, path }): ProjectStorageDto => {
       const project = findProject(path.project!);
       advanceTrims();
+      advancePurges();
       const application = params.get('application');
       if (application) findApplication(project.id, application);
       const all = usage();
@@ -436,6 +471,9 @@ export const managementHandlers = [
         ...total(tables),
         retentionDays: RETENTION_DAYS,
         trims: trims.filter((t) => t.projectId === project.id).map(trimDto),
+        purging: appsOf(project.id)
+          .map((a) => a.id)
+          .filter((id) => purges.has(id)),
       };
     }),
   ),
@@ -659,6 +697,7 @@ export const managementHandlers = [
     '*/api/storage',
     route((): StorageOverviewDto => {
       advanceTrims();
+      advancePurges();
       const all = usage();
       const raw = new Map<StorageUsageTable, number>();
       const partitions: StorageOverviewDto['partitions'] = [];

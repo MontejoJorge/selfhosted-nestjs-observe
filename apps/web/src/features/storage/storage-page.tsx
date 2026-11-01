@@ -25,6 +25,7 @@ import {
   PanelHeader,
 } from '@/components/panel';
 import { EmptyState } from '@/components/states';
+import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -45,6 +46,7 @@ import {
 } from '@/lib/format';
 import { paths } from '@/lib/paths';
 import { useSuspenseQuery } from '@tanstack/react-query';
+import { EraserIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { storageOverviewQueryOptions } from './queries';
@@ -55,6 +57,7 @@ import {
   type UsagePart,
 } from './storage-math';
 import { StorageStat, StorageStats } from './storage-stats';
+import { TrimDialog } from './trim-dialog';
 import { UsageLegend, UsageList, UsageRow } from './usage-bars';
 
 const KIND_OPTIONS = [
@@ -178,11 +181,14 @@ function ProjectsSection({ data }: { data: StorageOverviewDto }) {
               <TableHead className="hidden sm:table-cell">
                 Of raw telemetry
               </TableHead>
+              <TableHead>
+                <span className="sr-only">Actions</span>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {data.projects.length === 0 ? (
-              <MessageRow colSpan={4}>No project stores telemetry.</MessageRow>
+              <MessageRow colSpan={5}>No project stores telemetry.</MessageRow>
             ) : (
               data.projects.map((project) => (
                 <LinkRow key={project.projectId}>
@@ -203,6 +209,22 @@ function ProjectsSection({ data }: { data: StorageOverviewDto }) {
                       }
                     />
                   </TableCell>
+                  <TableCell className="w-0 text-right">
+                    <TrimDialog
+                      project={project.slug}
+                      retentionDays={data.retentionDays}
+                    >
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        className="relative z-10"
+                        aria-label={`Delete data of ${project.name}`}
+                        title="Delete data"
+                      >
+                        <EraserIcon />
+                      </Button>
+                    </TrimDialog>
+                  </TableCell>
                 </LinkRow>
               ))
             )}
@@ -220,6 +242,7 @@ function ProjectsSection({ data }: { data: StorageOverviewDto }) {
                     percent={rawBytes > 0 ? (unattributed / rawBytes) * 100 : 0}
                   />
                 </TableCell>
+                <TableCell />
               </TableRow>
             ) : null}
           </TableBody>

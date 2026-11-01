@@ -29,6 +29,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Reorder projects**: a Reorder button on the projects page sets their order by dragging or with
   arrows. New projects go last. Migration `0015` adds `projects.position`; existing projects keep
   their alphabetical order.
+- **Delete all data** of a project or one application, not only the days older than N: the delete
+  dialog has an "Everything" mode (type `delete` to confirm) that removes its raw telemetry, charts,
+  stats, error groups, instances and versions while the applications and keys stay. The Storage page
+  opens the same dialog from each project's row, so old data can be deleted from there too.
 - The Storage page says how long raw telemetry and rollups are kept and that `RETENTION_DAYS` and
   `AGGREGATE_RETENTION_DAYS` change it after a restart.
 - With JavaScript turned off, the dashboard (and the demo) explains how to allow it instead of

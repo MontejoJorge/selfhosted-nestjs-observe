@@ -18,6 +18,7 @@ import {
 } from '@/components/panel';
 import { ScopedLink } from '@/components/scoped-link';
 import { EmptyState } from '@/components/states';
+import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -38,7 +39,7 @@ import { paths } from '@/lib/paths';
 import { useProjectRef, useTypedSearch } from '@/lib/scope-hooks';
 import { cn } from '@/lib/utils';
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { ChevronRightIcon } from 'lucide-react';
+import { ChevronRightIcon, EraserIcon, LoaderCircleIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { Link } from 'react-router';
 import { projectStorageQueryOptions } from './queries';
@@ -255,10 +256,13 @@ export function ProjectStoragePage() {
           <RefreshButton />
           <TrimDialog
             project={project}
-            applications={storage.applications}
             defaultApplication={application}
             retentionDays={storage.retentionDays}
-          />
+          >
+            <Button variant="destructive" size="xl">
+              <EraserIcon /> Delete data
+            </Button>
+          </TrimDialog>
         </PageActions>
       </PageHeader>
 
@@ -270,6 +274,20 @@ export function ProjectStoragePage() {
           onChange={(value) => setSearch({ application: value })}
         />
       </FilterBar>
+
+      {storage.purging.length > 0 ? (
+        <p className="flex items-center gap-2 rounded-lg border border-primary/40 bg-primary/5 px-4 py-3 text-sm">
+          <LoaderCircleIcon
+            className="size-4 shrink-0 animate-spin text-primary"
+            aria-hidden
+          />
+          Deleting all the data of{' '}
+          {storage.purging
+            .map((id) => applicationNames.get(id) ?? 'an application')
+            .join(', ')}
+          …
+        </p>
+      ) : null}
 
       <TrimsPanel project={project} applicationNames={applicationNames} />
 
