@@ -13,6 +13,7 @@ import { serviceVersions } from './0011-service-versions.js';
 import { projectRangePresets } from './0012-project-range-presets.js';
 import { updateCheck } from './0013-update-check.js';
 import { selfObserve } from './0014-self-observe.js';
+import { projectPosition } from './0015-project-position.js';
 
 /**
  * All migrations, keyed by name. Names sort lexicographically, so keep the numeric
@@ -34,4 +35,5 @@ export const migrations: Record<string, Migration> = {
   '0012-project-range-presets': projectRangePresets,
   '0013-update-check': updateCheck,
   '0014-self-observe': selfObserve,
+  '0015-project-position': projectPosition,
 };

@@ -17,6 +17,8 @@ export interface ProjectsTable {
   created_at: ColumnType<Date, Date | string | undefined, Date | string>;
   /** Three `TimeRange` values, sorted by duration; default `{1h,24h,7d}`. */
   range_presets: ColumnType<string[], string[] | undefined, string[]>;
+  /** Manual order of the projects page; defaults to the next value of a sequence (last). */
+  position: ColumnType<number, number | undefined, number>;
 }
 
 export interface ApplicationsTable {

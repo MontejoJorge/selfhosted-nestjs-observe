@@ -45,7 +45,7 @@
         ]
       },
       "patch": {
-        "description": "On creates the \"Self\" project and its application when missing; no API key is needed. The agent reads the switch when the collector starts, so the change takes effect after a restart (`restartRequired`). Off stops accepting its batches at once.",
+        "description": "On creates the \"Observe collector (self)\" project and its application when missing; no API key is needed. The agent reads the switch when the collector starts, so the change takes effect after a restart (`restartRequired`). Off stops accepting its batches at once.",
         "operationId": "updateSelfObserve",
         "parameters": [],
         "requestBody": {
@@ -147,7 +147,7 @@
             }
           }
         },
-        "summary": "Projects sorted by name, with request activity over the range",
+        "summary": "Projects in their manual order (new ones last), with request activity over the range",
         "tags": [
           "projects"
         ]
@@ -178,6 +178,35 @@
           }
         },
         "summary": "Create a project (the slug is generated from the name)",
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/projects/order": {
+      "put": {
+        "description": "Positions follow `projectIds`, which must list every project once.",
+        "operationId": "reorderProjects",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderProjectsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "Not every project exactly once"
+          }
+        },
+        "summary": "Set the order of the projects page",
         "tags": [
           "projects"
         ]
@@ -3105,7 +3134,7 @@
           },
           "enabled": {
             "type": "boolean",
-            "description": "The switch: report the collector's own telemetry to its \"Self\" project."
+            "description": "The switch: report the collector's own telemetry to its \"Observe collector (self)\" project."
           },
           "restartRequired": {
             "type": "boolean",
@@ -3126,7 +3155,7 @@
         "properties": {
           "enabled": {
             "type": "boolean",
-            "description": "On: creates the \"Self\" project and its application when missing."
+            "description": "On: creates the \"Observe collector (self)\" project and its application when missing."
           }
         },
         "required": [
@@ -3258,6 +3287,24 @@
         "required": [
           "items",
           "nextCursor"
+        ]
+      },
+      "ReorderProjectsDto": {
+        "type": "object",
+        "properties": {
+          "projectIds": {
+            "description": "Every project id once, in the order the projects page shows them.",
+            "uniqueItems": true,
+            "maxItems": 10000,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "projectIds"
         ]
       },
       "ProjectDto": {

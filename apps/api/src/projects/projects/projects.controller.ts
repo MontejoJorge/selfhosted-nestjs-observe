@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -7,9 +8,11 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query,
 } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
   ApiCreatedResponse,
   ApiNoContentResponse,
   ApiNotFoundResponse,
@@ -20,16 +23,26 @@ import {
 import { decodeTextCursor, type Page } from '../../telemetry/common/cursor.js';
 import { DEFAULT_PAGE_SIZE } from '../../telemetry/common/query.dto.js';
 import { resolveWindow } from '../../telemetry/common/time-window.js';
+import { POSITION_KEY } from '../domain/project-order.js';
 import {
   CreateProjectDto,
   ProjectDto,
   ProjectSummaryPageDto,
+  ReorderProjectsDto,
   StatsPageQueryDto,
   UpdateProjectDto,
   type ProjectSummaryDto,
 } from './projects.dto.js';
 import { ProjectsRepository } from './projects.repository.js';
 import { ProjectsService } from './projects.service.js';
+
+/** A list cursor, whose key must be a position (not a name, as before the manual order). */
+function positionCursor(raw: string | undefined) {
+  const cursor = decodeTextCursor(raw);
+  if (cursor && !POSITION_KEY.test(cursor.key))
+    throw new BadRequestException('Invalid cursor');
+  return cursor;
+}
 
 /** `:project` is the project id or slug. */
 @ApiTags('projects')
@@ -43,14 +56,29 @@ export class ProjectsController {
   @Get()
   @ApiOperation({
     operationId: 'listProjects',
-    summary: 'Projects sorted by name, with request activity over the range',
+    summary:
+      'Projects in their manual order (new ones last), with request activity over the range',
   })
   @ApiOkResponse({ type: ProjectSummaryPageDto })
   list(@Query() query: StatsPageQueryDto): Promise<Page<ProjectSummaryDto>> {
     return this.repository.list(resolveWindow(query), {
       limit: query.limit ?? DEFAULT_PAGE_SIZE,
-      cursor: decodeTextCursor(query.cursor),
+      cursor: positionCursor(query.cursor),
     });
+  }
+
+  @Put('order')
+  @HttpCode(204)
+  @ApiOperation({
+    operationId: 'reorderProjects',
+    summary: 'Set the order of the projects page',
+    description:
+      'Positions follow `projectIds`, which must list every project once.',
+  })
+  @ApiNoContentResponse()
+  @ApiBadRequestResponse({ description: 'Not every project exactly once' })
+  reorder(@Body() body: ReorderProjectsDto): Promise<void> {
+    return this.projects.reorder(body.projectIds);
   }
 
   @Get(':project')

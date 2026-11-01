@@ -60,7 +60,12 @@ export class PostgresProjectsRepository extends ProjectsRepository {
             .as('stats'),
         (join) => join.onTrue(),
       )
-      .select([...COLUMNS, 'stats.application_count', 'stats.last_seen_at']);
+      .select([
+        ...COLUMNS,
+        'p.position',
+        'stats.application_count',
+        'stats.last_seen_at',
+      ]);
   }
 
   async findByRef(ref: string): Promise<ProjectDto | null> {
@@ -82,12 +87,17 @@ export class PostgresProjectsRepository extends ProjectsRepository {
     let query = this.withStats();
     const { cursor } = page;
     if (cursor) {
+      const position = Number(cursor.key);
       query = query.where((eb) =>
-        eb(eb.refTuple('p.name', 'p.id'), '>', eb.tuple(cursor.key, cursor.id)),
+        eb(
+          eb.refTuple('p.position', 'p.id'),
+          '>',
+          eb.tuple(position, cursor.id),
+        ),
       );
     }
     const rows = await query
-      .orderBy('p.name')
+      .orderBy('p.position')
       .orderBy('p.id')
       .limit(page.limit + 1)
       .execute();
@@ -131,9 +141,27 @@ export class PostgresProjectsRepository extends ProjectsRepository {
       }),
       nextCursor:
         hasMore && last
-          ? encodeTextCursor({ key: last.name, id: last.id })
+          ? encodeTextCursor({ key: String(last.position), id: last.id })
           : null,
     };
+  }
+
+  async ids(): Promise<string[]> {
+    const rows = await this.db.selectFrom('projects').select('id').execute();
+    return rows.map((row) => row.id);
+  }
+
+  async reorder(ids: string[]): Promise<void> {
+    if (ids.length === 0) return;
+    // One statement: positions 1..n from a values list joined on the primary key.
+    await sql`
+      update projects p
+         set position = o.position
+        from (values ${sql.join(
+          ids.map((id, index) => sql`(${id}::uuid, ${index + 1}::int)`),
+        )}) as o (id, position)
+       where p.id = o.id
+    `.execute(this.db);
   }
 
   async slugsLike(base: string): Promise<Set<string>> {

@@ -23,13 +23,17 @@ export class SlugTakenError extends Error {}
 export abstract class ProjectsRepository {
   /** By id (when `ref` is a UUID) or slug. */
   abstract findByRef(ref: string): Promise<ProjectDto | null>;
-  /** Sorted by name, with request activity over the window. */
+  /** In the manual order (`position`), with request activity over the window. */
   abstract list(
     window: TimeWindow,
     page: { limit: number; cursor: TextKeysetCursor | null },
   ): Promise<Page<ProjectSummaryDto>>;
   /** Slugs equal to `base` or `base-<n>`. */
   abstract slugsLike(base: string): Promise<Set<string>>;
+  /** Every project id, in no particular order. */
+  abstract ids(): Promise<string[]>;
+  /** Positions 1..n in the order of `ids`, which holds every project once. */
+  abstract reorder(ids: string[]): Promise<void>;
   abstract insert(project: NewProject): Promise<ProjectDto>;
   abstract update(id: string, patch: ProjectPatch): Promise<ProjectDto | null>;
   /**

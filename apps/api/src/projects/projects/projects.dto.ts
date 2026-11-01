@@ -13,6 +13,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  IsUUID,
   MaxLength,
   ValidateIf,
 } from 'class-validator';
@@ -100,6 +101,16 @@ export class CreateProjectDto {
   @IsString()
   @MaxLength(500)
   description?: string | null;
+}
+
+export class ReorderProjectsDto {
+  /** Every project id once, in the order the projects page shows them. */
+  @ApiProperty({ type: String, format: 'uuid', isArray: true })
+  @IsArray()
+  @ArrayMaxSize(10_000)
+  @ArrayUnique()
+  @IsUUID('all', { each: true })
+  projectIds: string[];
 }
 
 export class UpdateProjectDto {

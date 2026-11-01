@@ -1,7 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { ApplicationPurger } from '../../maintenance/application-purger.js';
 import { sortRanges } from '../../telemetry/common/time-window.js';
 import { ApiKeyAuthenticator } from '../api-keys/api-key-authenticator.js';
+import { isFullOrder } from '../domain/project-order.js';
 import { slugify, uniqueSlug } from '../domain/slug.js';
 import type {
   CreateProjectDto,
@@ -43,6 +48,15 @@ export class ProjectsService {
           throw error;
       }
     }
+  }
+
+  /** Sets the manual order of the projects page; `ids` must list every project once. */
+  async reorder(ids: string[]): Promise<void> {
+    if (!isFullOrder(ids, await this.projects.ids()))
+      throw new BadRequestException(
+        'projectIds must list every project exactly once',
+      );
+    await this.projects.reorder(ids);
   }
 
   async update(ref: string, input: UpdateProjectDto): Promise<ProjectDto> {

@@ -182,7 +182,7 @@ hourly, and on demand for any day an ingest batch touches (advisory-locked). Ret
   `user_id is not null`), `(application_id, sampled_at desc)`, ... The plain
   `(time desc, id desc)` indexes serve keyset lists across several applications of a project, and
   `trace_id` the trace lookups.
-- Management lists use keyset pagination too: projects by `(name, id)`, applications by `name` (unique
+- Management lists use keyset pagination too: projects by `(position, id)` (manual order, migration 0015), applications by `name` (unique
   per project), API keys by `(created_at desc, id desc)`. Card stats are computed for the whole page in
   one aggregate (`activity.ts`) plus one lateral per row for the latest runtime sample.
 - **Stats and timelines read the rollups, never the raw rows**: overview, operations, queues, users,
