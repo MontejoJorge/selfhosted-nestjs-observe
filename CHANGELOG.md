@@ -5,13 +5,14 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.1.0] - 2026-11-01
 
 ### Added
 
 - **Update check**: every 12 hours the collector asks GitHub for its latest release. The request is
   made by the API, never by the browser, and the result is stored. The sidebar shows the running
-  version and, when a newer one is out, links to its release. Set `UPDATE_CHECK=false` (new, `true`
+  version and, when a newer one is out, links to its release. When the repository answers 404, the
+  check looks at `MontejoJorge/unofficial-selfhosted-nestjs-observe` too. Set `UPDATE_CHECK=false` (new, `true`
   by default, also in `deploy/.env.example` and the Compose file) to never contact GitHub; the
   dashboard can't turn it back on. A collector without internet access logs a warning every 12 hours
   until you do. Migration `0013` adds `update_check`.
@@ -120,6 +121,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 First release. A drop-in collector and dashboard for the `@nestjs/observe` agent: requests, jobs,
 errors, logs, traces and runtime metrics in a single PostgreSQL database, shipped as a Docker image.
 
-[Unreleased]: https://github.com/MontejoJorge/selfhosted-nestjs-observe/compare/v1.0.0...HEAD
+[1.1.0]: https://github.com/MontejoJorge/selfhosted-nestjs-observe/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/MontejoJorge/selfhosted-nestjs-observe/compare/v0.1.0...v1.0.0
 [0.1.0]: https://github.com/MontejoJorge/selfhosted-nestjs-observe/releases/tag/v0.1.0
