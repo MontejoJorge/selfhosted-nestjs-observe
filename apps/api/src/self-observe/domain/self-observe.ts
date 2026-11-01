@@ -1,10 +1,10 @@
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 
 /** Names of what the switch creates: they say the telemetry is the collector's own. */
-export const SELF_PROJECT_NAME = 'Self';
+export const SELF_PROJECT_NAME = 'Observe collector (self)';
 export const SELF_PROJECT_DESCRIPTION =
-  "This collector's own requests, jobs, errors, logs and runtime metrics (self-observe).";
-export const SELF_APPLICATION_NAME = 'collector (self)';
+  "This collector's own requests, jobs, errors, logs and runtime metrics: the ingester observing itself (self-observe).";
+export const SELF_APPLICATION_NAME = 'ingester (self)';
 
 /**
  * Where the collector's own agent gets its credentials, decided at boot:

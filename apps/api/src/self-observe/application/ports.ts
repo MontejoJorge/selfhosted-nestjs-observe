@@ -17,7 +17,7 @@ export interface SelfObserveState extends StoredSelfObserve {
 export abstract class SelfObserveRepository {
   abstract get(): Promise<SelfObserveState>;
   /**
-   * Turns the switch on, first creating the "Self" project and its application when there
+   * Turns the switch on, first creating the "Observe collector (self)" project and its application when there
    * is none (never seen, or deleted since), in one transaction.
    */
   abstract enable(): Promise<void>;

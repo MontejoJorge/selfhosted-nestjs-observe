@@ -55,7 +55,7 @@ export function SelfObservePanel() {
     ...updateSelfObserveMutation(),
     onSuccess: async (next) => {
       queryClient.setQueryData(selfObserveQueryOptions().queryKey, next);
-      // Turning it on may have created the Self project.
+      // Turning it on may have created the self project.
       await queryClient.invalidateQueries({ queryKey: ['projects'] });
       toast.success(
         next.enabled ? 'Self-observe turned on' : 'Self-observe turned off',
@@ -74,10 +74,11 @@ export function SelfObservePanel() {
               Observe this collector
             </label>
             <p className="text-muted-foreground">
-              Creates a project “Self” with an application “collector (self)”
-              and sends them the collector's own requests, jobs, errors, logs
-              and runtime metrics, so you can watch the ingester like any other
-              app. No API key needed. Changes apply after a restart.
+              Creates a project “Observe collector (self)” with an application
+              “ingester (self)” and sends them the collector's own requests,
+              jobs, errors, logs and runtime metrics, so you can watch the
+              ingester like any other app. No API key needed. Changes apply
+              after a restart.
             </p>
           </div>
           <Switch

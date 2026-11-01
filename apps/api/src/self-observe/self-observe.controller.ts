@@ -31,7 +31,7 @@ export class SelfObserveController {
     operationId: 'updateSelfObserve',
     summary: "Turn the collector's own telemetry on or off",
     description:
-      'On creates the "Self" project and its application when missing; no API key is ' +
+      'On creates the "Observe collector (self)" project and its application when missing; no API key is ' +
       'needed. The agent reads the switch when the collector starts, so the change takes ' +
       'effect after a restart (`restartRequired`). Off stops accepting its batches at once.',
   })

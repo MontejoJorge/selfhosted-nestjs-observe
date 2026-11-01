@@ -15,9 +15,10 @@ given new credentials while the process runs.
 ## Decision
 
 **Switch.** Collector settings (`/settings`) has a self-observe switch, off by default
-(`GET`/`PATCH /api/self-observe`). Turning it on creates, in one transaction, a project "Self" (slug
-`self`, or `self-2`... when taken) with an application "collector (self)" and **no API key**, unless
-the stored application still exists. The names say the telemetry is the collector's own.
+(`GET`/`PATCH /api/self-observe`). Turning it on creates, in one transaction, a project "Observe
+collector (self)" (slug `observe-collector-self`, or `-2`... when taken) with an application
+"ingester (self)" and **no API key**, unless the stored application still exists. The names say the
+telemetry is the ingester's own.
 
 **State.** `self_observe`, a single-row table (`id = 1`, migration 0014): `enabled` and
 `application_id`, a foreign key set to null when that application or its project is deleted (turning
@@ -44,7 +45,7 @@ until the restart stops the agent. The collector does not restart itself.
 
 ## Consequences
 
-- No secret to manage, and no key in the Self application's key list.
+- No secret to manage, and no key in the self application's key list.
 - Credentials change on every start; another process can't reuse them.
-- Deleting the Self project while self mode runs stops the reporting (the row's application becomes
+- Deleting the self project while self mode runs stops the reporting (the row's application becomes
   null) until the switch is turned on again and the collector restarted.

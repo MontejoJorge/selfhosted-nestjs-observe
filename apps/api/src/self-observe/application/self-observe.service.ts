@@ -8,7 +8,7 @@ import {
 } from './ports.js';
 
 /**
- * Self-observe (ADR 0009): the collector reports its own telemetry to a "Self" project
+ * Self-observe (ADR 0009): the collector reports its own telemetry to an "Observe collector (self)" project
  * without any API key. The switch is read when the agent starts, so changing it takes
  * effect after a restart; turning it off stops accepting the collector's own batches
  * right away.

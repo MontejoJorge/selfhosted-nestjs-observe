@@ -6,7 +6,7 @@ import {
 } from './domain/self-observe.js';
 
 export class SelfObserveStatusDto {
-  /** The switch: report the collector's own telemetry to its "Self" project. */
+  /** The switch: report the collector's own telemetry to its "Observe collector (self)" project. */
   enabled: boolean;
   /**
    * How the collector's agent runs since the last start: `off`, `self` (the switch) or
@@ -26,7 +26,7 @@ export class SelfObserveStatusDto {
 }
 
 export class UpdateSelfObserveDto {
-  /** On: creates the "Self" project and its application when missing. */
+  /** On: creates the "Observe collector (self)" project and its application when missing. */
   @IsBoolean()
   enabled: boolean;
 }

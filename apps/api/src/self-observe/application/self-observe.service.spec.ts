@@ -24,9 +24,9 @@ class FakeRepository extends SelfObserveRepository {
       this.created++;
       this.state.applicationId = 'self-app';
       this.state.target = {
-        projectSlug: 'self',
-        projectName: 'Self',
-        applicationName: 'collector (self)',
+        projectSlug: 'observe-collector-self',
+        projectName: 'Observe collector (self)',
+        applicationName: 'ingester (self)',
       };
     }
     this.state.enabled = true;
@@ -49,15 +49,15 @@ function setup(source: SelfObserveSource) {
 }
 
 describe('SelfObserve', () => {
-  it('creates the Self project once and asks for a restart to start reporting', async () => {
+  it('creates the self project once and asks for a restart to start reporting', async () => {
     const { repository, service } = setup('off');
     expect(await service.setEnabled(true)).toEqual({
       enabled: true,
       source: 'off',
       restartRequired: true,
-      projectSlug: 'self',
-      projectName: 'Self',
-      applicationName: 'collector (self)',
+      projectSlug: 'observe-collector-self',
+      projectName: 'Observe collector (self)',
+      applicationName: 'ingester (self)',
     });
     await service.setEnabled(false);
     await service.setEnabled(true);
