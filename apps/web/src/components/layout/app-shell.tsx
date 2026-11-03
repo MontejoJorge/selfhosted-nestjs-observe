@@ -11,6 +11,7 @@ import { ThemeToggle } from '@/features/theme/theme-toggle';
 import { VersionLine } from '@/features/updates/version-line';
 import { API_URL } from '@/lib/api/client';
 import { paths } from '@/lib/paths';
+import { useStoreTimeWindow } from '@/lib/stored-window';
 import { cn } from '@/lib/utils';
 import {
   DatabaseIcon,
@@ -145,6 +146,7 @@ function MobileNav() {
 export function AppShell() {
   const navigation = useNavigation();
   const isNavigating = navigation.state !== 'idle';
+  useStoreTimeWindow();
 
   return (
     <LiveProvider>

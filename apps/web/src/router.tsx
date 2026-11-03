@@ -53,6 +53,7 @@ import { errorStatus } from '@/lib/api/client';
 import { pickWindow, scopeFromParams, windowFromParams } from '@/lib/api/scope';
 import { paths } from '@/lib/paths';
 import { parseRequestSearch } from '@/lib/search';
+import { readStoredWindow, withStoredWindow } from '@/lib/stored-window';
 import { QueryClient } from '@tanstack/react-query';
 import {
   createBrowserRouter,
@@ -87,6 +88,20 @@ const scopeOf = ({ request, params }: LoaderFunctionArgs) =>
     new URL(request.url).searchParams,
   );
 
+/** Vite's `base` (e.g. the demo on GitHub Pages under /<repo>/), without the trailing slash. */
+const BASENAME = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+/** A URL without a time window opens on the one picked last time (localStorage). */
+function restoreTimeWindow({ request }: LoaderFunctionArgs) {
+  const url = new URL(request.url);
+  const search = withStoredWindow(url.searchParams, readStoredWindow());
+  if (!search) return null;
+  const path = url.pathname.startsWith(BASENAME)
+    ? url.pathname.slice(BASENAME.length) || '/'
+    : url.pathname;
+  return redirect(`${path}?${search}`);
+}
+
 const projectOf = ({ params }: LoaderFunctionArgs) =>
   param(params, 'projectId');
 
@@ -106,6 +121,7 @@ export const router = createBrowserRouter(
         {
           // Pathless layout: page errors render inside the shell.
           ErrorBoundary: RouteError,
+          loader: restoreTimeWindow,
           children: [
             { index: true, loader: () => redirect(paths.projects) },
             {
@@ -565,6 +581,5 @@ export const router = createBrowserRouter(
       ],
     },
   ],
-  // Vite's `base` (e.g. the demo on GitHub Pages under /<repo>/), without the trailing slash.
-  { basename: import.meta.env.BASE_URL.replace(/\/$/, '') || '/' },
+  { basename: BASENAME || '/' },
 );
