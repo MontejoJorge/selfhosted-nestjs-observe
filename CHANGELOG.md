@@ -5,6 +5,37 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-11-03
+
+### Added
+
+- **Map page** (Activity → Map): how a project's applications, queues, databases and third-party
+  APIs connect over the selected range, with inbound traffic, volumes, durations and failure rates
+  on each node and link. Links to queues and between applications are inferred from runs that share
+  a trace id, sampled over the latest 5000 requests and 5000 jobs on busy ranges, and drawn dotted.
+  Served by `GET /api/map`; the demo shows a map of its generated traffic.
+- Hovering any relative time ("5 min ago") shows the exact date and time, in the browser's locale.
+- Architecture guides for the API and the dashboard in `docs/architecture/`.
+
+### Changed
+
+- The selected time range, preset or custom, is remembered: a page opened without one in its URL
+  uses the last range picked instead of the last hour.
+- Error counts follow the selected range: the errors list, the top errors and the error detail count
+  occurrences in the window (and of the instance, when filtered by one), not all time. An error group's
+  `count` in the API changes the same way.
+- The update check looks for a new release every 6 hours instead of 12. A collector without internet
+  access now logs its warning every 6 hours.
+- Self-observe no longer traces `GET /api/health`, so Docker and load balancer probes don't fill the
+  collector's own requests.
+- Self-observe names the application whose API key sent each batch as the request's user, so the
+  collector's Users page lists the applications reporting to it instead of a single anonymous row.
+
+### Fixed
+
+- The sidebar scrolls on short windows, so the collector link, the version and the theme toggle at
+  its bottom can always be reached.
+
 ## [1.1.0] - 2026-11-01
 
 ### Added
@@ -122,6 +153,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 First release. A drop-in collector and dashboard for the `@nestjs/observe` agent: requests, jobs,
 errors, logs, traces and runtime metrics in a single PostgreSQL database, shipped as a Docker image.
 
+[1.2.0]: https://github.com/MontejoJorge/selfhosted-nestjs-observe/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/MontejoJorge/selfhosted-nestjs-observe/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/MontejoJorge/selfhosted-nestjs-observe/compare/v0.1.0...v1.0.0
 [0.1.0]: https://github.com/MontejoJorge/selfhosted-nestjs-observe/releases/tag/v0.1.0
