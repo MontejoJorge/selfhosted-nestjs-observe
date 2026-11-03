@@ -14,16 +14,17 @@ permissions:
   packages: write
 
 jobs:
-  # Lint, typecheck, tests and format first: a failing check publishes no image or release.
+  # Lint, typecheck, tests and format, in parallel with the build: `merge` waits for both,
+  # so a failing check tags no image and publishes no release.
   quality:
     uses: ./.github/workflows/quality.yml
     permissions:
       contents: read
 
   # One native runner per platform, in parallel. Each pushes its image by digest only;
-  # `merge` then tags both digests as one multi-platform image.
+  # `merge` then tags both digests as one multi-platform image. Untagged digests from a run
+  # whose checks fail stay in the registry until cleaned up.
   build:
-    needs: quality
     strategy:
       fail-fast: true
       matrix:
@@ -83,7 +84,7 @@ jobs:
           retention-days: 1
 
   merge:
-    needs: build
+    needs: [quality, build]
     runs-on: ubuntu-24.04
     steps:
       # ghcr.io only takes lowercase names; github.repository keeps the owner's casing.
