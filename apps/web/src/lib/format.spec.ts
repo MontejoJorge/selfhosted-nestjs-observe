@@ -120,9 +120,17 @@ describe('date formatting', () => {
 
   it('formats date-times in 24-hour time', () => {
     expect(formatDateTime(iso)).toBe('Oct 29, 16:05:09');
-    expect(formatFullDateTime(iso)).toBe('Oct 29, 2026, 16:05:09');
     expect(formatTime(iso)).toBe('16:05');
     expect(formatPreciseTime(iso)).toBe('16:05:09.042');
+  });
+
+  it('formats full date-times in the given locale', () => {
+    // Newer ICU versions put a narrow no-break space before PM.
+    expect(formatFullDateTime(iso, 'en-US')).toMatch(
+      /^Oct 29, 2026, 4:05:09\sPM$/,
+    );
+    expect(formatFullDateTime(iso, 'en-GB')).toBe('29 Oct 2026, 16:05:09');
+    expect(formatFullDateTime(iso, 'es-ES')).toBe('29 oct 2026, 16:05:09');
   });
 
   it('formats relative times in the largest fitting unit', () => {
