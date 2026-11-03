@@ -40,8 +40,6 @@ export class UserStatsDto {
   /** The id the agent reported (`http.getUserId`); null for the requests without one. */
   @ApiProperty({ type: String, nullable: true })
   userId: string | null;
-  /** Applications the user's requests in the range came from. */
-  applicationIds: string[];
   requestCount: number;
   /** Failed requests (error captured or status >= 500). */
   errorCount: number;

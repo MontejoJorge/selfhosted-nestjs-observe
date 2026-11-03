@@ -5347,13 +5347,6 @@
             "nullable": true,
             "description": "The id the agent reported (`http.getUserId`); null for the requests without one."
           },
-          "applicationIds": {
-            "description": "Applications the user's requests in the range came from.",
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
           "requestCount": {
             "type": "number"
           },
@@ -5379,7 +5372,6 @@
         },
         "required": [
           "userId",
-          "applicationIds",
           "requestCount",
           "errorCount",
           "errorRate",
@@ -5431,13 +5423,6 @@
               "$ref": "#/components/schemas/TimeBucketDto"
             }
           },
-          "applicationIds": {
-            "description": "Applications the user's requests in the range came from.",
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
           "requestCount": {
             "type": "number"
           },
@@ -5464,7 +5449,6 @@
         "required": [
           "userId",
           "timeline",
-          "applicationIds",
           "requestCount",
           "errorCount",
           "errorRate",

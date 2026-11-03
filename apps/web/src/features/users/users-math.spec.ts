@@ -1,11 +1,6 @@
 import type { UserStatsDto } from '@/lib/api/generated/api';
 import { describe, expect, it } from 'vitest';
-import {
-  applicationsLabel,
-  failureColor,
-  scatterModel,
-  userLabel,
-} from './users-math';
+import { failureColor, scatterModel, userLabel } from './users-math';
 
 const user = (
   userId: string | null,
@@ -19,24 +14,6 @@ const user = (
     errorRate,
     latency: { p50: 0, p95, p99: 0, avg: 0 },
   }) as UserStatsDto;
-
-describe('applicationsLabel', () => {
-  const names = new Map([
-    ['a', 'orders-api'],
-    ['b', 'billing-api'],
-  ]);
-
-  it('lists the names alphabetically', () => {
-    expect(applicationsLabel(['a', 'b'], names)).toBe(
-      'billing-api, orders-api',
-    );
-  });
-
-  it('leaves out applications whose name is not known', () => {
-    expect(applicationsLabel(['a', 'gone'], names)).toBe('orders-api');
-    expect(applicationsLabel(['a'], new Map())).toBe('');
-  });
-});
 
 describe('failureColor', () => {
   it('goes teal -> grey up to 1% and grey -> red up to 5%', () => {

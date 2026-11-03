@@ -31,20 +31,6 @@ export function userLabel(user: Pick<UserStatsDto, 'userId'>): string {
   return user.userId ?? ANONYMOUS_LABEL;
 }
 
-/** The names of the applications a user's requests came from (unknown ids are left out). */
-export function applicationsLabel(
-  applicationIds: readonly string[],
-  names: ReadonlyMap<string, string>,
-): string {
-  return applicationIds
-    .flatMap((id) => {
-      const name = names.get(id);
-      return name ? [name] : [];
-    })
-    .toSorted((a, b) => a.localeCompare(b))
-    .join(', ');
-}
-
 function median(values: number[]): number {
   if (values.length === 0) return 0;
   const sorted = values.toSorted((a, b) => a - b);

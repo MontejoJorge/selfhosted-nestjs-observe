@@ -696,7 +696,6 @@ export const telemetryHandlers = [
     const errorCount = reqs.filter((r) => r.hasError).length;
     return {
       userId: userId ?? null,
-      applicationIds: [...new Set(reqs.map((r) => r.appId))].sort(),
       requestCount: reqs.length,
       errorCount,
       errorRate: errorCount / reqs.length,
@@ -728,7 +727,6 @@ export const telemetryHandlers = [
         const errorCount = list.filter((r) => r.hasError).length;
         return {
           userId,
-          applicationIds: [...new Set(list.map((r) => r.appId))].sort(),
           requestCount: list.length,
           errorCount,
           errorRate: errorCount / list.length,
