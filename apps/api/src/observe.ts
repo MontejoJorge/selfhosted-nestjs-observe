@@ -1,6 +1,7 @@
 import { ConfigService } from '@nestjs/config';
 import { createObserveModule } from '@nestjs/observe';
 import type { Request } from 'express';
+import { API_PREFIX } from './app.setup.js';
 import type { Env } from './config/env.js';
 import {
   SELF_OBSERVE_BOOT,
@@ -20,6 +21,9 @@ const INGEST_ROUTES = new Set([
   '/applications/telemetry',
   '/applications/profiles',
 ]);
+
+/** Polled by Docker and load balancers: tracing it would only add noise. */
+const HEALTH_ROUTE = `/${API_PREFIX}/health`;
 
 export const SelfObserveModule = ObserveModule.forRootAsync({
   imports: [SelfObserveSwitchModule],
@@ -47,10 +51,12 @@ export const SelfObserveModule = ObserveModule.forRootAsync({
       http: {
         // Ingest from other applications is traced; only the collector's own batches
         // (sent with its own key) are not, or every flush would produce the next one.
+        // Health checks are not traced either.
         ignore: (req: Request) =>
-          req.method === 'POST' &&
-          INGEST_ROUTES.has(req.path) &&
-          req.headers['x-api-key'] === appKey,
+          req.path === HEALTH_ROUTE ||
+          (req.method === 'POST' &&
+            INGEST_ROUTES.has(req.path) &&
+            req.headers['x-api-key'] === appKey),
       },
     };
   },
