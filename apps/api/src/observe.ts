@@ -3,6 +3,7 @@ import { createObserveModule } from '@nestjs/observe';
 import type { Request } from 'express';
 import { API_PREFIX } from './app.setup.js';
 import type { Env } from './config/env.js';
+import { ingestApplicationName } from './ingest/http/ingest-auth.guard.js';
 import {
   SELF_OBSERVE_BOOT,
   type SelfObserveBoot,
@@ -57,6 +58,10 @@ export const SelfObserveModule = ObserveModule.forRootAsync({
           (req.method === 'POST' &&
             INGEST_ROUTES.has(req.path) &&
             req.headers['x-api-key'] === appKey),
+        // An ingest batch is "used" by the application whose API key sent it, so the
+        // Users page lists the applications reporting here instead of one anonymous row.
+        // Undefined (any other request) leaves the request without a user.
+        getUserId: (req: Request) => ingestApplicationName(req) as string,
       },
     };
   },

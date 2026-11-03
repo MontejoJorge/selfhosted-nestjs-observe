@@ -10,7 +10,7 @@ import {
   SelfCredentials,
   type SelfObserveSource,
 } from '../../self-observe/domain/self-observe.js';
-import { IngestAuthGuard } from './ingest-auth.guard.js';
+import { IngestAuthGuard, ingestApplicationName } from './ingest-auth.guard.js';
 
 const APP = '0192b8c2-1a2b-7c3d-8e4f-123456789abc';
 const SELF_APP = '0192b8c2-1a2b-7c3d-8e4f-000000000001';
@@ -54,16 +54,20 @@ function fakeAuthenticator() {
     calls,
     async authenticate(keyId: string | undefined, secret: string | undefined) {
       calls.push([keyId, secret]);
-      return keyId === 'obs_key' && secret === 'obss_secret' ? APP : null;
+      return keyId === 'obs_key' && secret === 'obss_secret'
+        ? { id: APP, name: 'orders-api' }
+        : null;
     },
   };
   return authenticator as typeof authenticator & ApiKeyAuthenticator;
 }
 
 function contextFor(headers: Record<string, string | string[] | undefined>) {
-  const request: { headers: typeof headers; applicationId?: string } = {
-    headers,
-  };
+  const request: {
+    headers: typeof headers;
+    applicationId?: string;
+    applicationName?: string;
+  } = { headers };
   const context = {
     switchToHttp: () => ({ getRequest: () => request }),
   } as unknown as ExecutionContext;
@@ -71,7 +75,7 @@ function contextFor(headers: Record<string, string | string[] | undefined>) {
 }
 
 describe('IngestAuthGuard', () => {
-  it('lets valid credentials through and attaches the application id', async () => {
+  it('lets valid credentials through and attaches the application', async () => {
     const authenticator = fakeAuthenticator();
     const { context, request } = contextFor({
       'x-api-key': 'obs_key',
@@ -79,6 +83,7 @@ describe('IngestAuthGuard', () => {
     });
     await expect(guard(authenticator).canActivate(context)).resolves.toBe(true);
     expect(request.applicationId).toBe(APP);
+    expect(ingestApplicationName(request as never)).toBe('orders-api');
   });
 
   it('uses the first value of repeated headers', async () => {
@@ -101,6 +106,7 @@ describe('IngestAuthGuard', () => {
       guard(fakeAuthenticator()).canActivate(context),
     ).rejects.toBeInstanceOf(UnauthorizedException);
     expect(request.applicationId).toBeUndefined();
+    expect(ingestApplicationName(request as never)).toBeUndefined();
   });
 
   describe('self-observe', () => {

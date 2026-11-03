@@ -11,11 +11,18 @@ const CACHE_TTL_MS = 60_000;
 /** Bound on cached entries, so random key ids cannot grow memory without limit. */
 const MAX_ENTRIES = 10_000;
 
+/** The application an ingest key belongs to. */
+export interface KeyApplication {
+  id: string;
+  name: string;
+}
+
 interface CachedKey {
   /** null when the key id does not exist */
   key: {
     id: string;
     applicationId: string;
+    applicationName: string;
     secretHash: Buffer;
     revokedAt: Date | null;
   } | null;
@@ -23,7 +30,7 @@ interface CachedKey {
 }
 
 /**
- * Resolves ingest credentials (`x-api-key` / `x-api-secret`) to an application id.
+ * Resolves ingest credentials (`x-api-key` / `x-api-secret`) to their application.
  *
  * Lookups are cached in memory for 60 s, so a busy agent does not cost a database round
  * trip per batch. Revoking or deleting a key through this instance evicts it at once;
@@ -35,16 +42,16 @@ export class ApiKeyAuthenticator {
 
   constructor(@Inject(KYSELY) private readonly db: Db) {}
 
-  /** Application id for valid, active credentials; null otherwise. */
+  /** Application of valid, active credentials; null otherwise. */
   async authenticate(
     keyId: string | undefined,
     secret: string | undefined,
-  ): Promise<string | null> {
+  ): Promise<KeyApplication | null> {
     if (!keyId || !secret || !looksLikeKeyId(keyId)) return null;
     const { key } = await this.lookup(keyId);
     if (!key || !secretMatches(secret, key.secretHash)) return null;
     if (apiKeyStatus(key) !== 'active') return null;
-    return key.applicationId;
+    return { id: key.applicationId, name: key.applicationName };
   }
 
   /** Drops a key from the cache (after revoke or delete). */
@@ -59,14 +66,22 @@ export class ApiKeyAuthenticator {
 
     const row = await this.db
       .selectFrom('api_keys')
-      .select(['id', 'application_id', 'secret_hash', 'revoked_at'])
-      .where('key_id', '=', keyId)
+      .innerJoin('applications', 'applications.id', 'api_keys.application_id')
+      .select([
+        'api_keys.id',
+        'api_keys.application_id',
+        'applications.name as application_name',
+        'api_keys.secret_hash',
+        'api_keys.revoked_at',
+      ])
+      .where('api_keys.key_id', '=', keyId)
       .executeTakeFirst();
     const entry: CachedKey = {
       key: row
         ? {
             id: row.id,
             applicationId: row.application_id,
+            applicationName: row.application_name,
             secretHash: row.secret_hash,
             revokedAt: row.revoked_at,
           }

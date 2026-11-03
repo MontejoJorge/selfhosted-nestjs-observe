@@ -9,7 +9,11 @@ import type { Request } from 'express';
 import { ApiKeyAuthenticator } from '../../projects/api-keys/api-key-authenticator.js';
 import { SelfObserve } from '../../self-observe/application/self-observe.service.js';
 
-type IngestRequest = Request & { applicationId?: string };
+type IngestRequest = Request & {
+  applicationId?: string;
+  /** Name of the application of an API key (not set for self-observe credentials). */
+  applicationName?: string;
+};
 
 function header(request: Request, name: string): string | undefined {
   const value = request.headers[name];
@@ -33,14 +37,32 @@ export class IngestAuthGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<IngestRequest>();
     const appKey = header(request, 'x-api-key');
     const appSecret = header(request, 'x-api-secret');
-    const applicationId =
-      (await this.selfObserve.applicationFor(appKey, appSecret)) ??
-      (await this.authenticator.authenticate(appKey, appSecret));
-    if (!applicationId)
+    const selfApplication = await this.selfObserve.applicationFor(
+      appKey,
+      appSecret,
+    );
+    if (selfApplication) {
+      request.applicationId = selfApplication;
+      return true;
+    }
+    const application = await this.authenticator.authenticate(
+      appKey,
+      appSecret,
+    );
+    if (!application)
       throw new UnauthorizedException('Invalid ingest credentials');
-    request.applicationId = applicationId;
+    request.applicationId = application.id;
+    request.applicationName = application.name;
     return true;
   }
+}
+
+/**
+ * Name of the application whose API key sent an ingest request, once `IngestAuthGuard`
+ * accepted it; undefined for any other request.
+ */
+export function ingestApplicationName(request: Request): string | undefined {
+  return (request as IngestRequest).applicationName;
 }
 
 /** Application id resolved by `IngestAuthGuard`. */

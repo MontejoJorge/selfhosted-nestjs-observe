@@ -38,6 +38,11 @@ the switch on again creates a new one).
 in self mode, a match reads the row (one primary-key lookup per batch, no cache) and maps the batch to
 its application while the switch is on. Anything else goes through the API keys as usual.
 
+**Users.** The collector's requests carry no user, so its Users page would be one anonymous row. Its
+agent's `http.getUserId` names instead the application whose API key sent an ingest batch (the guard
+leaves it on the request; key lookups already join the application, within their 60 s cache), so the
+page lists the applications reporting to the collector. Other requests stay anonymous.
+
 **Restarts.** Changes apply on the next start: the status says `restartRequired` when the switch no
 longer matches the boot, and the dashboard shows a restart notice. Turning it off stops storing the
 collector's batches at once (401: the agent logs one rejection and backs off to one attempt an hour)
