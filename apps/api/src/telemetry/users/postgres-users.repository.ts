@@ -100,15 +100,16 @@ function totalsSource(
   const parts: RawBuilder<unknown>[] = [];
   if (split.whole)
     parts.push(sql`
-      select user_id, hour as t, count, errors, status_4xx, status_5xx, sum_ms, min_ms,
-        max_ms, first_called_at, last_called_at
+      select user_id, application_id, hour as t, count, errors, status_4xx, status_5xx,
+        sum_ms, min_ms, max_ms, first_called_at, last_called_at
       from users_1h
       where ${apps} and hour >= ${split.whole.from} and hour < ${split.whole.to}
         and ${rollupUsers(match)}
     `);
   for (const edge of split.edges)
     parts.push(sql`
-      select coalesce(user_id, ${ANONYMOUS}) as user_id, called_at as t, 1 as count,
+      select coalesce(user_id, ${ANONYMOUS}) as user_id, application_id,
+        called_at as t, 1 as count,
         has_error::int4 as errors,
         (status_code between 400 and 499)::int4 as status_4xx,
         (status_code >= 500)::int4 as status_5xx,
@@ -181,6 +182,7 @@ function presenceSource(
 }
 
 interface TotalsRow {
+  application_ids: string[];
   count: number;
   errors: number;
   sum_ms: number;
@@ -227,7 +229,9 @@ export class PostgresUsersRepository extends UsersRepository {
   ): Promise<UserStatsDto[]> {
     const split = splitWindow(window, HOUR_MS);
     const { rows } = await sql<TotalsRow & { user_id: string }>`
-      select user_id, sum(count)::int8 as count, sum(errors)::int8 as errors,
+      select user_id,
+        array_agg(distinct application_id::text) as application_ids,
+        sum(count)::int8 as count, sum(errors)::int8 as errors,
         coalesce(sum(sum_ms), 0)::float8 as sum_ms, min(min_ms) as min_ms,
         max(max_ms) as max_ms, min(first_called_at) as first_called_at,
         max(last_called_at) as last_called_at
@@ -342,7 +346,9 @@ export class PostgresUsersRepository extends UsersRepository {
 
     const [{ rows }, { rows: cells }] = await Promise.all([
       sql<TotalsRow & { t: Date; status4xx: number; status5xx: number }>`
-        select ${t} as t, sum(count)::int8 as count, sum(errors)::int8 as errors,
+        select ${t} as t,
+          array_agg(distinct application_id::text) as application_ids,
+          sum(count)::int8 as count, sum(errors)::int8 as errors,
           sum(status_4xx)::int8 as "status4xx", sum(status_5xx)::int8 as "status5xx",
           coalesce(sum(sum_ms), 0)::float8 as sum_ms, min(min_ms) as min_ms,
           max(max_ms) as max_ms, min(first_called_at) as first_called_at,
@@ -361,8 +367,12 @@ export class PostgresUsersRepository extends UsersRepository {
     const summary = summarizeTimeline(rows, cells);
     const firstSeen = Math.min(...rows.map((r) => r.first_called_at.getTime()));
     const lastSeen = Math.max(...rows.map((r) => r.last_called_at.getTime()));
+    const applicationIds = [
+      ...new Set(rows.flatMap((r) => r.application_ids)),
+    ].sort();
     return {
       userId,
+      applicationIds,
       requestCount: summary.totals.count,
       errorCount: summary.totals.errors,
       errorRate: ratio(summary.totals.errors, summary.totals.count),
@@ -381,6 +391,7 @@ function toStats(
 ): UserStatsDto {
   return {
     userId,
+    applicationIds: row.application_ids,
     requestCount: row.count,
     errorCount: row.errors,
     errorRate: ratio(row.errors, row.count),

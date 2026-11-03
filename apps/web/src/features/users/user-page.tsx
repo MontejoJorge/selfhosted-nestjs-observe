@@ -6,6 +6,7 @@ import { ScopeControls } from '@/components/layout/scope-controls';
 import { Page, PageHeader, PageSection } from '@/components/page';
 import { Panel, PanelBody, PanelHeader } from '@/components/panel';
 import { EmptyState } from '@/components/states';
+import { useApplicationNames } from '@/features/applications/use-application-names';
 import {
   DurationPanelView,
   RequestsPanelView,
@@ -21,6 +22,7 @@ import { useMemo } from 'react';
 import { useParams } from 'react-router';
 import { userQueryOptions } from './queries';
 import { userSearch } from './search';
+import { applicationsLabel } from './users-math';
 
 const STATUS_OPTIONS = [
   { value: 'ok', label: 'Succeeded' },
@@ -91,6 +93,7 @@ function UserOverview({
   user: UserDetailDto;
 }) {
   const scope = useScope();
+  const names = useApplicationNames();
   const totals = useMemo(() => statusTotals(user.timeline), [user.timeline]);
 
   return (
@@ -102,6 +105,9 @@ function UserOverview({
             <KeyValue label="User ID">
               <span className="truncate">{userId}</span>
               <CopyButton value={userId} label="Copy user id" />
+            </KeyValue>
+            <KeyValue label="Applications">
+              {applicationsLabel(user.applicationIds, names)}
             </KeyValue>
             <KeyValue label="Requests">
               {formatCount(user.requestCount)}

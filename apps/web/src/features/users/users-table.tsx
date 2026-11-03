@@ -20,24 +20,33 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { useApplicationNames } from '@/features/applications/use-application-names';
 import type { UserStatsDto } from '@/lib/api/generated/api';
 import { formatCount, formatRelative } from '@/lib/format';
 import { paths } from '@/lib/paths';
 import { useProjectRef } from '@/lib/scope-hooks';
 import { cn } from '@/lib/utils';
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
-import { ANONYMOUS_LABEL, USERS_PAGE_SIZE } from './users-math';
+import { useMemo, useState, type ReactNode } from 'react';
+import {
+  ANONYMOUS_LABEL,
+  applicationsLabel,
+  USERS_PAGE_SIZE,
+} from './users-math';
 
-type SortKey = 'user' | 'duration' | 'failureRate' | 'count' | 'lastSeen';
+type SortKey =
+  'user' | 'application' | 'duration' | 'failureRate' | 'count' | 'lastSeen';
 
-const accessors: SortAccessors<UserStatsDto, SortKey> = {
+const accessors = (
+  names: ReadonlyMap<string, string>,
+): SortAccessors<UserStatsDto, SortKey> => ({
   user: (row) => row.userId ?? '',
+  application: (row) => applicationsLabel(row.applicationIds, names),
   duration: (row) => row.latency.p95,
   failureRate: (row) => row.errorRate,
   count: (row) => row.requestCount,
   lastSeen: (row) => row.lastSeenAt,
-};
+});
 
 /**
  * Users with sortable headers and client-side pages. The anonymous row
@@ -54,7 +63,9 @@ export function UsersTable({
   footnote?: ReactNode;
 }) {
   const project = useProjectRef();
-  const { sorted, sort, toggle } = useSortedRows(users, accessors, {
+  const names = useApplicationNames();
+  const sortAccessors = useMemo(() => accessors(names), [names]);
+  const { sorted, sort, toggle } = useSortedRows(users, sortAccessors, {
     key: 'count',
     direction: 'desc',
   });
@@ -105,6 +116,9 @@ export function UsersTable({
             <SortableHead sortKey="user" sort={sort} onToggle={toggle}>
               User
             </SortableHead>
+            <SortableHead sortKey="application" sort={sort} onToggle={toggle}>
+              Application
+            </SortableHead>
             <SortableHead sortKey="duration" sort={sort} onToggle={toggle}>
               Duration
             </SortableHead>
@@ -131,10 +145,15 @@ export function UsersTable({
         </TableHeader>
         <TableBody>
           {rows.map((user) => (
-            <UserRow key={user.userId ?? ''} user={user} project={project} />
+            <UserRow
+              key={user.userId ?? ''}
+              user={user}
+              project={project}
+              names={names}
+            />
           ))}
           {rows.length === 0 ? (
-            <MessageRow colSpan={5}>{emptyMessage}</MessageRow>
+            <MessageRow colSpan={6}>{emptyMessage}</MessageRow>
           ) : null}
         </TableBody>
       </Table>
@@ -142,9 +161,20 @@ export function UsersTable({
   );
 }
 
-function UserRow({ user, project }: { user: UserStatsDto; project: string }) {
+function UserRow({
+  user,
+  project,
+  names,
+}: {
+  user: UserStatsDto;
+  project: string;
+  names: ReadonlyMap<string, string>;
+}) {
   const cells = (
     <>
+      <TableCell className="max-w-56 truncate text-sm">
+        {applicationsLabel(user.applicationIds, names)}
+      </TableCell>
       <TableCell>
         <DurationPill avg={user.latency.avg} p95={user.latency.p95} />
       </TableCell>
