@@ -98,7 +98,7 @@ function Rail() {
 
 function Sidebar() {
   return (
-    <aside className="sticky top-0 hidden h-svh w-[270px] shrink-0 flex-col border-r border-sidebar-border bg-sidebar px-4 py-6 lg:flex">
+    <aside className="sticky top-0 hidden h-svh w-[270px] shrink-0 flex-col overflow-y-auto overscroll-contain border-r border-sidebar-border bg-sidebar px-4 py-6 lg:flex">
       <AppNav />
       <div className="mt-auto border-t border-sidebar-border pt-4">
         <p className="px-1 font-mono text-[11px] tracking-wider text-muted-foreground uppercase">
