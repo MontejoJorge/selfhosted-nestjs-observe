@@ -7,6 +7,7 @@ import {
 } from '@/components/data/data-table';
 import { LoadMore } from '@/components/data/load-more';
 import { Duration, RoutePath } from '@/components/data/metric-cells';
+import { RelativeTime } from '@/components/data/relative-time';
 import { ScopedLink } from '@/components/scoped-link';
 import { EmptyState } from '@/components/states';
 import {
@@ -17,7 +18,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { formatRelative } from '@/lib/format';
 import { paths } from '@/lib/paths';
 import { useScope } from '@/lib/scope-hooks';
 import { cn } from '@/lib/utils';
@@ -98,7 +98,7 @@ export function RequestTable({ filters }: { filters: RequestFilters }) {
                 </TableCell>
               ) : null}
               <TableCell className="text-right text-sm whitespace-nowrap text-muted-foreground">
-                {formatRelative(request.calledAt)}
+                <RelativeTime iso={request.calledAt} />
               </TableCell>
             </LinkRow>
           ))}

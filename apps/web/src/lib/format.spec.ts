@@ -5,6 +5,7 @@ import {
   formatDateTime,
   formatDay,
   formatDuration,
+  formatFullDateTime,
   formatLongDay,
   formatMegabytes,
   formatPercent,
@@ -119,6 +120,7 @@ describe('date formatting', () => {
 
   it('formats date-times in 24-hour time', () => {
     expect(formatDateTime(iso)).toBe('Oct 29, 16:05:09');
+    expect(formatFullDateTime(iso)).toBe('Oct 29, 2026, 16:05:09');
     expect(formatTime(iso)).toBe('16:05');
     expect(formatPreciseTime(iso)).toBe('16:05:09.042');
   });

@@ -6,12 +6,13 @@ import {
   InputFilter,
   OptionFilter,
 } from '@/components/data/filters';
+import { RelativeTime } from '@/components/data/relative-time';
 import { Page, PageActions, PageHeader, PageTitle } from '@/components/page';
 import { CountBadge } from '@/components/panel';
 import { EmptyState } from '@/components/states';
 import type { ProjectSummaryDto } from '@/lib/api/generated/api';
 import type { TimeWindow } from '@/lib/api/scope';
-import { formatDuration, formatRelative } from '@/lib/format';
+import { formatDuration } from '@/lib/format';
 import { paths } from '@/lib/paths';
 import { useTimeWindow } from '@/lib/scope-hooks';
 import { windowPhrase } from '@/lib/time-window';
@@ -107,7 +108,9 @@ function ProjectCard({
           {project.lastSeenAt ? (
             <>
               <span>/</span>
-              <span>seen {formatRelative(project.lastSeenAt)}</span>
+              <span>
+                seen <RelativeTime iso={project.lastSeenAt} />
+              </span>
             </>
           ) : null}
         </div>

@@ -6,6 +6,7 @@ import {
 } from '@/components/data/filters';
 import { KeyValue, KeyValueList } from '@/components/data/key-value';
 import { FailureRate, RoutePath } from '@/components/data/metric-cells';
+import { RelativeTime } from '@/components/data/relative-time';
 import { ScopeControls } from '@/components/layout/scope-controls';
 import { Page, PageHeader, PageSection } from '@/components/page';
 import { Panel, PanelBody, PanelHeader } from '@/components/panel';
@@ -17,7 +18,7 @@ import { overviewQueryOptions } from '@/features/overview/queries';
 import { usePreviousOverview } from '@/features/overview/use-previous-overview';
 import { ProjectTitle } from '@/features/projects/project-title';
 import { useReleaseMarkers } from '@/features/releases/use-release-markers';
-import { formatCount, formatDuration, formatRelative } from '@/lib/format';
+import { formatCount, formatDuration } from '@/lib/format';
 import { useScope, useTypedSearch } from '@/lib/scope-hooks';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { operationsQueryOptions } from './queries';
@@ -88,7 +89,7 @@ export function OperationPage() {
                 <FailureRate rate={overview.requests.errorRate} />
               </KeyValue>
               <KeyValue label="Last call">
-                {stats ? formatRelative(stats.lastSeenAt) : '–'}
+                {stats ? <RelativeTime iso={stats.lastSeenAt} /> : '–'}
               </KeyValue>
             </KeyValueList>
           </PanelBody>

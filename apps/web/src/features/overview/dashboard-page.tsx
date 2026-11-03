@@ -1,5 +1,6 @@
 import { MethodBadge } from '@/components/data/badges';
 import { RoutePath } from '@/components/data/metric-cells';
+import { RelativeTime } from '@/components/data/relative-time';
 import { ScopeControls } from '@/components/layout/scope-controls';
 import { Page, PageHeader, PanelGrid } from '@/components/page';
 import { EmptyState, NoTelemetryHint } from '@/components/states';
@@ -8,7 +9,7 @@ import { ProjectTitle } from '@/features/projects/project-title';
 import { operationsQueryOptions } from '@/features/requests/queries';
 import { servicesQueryOptions } from '@/features/services/queries';
 import { TimeMapPanel } from '@/features/services/time-map-panel';
-import { formatCount, formatDuration, formatRelative } from '@/lib/format';
+import { formatCount, formatDuration } from '@/lib/format';
 import { paths } from '@/lib/paths';
 import { useScope } from '@/lib/scope-hooks';
 import {
@@ -92,7 +93,7 @@ function TopErrors() {
         </span>
       ),
       value: formatCount(group.count),
-      caption: formatRelative(group.lastSeenAt),
+      caption: <RelativeTime iso={group.lastSeenAt} />,
     }));
   return (
     <RankedList

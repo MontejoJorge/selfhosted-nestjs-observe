@@ -7,6 +7,7 @@ import {
   RecordList,
 } from '@/components/data/key-value';
 import { DottedName } from '@/components/data/metric-cells';
+import { RelativeTime } from '@/components/data/relative-time';
 import { Page, PageActions, PageHeader } from '@/components/page';
 import { Panel, PanelBody, PanelHeader } from '@/components/panel';
 import { ScopedLink } from '@/components/scoped-link';
@@ -17,7 +18,7 @@ import { useApplicationNames } from '@/features/applications/use-application-nam
 import { useLiveHold } from '@/features/live/live-context';
 import { ProjectTitle } from '@/features/projects/project-title';
 import { VersionLink } from '@/features/releases/version-link';
-import { formatDuration, formatRelative } from '@/lib/format';
+import { formatDuration } from '@/lib/format';
 import { paths } from '@/lib/paths';
 import { useScope } from '@/lib/scope-hooks';
 import { windowPhrase } from '@/lib/time-window';
@@ -107,7 +108,7 @@ export function JobDetailPage() {
             <KeyValue label="Started at">
               {job.calledAt}
               <span className="font-normal text-muted-foreground">
-                {formatRelative(job.calledAt)}
+                <RelativeTime iso={job.calledAt} />
               </span>
             </KeyValue>
             <KeyValue label="Tags">

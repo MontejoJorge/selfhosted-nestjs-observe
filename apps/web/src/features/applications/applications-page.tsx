@@ -8,6 +8,7 @@ import {
   OptionFilter,
 } from '@/components/data/filters';
 import { Meter } from '@/components/data/metric-cells';
+import { RelativeTime } from '@/components/data/relative-time';
 import { Page, PageActions, PageHeader } from '@/components/page';
 import { CountBadge } from '@/components/panel';
 import { ScopedLink } from '@/components/scoped-link';
@@ -30,7 +31,6 @@ import {
 } from '@/components/ui/table';
 import { ProjectTitle } from '@/features/projects/project-title';
 import type { ApplicationSummaryDto } from '@/lib/api/generated/api';
-import { formatRelative } from '@/lib/format';
 import { paths } from '@/lib/paths';
 import { useScope } from '@/lib/scope-hooks';
 import { cn } from '@/lib/utils';
@@ -212,9 +212,11 @@ export function ApplicationsPage() {
                       />
                     </TableCell>
                     <TableCell className="text-sm whitespace-nowrap text-muted-foreground">
-                      {app.lastSeenAt
-                        ? formatRelative(app.lastSeenAt)
-                        : 'Never'}
+                      {app.lastSeenAt ? (
+                        <RelativeTime iso={app.lastSeenAt} />
+                      ) : (
+                        'Never'
+                      )}
                     </TableCell>
                     <TableCell>
                       <Meter percent={app.cpuPercent} />

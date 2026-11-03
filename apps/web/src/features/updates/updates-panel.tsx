@@ -1,10 +1,11 @@
 import { KeyValue, KeyValueList } from '@/components/data/key-value';
+import { RelativeTime } from '@/components/data/relative-time';
 import { FormError } from '@/components/form';
 import { Panel, PanelBody, PanelHeader } from '@/components/panel';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import type { UpdateStatusDto } from '@/lib/api/generated/api';
-import { formatDateTime, formatRelative } from '@/lib/format';
+import { formatDateTime } from '@/lib/format';
 import {
   useMutation,
   useQueryClient,
@@ -123,7 +124,7 @@ export function UpdatesPanel() {
           <KeyValue label="Last checked">
             {status.checkedAt ? (
               <span title={formatDateTime(status.checkedAt)}>
-                {formatRelative(status.checkedAt)}
+                <RelativeTime iso={status.checkedAt} />
               </span>
             ) : (
               <span className="text-muted-foreground">Never</span>

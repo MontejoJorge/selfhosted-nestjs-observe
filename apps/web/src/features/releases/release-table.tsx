@@ -1,4 +1,5 @@
 import { NumCell, TableFrame } from '@/components/data/data-table';
+import { RelativeTime } from '@/components/data/relative-time';
 import {
   Table,
   TableBody,
@@ -8,7 +9,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import type { ReleaseSummaryDto } from '@/lib/api/generated/api';
-import { formatDateTime, formatRelative } from '@/lib/format';
+import { formatDateTime } from '@/lib/format';
 import type { ReactNode } from 'react';
 import { releaseKey, shortVersion } from './release-math';
 
@@ -75,7 +76,7 @@ export function ReleaseTable({
                       {formatDateTime(release.firstSeenAt)}
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      {formatRelative(release.firstSeenAt)}
+                      <RelativeTime iso={release.firstSeenAt} />
                     </span>
                   </div>
                 </TableCell>
@@ -83,7 +84,7 @@ export function ReleaseTable({
                   className="text-sm whitespace-nowrap text-muted-foreground"
                   title={formatDateTime(release.lastSeenAt)}
                 >
-                  {formatRelative(release.lastSeenAt)}
+                  <RelativeTime iso={release.lastSeenAt} />
                 </TableCell>
                 <NumCell className="whitespace-nowrap">
                   <span

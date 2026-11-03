@@ -1,3 +1,4 @@
+import { RelativeTime } from '@/components/data/relative-time';
 import { ScopeControls } from '@/components/layout/scope-controls';
 import { Page, PageHeader, PageSection } from '@/components/page';
 import {
@@ -26,7 +27,6 @@ import {
   formatDuration,
   formatMegabytes,
   formatPercent,
-  formatRelative,
 } from '@/lib/format';
 import { paths } from '@/lib/paths';
 import { useScope, useTypedSearch } from '@/lib/scope-hooks';
@@ -315,7 +315,7 @@ function InstanceRow({
           />
         ) : null}
         <span className="text-xs whitespace-nowrap text-muted-foreground">
-          {formatRelative(instance.lastSeenAt)}
+          <RelativeTime iso={instance.lastSeenAt} />
         </span>
       </span>
       {[
@@ -400,9 +400,14 @@ function ProfilerBody({ scope }: { scope: RuntimeScope }) {
           title="Runtime"
           aside={
             <span className="font-mono text-[11px] tracking-wider text-muted-foreground uppercase">
-              {metrics.latest
-                ? `latest sample · ${metrics.latest.serviceId} · ${formatRelative(metrics.latest.sampledAt)}`
-                : 'range average'}
+              {metrics.latest ? (
+                <>
+                  latest sample · {metrics.latest.serviceId} ·{' '}
+                  <RelativeTime iso={metrics.latest.sampledAt} />
+                </>
+              ) : (
+                'range average'
+              )}
             </span>
           }
         />

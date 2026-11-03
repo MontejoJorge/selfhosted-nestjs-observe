@@ -8,6 +8,7 @@ import {
   TableFrame,
 } from '@/components/data/data-table';
 import { KeyValue, KeyValueList } from '@/components/data/key-value';
+import { RelativeTime } from '@/components/data/relative-time';
 import { ScopeControls } from '@/components/layout/scope-controls';
 import { Page, PageHeader, PageSection } from '@/components/page';
 import {
@@ -29,7 +30,7 @@ import {
 import { useApplicationNames } from '@/features/applications/use-application-names';
 import { ProjectTitle } from '@/features/projects/project-title';
 import type { TimeBucketDto } from '@/lib/api/generated/api';
-import { formatCount, formatRelative } from '@/lib/format';
+import { formatCount } from '@/lib/format';
 import { paths } from '@/lib/paths';
 import { useScope } from '@/lib/scope-hooks';
 import { formatLongDate } from '@/lib/stats';
@@ -79,10 +80,10 @@ export function ErrorGroupPage() {
                 {formatCount(group.count)}
               </KeyValue>
               <KeyValue label="First seen">
-                {formatRelative(group.firstSeenAt)}
+                <RelativeTime iso={group.firstSeenAt} />
               </KeyValue>
               <KeyValue label="Last seen">
-                {formatRelative(group.lastSeenAt)}
+                <RelativeTime iso={group.lastSeenAt} />
               </KeyValue>
             </KeyValueList>
           </PanelBody>
@@ -157,7 +158,7 @@ export function ErrorGroupPage() {
                       {occurrence.serviceId}
                     </TableCell>
                     <TableCell className="text-right text-sm whitespace-nowrap text-muted-foreground">
-                      {formatRelative(occurrence.occurredAt)}
+                      <RelativeTime iso={occurrence.occurredAt} />
                     </TableCell>
                   </LinkRow>
                 ))}

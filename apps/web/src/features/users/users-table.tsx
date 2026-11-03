@@ -6,6 +6,7 @@ import {
   TableFrame,
 } from '@/components/data/data-table';
 import { DurationPill, FailureRate } from '@/components/data/metric-cells';
+import { RelativeTime } from '@/components/data/relative-time';
 import { SortableHead } from '@/components/data/sort';
 import {
   useSortedRows,
@@ -22,7 +23,7 @@ import {
 } from '@/components/ui/table';
 import { useApplicationNames } from '@/features/applications/use-application-names';
 import type { UserStatsDto } from '@/lib/api/generated/api';
-import { formatCount, formatRelative } from '@/lib/format';
+import { formatCount } from '@/lib/format';
 import { paths } from '@/lib/paths';
 import { useProjectRef } from '@/lib/scope-hooks';
 import { cn } from '@/lib/utils';
@@ -183,7 +184,7 @@ function UserRow({
       </TableCell>
       <NumCell>{formatCount(user.requestCount)}</NumCell>
       <TableCell className="text-right text-sm whitespace-nowrap text-muted-foreground">
-        {formatRelative(user.lastSeenAt)}
+        <RelativeTime iso={user.lastSeenAt} />
       </TableCell>
     </>
   );

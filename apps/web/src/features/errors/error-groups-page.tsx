@@ -11,6 +11,7 @@ import {
   OptionFilter,
 } from '@/components/data/filters';
 import { LoadMore } from '@/components/data/load-more';
+import { RelativeTime } from '@/components/data/relative-time';
 import { ScopeControls } from '@/components/layout/scope-controls';
 import { Page, PageHeader } from '@/components/page';
 import { ScopedLink } from '@/components/scoped-link';
@@ -28,7 +29,7 @@ import { ErrorsPanel } from '@/features/overview/overview-panels';
 import { overviewQueryOptions } from '@/features/overview/queries';
 import { usePreviousOverview } from '@/features/overview/use-previous-overview';
 import { ProjectTitle } from '@/features/projects/project-title';
-import { formatCount, formatRelative } from '@/lib/format';
+import { formatCount } from '@/lib/format';
 import { paths } from '@/lib/paths';
 import { useScope, useTypedSearch } from '@/lib/scope-hooks';
 import { cn } from '@/lib/utils';
@@ -151,10 +152,10 @@ export function ErrorGroupsPage() {
                       {names.get(group.applicationId) ?? group.serviceId}
                     </TableCell>
                     <TableCell className="text-sm whitespace-nowrap text-muted-foreground">
-                      {formatRelative(group.firstSeenAt)}
+                      <RelativeTime iso={group.firstSeenAt} />
                     </TableCell>
                     <TableCell className="text-right text-sm whitespace-nowrap text-muted-foreground">
-                      {formatRelative(group.lastSeenAt)}
+                      <RelativeTime iso={group.lastSeenAt} />
                     </TableCell>
                   </LinkRow>
                 ))}

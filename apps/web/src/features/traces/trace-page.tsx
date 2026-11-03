@@ -5,6 +5,7 @@ import {
 } from '@/components/data/badges';
 import { IdChip } from '@/components/data/copy';
 import { Duration, RoutePath } from '@/components/data/metric-cells';
+import { RelativeTime } from '@/components/data/relative-time';
 import { Page, PageHeader, PageSection } from '@/components/page';
 import { CountBadge, Panel, PanelBody, PanelHeader } from '@/components/panel';
 import { ScopedLink } from '@/components/scoped-link';
@@ -13,7 +14,6 @@ import { TraceWaterfall } from '@/components/trace/trace-waterfall';
 import { LogStream } from '@/features/logs/log-stream';
 import { ProjectTitle } from '@/features/projects/project-title';
 import { VersionLink } from '@/features/releases/version-link';
-import { formatRelative } from '@/lib/format';
 import { paths } from '@/lib/paths';
 import { useProjectRef } from '@/lib/scope-hooks';
 import { useSuspenseQuery } from '@tanstack/react-query';
@@ -68,7 +68,7 @@ export function TracePage() {
                 <StatusCodeBadge code={request.statusCode} />
                 <Duration ms={request.durationMs} />
                 <span className="text-sm text-muted-foreground">
-                  {formatRelative(request.calledAt)}
+                  <RelativeTime iso={request.calledAt} />
                 </span>
               </>
             }
@@ -110,7 +110,7 @@ export function TracePage() {
                 <JobStatusBadge status={job.status} />
                 <Duration ms={job.durationMs} />
                 <span className="text-sm text-muted-foreground">
-                  {formatRelative(job.calledAt)}
+                  <RelativeTime iso={job.calledAt} />
                 </span>
               </>
             }

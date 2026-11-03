@@ -1,8 +1,9 @@
 import { DotPill } from '@/components/data/badges';
+import { RelativeTime } from '@/components/data/relative-time';
 import { CountBadge, Panel, PanelBody, PanelHeader } from '@/components/panel';
 import { InlineSpinner } from '@/components/states';
 import type { StorageTrimDto } from '@/lib/api/generated/api';
-import { formatLongDay, formatRelative } from '@/lib/format';
+import { formatLongDay } from '@/lib/format';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { storageTrimsQueryOptions } from './queries';
 import { useFinishedTrims } from './use-finished-trims';
@@ -71,7 +72,7 @@ export function TrimsPanel({
               </p>
               <p className="font-mono text-xs text-muted-foreground">
                 before {formatLongDay(trim.cutoffDay)} · asked{' '}
-                {formatRelative(trim.requestedAt)}
+                <RelativeTime iso={trim.requestedAt} />
               </p>
             </div>
             <TrimProgress trim={trim} />

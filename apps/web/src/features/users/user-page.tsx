@@ -2,6 +2,7 @@ import { CopyButton } from '@/components/data/copy';
 import { OptionFilter } from '@/components/data/filters';
 import { KeyValue, KeyValueList } from '@/components/data/key-value';
 import { FailureRate } from '@/components/data/metric-cells';
+import { RelativeTime } from '@/components/data/relative-time';
 import { ScopeControls } from '@/components/layout/scope-controls';
 import { Page, PageHeader, PageSection } from '@/components/page';
 import { Panel, PanelBody, PanelHeader } from '@/components/panel';
@@ -14,7 +15,7 @@ import {
 import { ProjectTitle } from '@/features/projects/project-title';
 import { RequestTable } from '@/features/requests/request-table';
 import type { TimeBucketDto, UserDetailDto } from '@/lib/api/generated/api';
-import { formatCount, formatDuration, formatRelative } from '@/lib/format';
+import { formatCount, formatDuration } from '@/lib/format';
 import { useScope, useTypedSearch } from '@/lib/scope-hooks';
 import { windowPhrase } from '@/lib/time-window';
 import { useSuspenseQuery } from '@tanstack/react-query';
@@ -129,10 +130,10 @@ function UserOverview({
               {formatDuration(user.latency.p99)}
             </KeyValue>
             <KeyValue label="First seen">
-              {formatRelative(user.firstSeenAt)}
+              <RelativeTime iso={user.firstSeenAt} />
             </KeyValue>
             <KeyValue label="Last seen">
-              {formatRelative(user.lastSeenAt)}
+              <RelativeTime iso={user.lastSeenAt} />
             </KeyValue>
           </KeyValueList>
         </PanelBody>

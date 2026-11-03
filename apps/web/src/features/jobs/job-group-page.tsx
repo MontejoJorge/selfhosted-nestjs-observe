@@ -13,6 +13,7 @@ import {
   Duration,
   FailureRate,
 } from '@/components/data/metric-cells';
+import { RelativeTime } from '@/components/data/relative-time';
 import { ScopeControls } from '@/components/layout/scope-controls';
 import { Page, PageHeader, PageSection } from '@/components/page';
 import { Panel, PanelBody, PanelHeader } from '@/components/panel';
@@ -34,7 +35,7 @@ import { overviewQueryOptions } from '@/features/overview/queries';
 import { usePreviousOverview } from '@/features/overview/use-previous-overview';
 import { ProjectTitle } from '@/features/projects/project-title';
 import { useReleaseMarkers } from '@/features/releases/use-release-markers';
-import { formatCount, formatDuration, formatRelative } from '@/lib/format';
+import { formatCount, formatDuration } from '@/lib/format';
 import { paths } from '@/lib/paths';
 import { useScope, useTypedSearch } from '@/lib/scope-hooks';
 import { cn } from '@/lib/utils';
@@ -103,7 +104,7 @@ export function JobGroupPage() {
                 <FailureRate rate={overview.jobs.failureRate} />
               </KeyValue>
               <KeyValue label="Last run">
-                {stats ? formatRelative(stats.lastSeenAt) : '–'}
+                {stats ? <RelativeTime iso={stats.lastSeenAt} /> : '–'}
               </KeyValue>
             </KeyValueList>
           </PanelBody>
@@ -214,7 +215,7 @@ function RunTable({
                 {job.maxAttempts ? ` / ${job.maxAttempts}` : ''}
               </TableCell>
               <TableCell className="text-right text-sm whitespace-nowrap text-muted-foreground">
-                {formatRelative(job.calledAt)}
+                <RelativeTime iso={job.calledAt} />
               </TableCell>
             </LinkRow>
           ))}

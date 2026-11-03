@@ -11,6 +11,15 @@ const dateTimeFormat = new Intl.DateTimeFormat('en-US', {
   second: '2-digit',
   hour12: false,
 });
+const fullDateTimeFormat = new Intl.DateTimeFormat('en-US', {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hour12: false,
+});
 const timeFormat = new Intl.DateTimeFormat('en-US', {
   hour: '2-digit',
   minute: '2-digit',
@@ -117,6 +126,11 @@ export function formatLongDay(day: string): string {
 
 export function formatDateTime(iso: string): string {
   return dateTimeFormat.format(new Date(iso));
+}
+
+/** With the year: the exact moment behind a relative time. */
+export function formatFullDateTime(iso: string): string {
+  return fullDateTimeFormat.format(new Date(iso));
 }
 
 export function formatTime(iso: string): string {
