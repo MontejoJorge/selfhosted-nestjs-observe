@@ -35,7 +35,7 @@ CORS allows every origin.
 | `DATABASE_MIGRATE_ON_START` | `true`      | run pending migrations when the app boots    |
 | `RETENTION_DAYS`            | `14`        | daily partitions older than this are dropped |
 | `AGGREGATE_RETENTION_DAYS`  | `90`        | same for the rollups (min: RETENTION_DAYS)   |
-| `UPDATE_CHECK`              | `true`      | latest GitHub release every 12 h (ADR 0008)  |
+| `UPDATE_CHECK`              | `true`      | latest GitHub release every 6 h (ADR 0008)   |
 
 ## Layout
 
@@ -80,7 +80,7 @@ src/
   self-observe/                          /api/self-observe: the switch for the collector's own telemetry, the
                                          boot decision for the agent (observe.ts) and its in-memory ingest
                                          credentials (ADR 0009)
-  updates/                               /api/updates: latest GitHub release vs. the running version, every 12 h
+  updates/                               /api/updates: latest GitHub release vs. the running version, every 6 h
                                          (ADR 0008); domain (semver, schedule), UpdateChecker, GitHub and
                                          Postgres adapters
   openapi/                               document builder + generate.ts (writes apps/api/openapi.json)
