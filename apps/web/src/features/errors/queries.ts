@@ -14,7 +14,7 @@ export const errorGroupsQueryOptions = (scope: Scope, filters: ErrorFilters) =>
     api.errors.listErrorGroups({ ...scope, ...filters, ...page }, { signal }),
   );
 
-/** The timeline and occurrences only cover the scope's time window; the count is all-time. */
+/** The count, timeline and occurrences cover the scope's time window. */
 export const errorGroupQueryOptions = (id: string, scope: Scope) =>
   queryOptions({
     queryKey: ['errors', 'detail', id, scope],

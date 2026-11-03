@@ -211,7 +211,12 @@ function logItem(l: LogEvent): LogItemDto {
   };
 }
 
-function errorGroup(key: string, apps: Set<string>): ErrorGroupDto | null {
+/** `inWindow`: the scoped occurrences of the range, which `count` covers. */
+function errorGroup(
+  key: string,
+  apps: Set<string>,
+  inWindow: readonly OccurrenceEvent[],
+): ErrorGroupDto | null {
   const def = errorByKey.get(key)!;
   if (!apps.has(def.appId)) return null;
   const all = occurrences.filter((o) => o.key === key);
@@ -220,7 +225,7 @@ function errorGroup(key: string, apps: Set<string>): ErrorGroupDto | null {
   return {
     id: errorGroupIds.get(key)!,
     applicationId: def.appId,
-    count: all.length,
+    count: inWindow.filter((o) => o.key === key).length,
     culprit: def.culprit,
     errorClass: def.errorClass,
     fingerprint: def.fingerprint,
@@ -527,12 +532,11 @@ export const telemetryHandlers = [
   get('errors/:id', (params, { id }): ErrorGroupDetailDto => {
     const def = errorById.get(id);
     const apps = scopeApps(params);
-    const group = def ? errorGroup(def.key, apps) : null;
-    if (!def || !group) throw new ApiError(404, `Error group ${id} not found`);
     const window = windowOf(params);
-    const occ = scopedOccurrences(params, window).filter(
-      (o) => o.key === def.key,
-    );
+    const scoped = scopedOccurrences(params, window);
+    const group = def ? errorGroup(def.key, apps, scoped) : null;
+    if (!def || !group) throw new ApiError(404, `Error group ${id} not found`);
+    const occ = scoped.filter((o) => o.key === def.key);
     return {
       ...group,
       stack: def.stack,
@@ -558,16 +562,15 @@ export const telemetryHandlers = [
     const apps = scopeApps(params);
     const source = params.get('source');
     const q = params.get('q')?.toLowerCase();
-    const seen = new Set(
-      scopedOccurrences(params, windowOf(params)).map((o) => o.key),
-    );
+    const scoped = scopedOccurrences(params, windowOf(params));
+    const seen = new Set(scoped.map((o) => o.key));
     const groups = ERRORS.filter(
       (def) =>
         seen.has(def.key) &&
         (!source || def.source === source) &&
         (!q || `${def.errorClass} ${def.message}`.toLowerCase().includes(q)),
     )
-      .map((def) => errorGroup(def.key, apps))
+      .map((def) => errorGroup(def.key, apps, scoped))
       .filter((g): g is ErrorGroupDto => g !== null)
       .sort((a, b) => b.lastSeenAt.localeCompare(a.lastSeenAt));
     return page(groups, params);

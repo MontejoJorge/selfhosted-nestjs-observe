@@ -36,7 +36,7 @@ export class ErrorGroupDto {
   /** operationId or `queue/name` where it happens most. */
   @ApiProperty({ type: String, nullable: true })
   culprit: string | null;
-  /** All-time count (within retention). */
+  /** Occurrences in the time range (of the instance, when filtered by one). */
   count: number;
   firstSeenAt: string;
   lastSeenAt: string;

@@ -42,14 +42,32 @@ export class PostgresErrorsRepository extends ErrorsRepository {
   }
 
   /**
-   * Error groups plus their top culprit. The lateral join runs once per returned row
-   * (the outer query is an index scan on (application_id, last_seen_at desc, id desc)
-   * with a LIMIT), so the page costs one round trip.
+   * Error groups plus their top culprit and their occurrences in the window (of the
+   * instance, when scoped to one). The lateral joins run once per returned row (the
+   * outer query is an index scan on (application_id, last_seen_at desc, id desc) with
+   * a LIMIT; the count reads the (group_id, occurred_at desc) index), so the page
+   * costs one round trip.
    */
-  private groups(scope: TelemetryScope) {
+  private groups(scope: TelemetryScope, window: TimeWindow) {
     return this.db
       .selectFrom('error_groups as g')
       .where(inApplications('g.application_id', scope.applicationIds))
+      .innerJoinLateral(
+        (eb) => {
+          const inWindow = eb
+            .selectFrom('error_occurrences as o')
+            .select(countAll.as('count'))
+            .whereRef('o.group_id', '=', 'g.id')
+            .where('o.occurred_at', '>=', window.from)
+            .where('o.occurred_at', '<', window.to);
+          return (
+            scope.instance
+              ? inWindow.where('o.service_id', '=', scope.instance)
+              : inWindow
+          ).as('occurrences');
+        },
+        (join) => join.onTrue(),
+      )
       .leftJoinLateral(
         (eb) =>
           eb
@@ -71,7 +89,7 @@ export class PostgresErrorsRepository extends ErrorsRepository {
         'g.error_class',
         'g.message',
         'g.stack',
-        'g.count',
+        'occurrences.count',
         'g.first_seen_at',
         'g.last_seen_at',
         'top.culprit',
@@ -83,7 +101,7 @@ export class PostgresErrorsRepository extends ErrorsRepository {
     page: { limit: number; cursor: KeysetCursor | null },
   ): Promise<Page<ErrorGroupDto>> {
     const { window, scope } = filter;
-    let query = this.groups(scope)
+    let query = this.groups(scope, window)
       .where('g.last_seen_at', '>=', window.from)
       .where('g.first_seen_at', '<', window.to);
     if (scope.instance) {
@@ -140,7 +158,7 @@ export class PostgresErrorsRepository extends ErrorsRepository {
     window: TimeWindow,
   ): Promise<ErrorGroupDetailDto | null> {
     const groupId = Number(id);
-    const group = await this.groups(scope)
+    const group = await this.groups(scope, window)
       .where('g.id', '=', groupId)
       .executeTakeFirst();
     if (!group) return null;

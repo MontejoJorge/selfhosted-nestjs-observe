@@ -49,7 +49,6 @@ export function ErrorGroupPage() {
     errorGroupQueryOptions(errorId, scope),
   );
   const names = useApplicationNames();
-  const inRange = group.timeline.reduce((sum, b) => sum + b.count, 0);
 
   return (
     <Page>
@@ -76,9 +75,6 @@ export function ErrorGroupPage() {
               <KeyValue label="Application">
                 {names.get(group.applicationId) ?? group.serviceId}
               </KeyValue>
-              <KeyValue label="Events (all time)">
-                {formatCount(group.count)}
-              </KeyValue>
               <KeyValue label="First seen">
                 <RelativeTime iso={group.firstSeenAt} />
               </KeyValue>
@@ -90,7 +86,7 @@ export function ErrorGroupPage() {
         </Panel>
         <Panel>
           <PanelHeader title="Occurrences">
-            <CountBadge>{formatCount(inRange)}</CountBadge>
+            <CountBadge>{formatCount(group.count)}</CountBadge>
           </PanelHeader>
           <PanelBody>
             <ErrorStemChart

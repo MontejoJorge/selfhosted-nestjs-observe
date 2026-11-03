@@ -4673,7 +4673,7 @@
           },
           "count": {
             "type": "number",
-            "description": "All-time count (within retention)."
+            "description": "Occurrences in the time range (of the instance, when filtered by one)."
           },
           "firstSeenAt": {
             "type": "string"
@@ -4807,7 +4807,7 @@
           },
           "count": {
             "type": "number",
-            "description": "All-time count (within retention)."
+            "description": "Occurrences in the time range (of the instance, when filtered by one)."
           },
           "firstSeenAt": {
             "type": "string"
