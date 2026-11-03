@@ -73,7 +73,7 @@ the stack and keeps the data (`down -v` deletes it).
 | `OBSERVE_PORT`             | `3000`   | `[host_ip:]port` for the dashboard and ingest.         |
 | `RETENTION_DAYS`           | `14`     | Days of telemetry to keep.                             |
 | `AGGREGATE_RETENTION_DAYS` | `90`     | Days of charts and stats to keep (per-minute rollups). |
-| `UPDATE_CHECK`             | `true`   | Look up the latest release on GitHub every 12 hours.   |
+| `UPDATE_CHECK`             | `true`   | Look up the latest release on GitHub every 6 hours.    |
 
 ## Connect your NestJS app
 

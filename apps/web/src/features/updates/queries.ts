@@ -1,7 +1,7 @@
 import { api } from '@/lib/api/client';
 import { mutationOptions, queryOptions } from '@tanstack/react-query';
 
-/** The API refreshes the latest release every 12 hours; reading it hourly is plenty. */
+/** The API refreshes the latest release every 6 hours; reading it hourly is plenty. */
 const UPDATE_STATUS_STALE_MS = 60 * 60 * 1000;
 
 /** Running version, latest GitHub release and whether the check is on. */

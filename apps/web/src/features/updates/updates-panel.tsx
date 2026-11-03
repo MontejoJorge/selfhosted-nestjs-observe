@@ -59,7 +59,7 @@ function Verdict({ status }: { status: UpdateStatusDto }) {
   return null;
 }
 
-/** Running version, latest release and the switch of the 12-hourly check. */
+/** Running version, latest release and the switch of the 6-hourly check. */
 export function UpdatesPanel() {
   const queryClient = useQueryClient();
   const { data: status } = useSuspenseQuery(updateStatusQueryOptions());
@@ -96,7 +96,7 @@ export function UpdatesPanel() {
               Check for new versions
             </label>
             <p className="text-muted-foreground">
-              Every 12 hours the collector asks GitHub for its latest release.
+              Every 6 hours the collector asks GitHub for its latest release.
               Nothing about your telemetry is sent.
             </p>
           </div>

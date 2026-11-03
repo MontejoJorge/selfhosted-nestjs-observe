@@ -19,9 +19,9 @@ import {
 } from './ports.js';
 
 /**
- * Looks up the latest release of the collector every 12 hours (ADR 0008). An hourly tick
- * checks when the last attempt is 12 hours old, so restarts don't add requests to GitHub.
- * A failed attempt waits 12 hours too; "check now" retries at once. UPDATE_CHECK=false
+ * Looks up the latest release of the collector every 6 hours (ADR 0008). A tick every
+ * 6 hours and the boot check when the last attempt is 6 hours old, so restarts don't add
+ * requests to GitHub. A failed attempt waits 6 hours too; "check now" retries at once. UPDATE_CHECK=false
  * turns it off for good; otherwise the dashboard's switch does.
  */
 @Injectable()
@@ -44,7 +44,7 @@ export class UpdateChecker implements OnApplicationBootstrap {
     void this.scheduled();
   }
 
-  @Cron(CronExpression.EVERY_HOUR)
+  @Cron(CronExpression.EVERY_6_HOURS)
   async scheduled(): Promise<void> {
     try {
       await this.checkIfDue(new Date());

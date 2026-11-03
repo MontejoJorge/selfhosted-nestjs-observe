@@ -4,7 +4,7 @@ import { IsBoolean } from 'class-validator';
 export class UpdateStatusDto {
   /** Version of the running collector. */
   currentVersion: string;
-  /** Whether the latest release is looked up every 12 hours: the switch and UPDATE_CHECK both on. */
+  /** Whether the latest release is looked up every 6 hours: the switch and UPDATE_CHECK both on. */
   enabled: boolean;
   /** UPDATE_CHECK=false: never checks, and the switch can't turn it on. */
   disabledByEnv: boolean;
@@ -29,7 +29,7 @@ export class UpdateStatusDto {
 }
 
 export class UpdateSettingsDto {
-  /** Look up the latest release every 12 hours. */
+  /** Look up the latest release every 6 hours. */
   @IsBoolean()
   enabled: boolean;
 }

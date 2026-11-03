@@ -22,8 +22,9 @@ and the result is stored, so the dashboard reads it without leaving the network.
 requests per hour per IP; drafts and pre-releases are left out by GitHub), 10 s timeout. The owner and
 repositories live in one constant (`GITHUB_REPOSITORIES`); GitHub redirects renamed repositories.
 
-**When.** An hourly cron (`@nestjs/schedule`, like maintenance) and the boot run a check only when the
-last attempt is at least 12 hours old, so restarts don't add requests. A failed attempt waits 12 hours
+**When.** A cron every 6 hours (`@nestjs/schedule`, like maintenance) and the boot run a check only when
+the last attempt is about 6 hours old (10 minutes of slack, so a tick that lands just short of it is not
+skipped), so restarts don't add requests. A failed attempt waits 6 hours
 too and is shown with its error; the previous result is kept. "Check now" (`POST /api/updates/check`)
 asks at once.
 
@@ -31,7 +32,7 @@ asks at once.
 The check then asks the next repository of the list, `MontejoJorge/unofficial-selfhosted-nestjs-observe`
 (the name the project may move to), and links to the releases page of whichever answered. When both
 answer 404 there is nothing to announce: the stored result is cleared, so no update link is shown, and
-the settings page says "No release found". The check keeps running every 12 hours, which is harmless;
+the settings page says "No release found". The check keeps running every 6 hours, which is harmless;
 the operator can turn it off. Any other error stops at the repository that gave it.
 
 **State.** `update_check`, a single-row table (`id = 1`, inserted by migration 0013): the switch and
@@ -49,4 +50,4 @@ release, the last check and its error. The demo answers these routes in memory a
 
 - Releasing means bumping `apps/api/package.json` (with the root and web ones) before tagging, or the
   release job fails after the image is pushed.
-- Collectors without internet access log a warning every 12 hours until `UPDATE_CHECK=false`.
+- Collectors without internet access log a warning every 6 hours until `UPDATE_CHECK=false`.

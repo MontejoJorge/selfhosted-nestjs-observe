@@ -12,7 +12,7 @@ import { UpdatesController } from './updates.controller.js';
 
 /**
  * Update check (ADR 0008): the latest GitHub release against the running version, every
- * 12 hours, under /api/updates. Off with UPDATE_CHECK=false or the dashboard's switch.
+ * 6 hours, under /api/updates. Off with UPDATE_CHECK=false or the dashboard's switch.
  */
 @Module({
   controllers: [UpdatesController],

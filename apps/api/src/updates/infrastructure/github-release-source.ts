@@ -48,7 +48,7 @@ export function parseLatestRelease(body: unknown): LatestRelease {
 
 /**
  * Latest non-draft, non-prerelease GitHub release of the first repository that has one,
- * without a token (60 requests per hour per IP, far above two every 12 hours).
+ * without a token (60 requests per hour per IP, far above two every 6 hours).
  */
 @Injectable()
 export class GithubReleaseSource extends ReleaseSource {

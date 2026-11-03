@@ -78,7 +78,7 @@ export class Env {
   AGGREGATE_RETENTION_DAYS: number = 90;
 
   /**
-   * Look up the latest release on GitHub every 12 hours (ADR 0008). false: never, and the
+   * Look up the latest release on GitHub every 6 hours (ADR 0008). false: never, and the
    * dashboard's switch can't turn it on.
    */
   @Transform(toBoolean)

@@ -21,7 +21,7 @@ export class UpdatesController {
     summary:
       'Running version, the latest release found on GitHub and whether the check is on',
     description:
-      'The API looks up the latest GitHub release every 12 hours while the check is on; ' +
+      'The API looks up the latest GitHub release every 6 hours while the check is on; ' +
       'this route only reads the stored result.',
   })
   @ApiOkResponse({ type: UpdateStatusDto })
@@ -34,7 +34,7 @@ export class UpdatesController {
     operationId: 'updateUpdateSettings',
     summary: 'Turn the update check on or off',
     description:
-      'Turning it on looks up the latest release right away when the last check is 12 hours old.',
+      'Turning it on looks up the latest release right away when the last check is 6 hours old.',
   })
   @ApiOkResponse({ type: UpdateStatusDto })
   @ApiConflictResponse({ description: 'UPDATE_CHECK=false' })

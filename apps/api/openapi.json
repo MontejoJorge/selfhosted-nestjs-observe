@@ -3036,7 +3036,7 @@
     },
     "/api/updates": {
       "get": {
-        "description": "The API looks up the latest GitHub release every 12 hours while the check is on; this route only reads the stored result.",
+        "description": "The API looks up the latest GitHub release every 6 hours while the check is on; this route only reads the stored result.",
         "operationId": "getUpdateStatus",
         "parameters": [],
         "responses": {
@@ -3059,7 +3059,7 @@
     },
     "/api/updates/settings": {
       "patch": {
-        "description": "Turning it on looks up the latest release right away when the last check is 12 hours old.",
+        "description": "Turning it on looks up the latest release right away when the last check is 6 hours old.",
         "operationId": "updateUpdateSettings",
         "parameters": [],
         "requestBody": {
@@ -6539,7 +6539,7 @@
           },
           "enabled": {
             "type": "boolean",
-            "description": "Whether the latest release is looked up every 12 hours: the switch and UPDATE_CHECK both on."
+            "description": "Whether the latest release is looked up every 6 hours: the switch and UPDATE_CHECK both on."
           },
           "disabledByEnv": {
             "type": "boolean",
@@ -6572,7 +6572,7 @@
         "properties": {
           "enabled": {
             "type": "boolean",
-            "description": "Look up the latest release every 12 hours."
+            "description": "Look up the latest release every 6 hours."
           }
         },
         "required": [

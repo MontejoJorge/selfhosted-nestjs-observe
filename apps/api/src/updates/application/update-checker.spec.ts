@@ -2,7 +2,7 @@ import { ConflictException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Env } from '../../config/env.js';
-import { CHECK_INTERVAL_MS } from '../domain/check-schedule.js';
+import { CHECK_INTERVAL_MS, CHECK_SLACK_MS } from '../domain/check-schedule.js';
 import {
   ReleaseSource,
   UpdateCheckRepository,
@@ -90,14 +90,16 @@ describe('UpdateChecker', () => {
     });
   });
 
-  it('waits 12 hours between checks', async () => {
+  it('waits 6 hours between checks', async () => {
     const checkedAt = new Date('2026-11-01T00:00:00Z');
     repository.state.checkedAt = checkedAt;
-    await checker.checkIfDue(
-      new Date(checkedAt.getTime() + CHECK_INTERVAL_MS - 1),
-    );
+    const due = checkedAt.getTime() + CHECK_INTERVAL_MS - CHECK_SLACK_MS;
+    await checker.checkIfDue(new Date(due - 1));
     expect(source.calls).toBe(0);
-    await checker.checkIfDue(new Date(checkedAt.getTime() + CHECK_INTERVAL_MS));
+    // A 6-hour tick that comes a moment short of 6 hours still checks.
+    await checker.checkIfDue(
+      new Date(checkedAt.getTime() + CHECK_INTERVAL_MS - 500),
+    );
     expect(source.calls).toBe(1);
   });
 
