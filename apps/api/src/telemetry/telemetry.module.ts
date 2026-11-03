@@ -4,6 +4,7 @@ import { ErrorsModule } from './errors/errors.module.js';
 import { InstancesModule } from './instances/instances.module.js';
 import { JobsModule } from './jobs/jobs.module.js';
 import { LogsModule } from './logs/logs.module.js';
+import { MapModule } from './map/map.module.js';
 import { MetricsModule } from './metrics/metrics.module.js';
 import { OverviewModule } from './overview/overview.module.js';
 import { ReleasesModule } from './releases/releases.module.js';
@@ -26,6 +27,7 @@ import { UsersModule } from './users/users.module.js';
     UsersModule,
     ServicesModule,
     ReleasesModule,
+    MapModule,
     DataDaysModule,
   ],
 })

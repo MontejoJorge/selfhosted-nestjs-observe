@@ -218,6 +218,12 @@ hourly, and on demand for any day an ingest batch touches (advisory-locked). Ret
   overall window (pruning), one for sums and one for histogram cells; per-operation impact fetches
   the cells of the top 10 groups only. Markers have their own path (`/release-markers`) so no
   version string shadows them.
+- Map (`/map`, `telemetry/map`): nodes from `requests_1m`, `jobs_1m` and the outbound spans of
+  `span_stats_5m` (driver classes `pg`, `mysql2`, `mssql`, `mongodb`; `http` with method
+  `<METHOD> <host>`). Links to queues and between applications are inferred by trace id over the
+  latest 5000 requests and 5000 jobs of the window, each with one lateral lookup of its parent
+  (trace id index, run-time pruned to the day before); counts are scaled up when the sample is full.
+  Graph assembly is pure (`map-graph.ts`).
 - Days with data (`data-days`) read `application_usage` through its primary key, then probe
   `requests_1m`/`jobs_1m` with one `exists` per remaining day (run-time pruning, one partition each).
 - Storage views read the catalog (`pg_total_relation_size`, `reltuples`, `pg_partition_tree`) and

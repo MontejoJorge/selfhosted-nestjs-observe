@@ -27,6 +27,8 @@ export const paths = {
   user: (p: string, userId: string) => `${project(p)}/users/${enc(userId)}`,
   /** Own and total time per class; pass `{ className }` as search for one class. */
   services: (p: string) => `${project(p)}/services`,
+  /** Clients, applications, queues, databases and external services, and their links. */
+  map: (p: string) => `${project(p)}/map`,
   /** Versions and their before/after comparison; pass `{ release, releaseApp }` to expand one. */
   releases: (p: string) => `${project(p)}/releases`,
   errors: (p: string) => `${project(p)}/errors`,

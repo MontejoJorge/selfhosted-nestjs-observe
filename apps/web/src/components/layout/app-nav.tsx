@@ -169,6 +169,7 @@ function ProjectNav({
       label: 'Services',
       prefixes: [paths.services(project)],
     },
+    { to: paths.map(project), label: 'Map', prefixes: [paths.map(project)] },
     {
       to: paths.releases(project),
       label: 'Releases',

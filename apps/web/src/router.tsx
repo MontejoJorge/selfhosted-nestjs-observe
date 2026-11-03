@@ -17,6 +17,7 @@ import {
 import { jobGroupSearch } from '@/features/jobs/search';
 import { logsQueryOptions } from '@/features/logs/queries';
 import { logsSearch } from '@/features/logs/search';
+import { mapQueryOptions } from '@/features/map/queries';
 import {
   overviewQueryOptions,
   previousOverviewQueryOptions,
@@ -431,6 +432,18 @@ export const router = createBrowserRouter(
                     Component: (
                       await import('@/features/services/services-page')
                     ).ServicesPage,
+                  }),
+                },
+                {
+                  path: 'map',
+                  loader: async (args) => {
+                    await queryClient.ensureQueryData(
+                      mapQueryOptions(scopeOf(args)),
+                    );
+                  },
+                  lazy: async () => ({
+                    Component: (await import('@/features/map/map-page'))
+                      .MapPage,
                   }),
                 },
                 {

@@ -17,6 +17,29 @@
   --color-span-http: var(--span-http);
   --color-span-code: var(--span-code);
   --color-teal: var(--teal);
+  --color-map-neutral: var(--map-neutral);
+  --color-map-healthy: var(--map-healthy);
+  --color-map-elevated: var(--map-elevated);
+  --color-map-failing: var(--map-failing);
+  --color-map-track: var(--map-track);
+  --color-map-guide: var(--map-guide);
+  --color-map-guide-label: var(--map-guide-label);
+  --color-map-meta: var(--map-meta);
+  --color-map-tile: var(--map-tile);
+  --color-map-idle: var(--map-idle);
+  --color-map-frame: var(--map-frame);
+  --color-map-comet: var(--map-comet);
+  --animate-map-ping: map-ping 1.8s ease-out infinite;
+  @keyframes map-ping {
+    0% {
+      opacity: 0.9;
+      transform: scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(1.55);
+    }
+  }
   --color-usage-1: var(--usage-1);
   --color-usage-2: var(--usage-2);
   --color-usage-3: var(--usage-3);
@@ -112,6 +135,25 @@
   --usage-1: #0f9f8f;
   --usage-2: #7c5cd6;
   --usage-3: #c98500;
+  /* Map: node tones (neutral, healthy application, errors above 1% and 5%), link
+     track, column guides, captions, icon tiles and the panel surface. */
+  --map-neutral: #8f7277;
+  --map-healthy: #0ea394;
+  --map-elevated: #e8687d;
+  --map-failing: #ea2845;
+  --map-track: rgb(0 0 0 / 0.16);
+  --map-guide: rgb(0 0 0 / 0.08);
+  --map-guide-label: #c8c2c3;
+  --map-meta: #7a7374;
+  --map-tile: #ffffff;
+  --map-icon-mix: #000000;
+  --map-idle: rgb(0 0 0 / 0.12);
+  --map-frame: rgb(0 0 0 / 0.08);
+  --map-comet: #3f3f46;
+  --map-surface-from: #ffffff;
+  --map-surface-to: #fbfafa;
+  --map-glow-primary: rgb(234 40 69 / 0.05);
+  --map-glow-violet: rgb(124 92 255 / 0.05);
 }
 
 .dark {
@@ -160,6 +202,39 @@
   --usage-1: #1fa898;
   --usage-2: #8a72e0;
   --usage-3: #be850f;
+  --map-neutral: #a9898e;
+  --map-healthy: #0ea394;
+  --map-elevated: #fa8b9c;
+  --map-failing: #ea2845;
+  --map-track: rgb(255 255 255 / 0.16);
+  --map-guide: rgb(255 255 255 / 0.055);
+  --map-guide-label: #322f2f;
+  --map-meta: #767071;
+  --map-tile: #191718;
+  --map-icon-mix: #ffffff;
+  --map-idle: rgb(255 255 255 / 0.1);
+  --map-frame: rgb(255 255 255 / 0.055);
+  --map-comet: #ffffff;
+  --map-surface-from: hsl(350 4% 5.8%);
+  --map-surface-to: hsl(350 4% 4.2%);
+  --map-glow-primary: rgb(234 40 69 / 0.1);
+  --map-glow-violet: rgb(124 92 255 / 0.1);
+}
+
+/* The map panel: two soft glows over a dark-to-darker surface. */
+@utility map-surface {
+  background:
+    radial-gradient(
+      720px 340px at 0% 0%,
+      var(--map-glow-primary),
+      transparent 62%
+    ),
+    radial-gradient(
+      640px 360px at 100% 100%,
+      var(--map-glow-violet),
+      transparent 60%
+    ),
+    linear-gradient(180deg, var(--map-surface-from), var(--map-surface-to));
 }
 
 @layer base {

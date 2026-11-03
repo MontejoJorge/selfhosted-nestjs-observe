@@ -2793,6 +2793,89 @@
         ]
       }
     },
+    "/api/map": {
+      "get": {
+        "description": "Applications and queues come from the per-minute rollups, databases and external services from the outbound spans of the 5-minute span rollup (spans ingested before it existed are not covered). Links from an application to a queue or to another application are inferred from executions sharing a trace id, over the latest 5000 requests and 5000 jobs of the window (`sampled` when there were more).",
+        "operationId": "getMap",
+        "parameters": [
+          {
+            "name": "application",
+            "required": false,
+            "in": "query",
+            "description": "Application id (must belong to the project). Omit for the whole project.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "range",
+            "required": false,
+            "in": "query",
+            "description": "Relative window ending now (default `1h`). Ignored when `from` is given.",
+            "schema": {
+              "$ref": "#/components/schemas/TimeRange"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Window start (ISO 8601 date-time with a time zone), inclusive.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Window end (ISO 8601 date-time with a time zone), exclusive; defaults to now.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "instance",
+            "required": false,
+            "in": "query",
+            "description": "Filter by instance: the `serviceId` an agent reports.",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "project",
+            "required": true,
+            "in": "query",
+            "description": "Project id or slug.",
+            "schema": {
+              "maxLength": 64,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MapDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "How the applications, queues, databases and external services talk to each other",
+        "tags": [
+          "map"
+        ]
+      }
+    },
     "/api/projects/{project}/data-days": {
       "get": {
         "description": "A day counts when it has raw telemetry (from the ingest usage counts) or per-minute request or job rollups. Raw rows are kept for RETENTION_DAYS and rollups for AGGREGATE_RETENTION_DAYS, so older days may only have charts and stats. Covers today - AGGREGATE_RETENTION_DAYS through tomorrow (events up to 1 day ahead are accepted). `:project` is the project id or slug.",
@@ -6041,6 +6124,137 @@
           "complete",
           "requests",
           "jobs"
+        ]
+      },
+      "MapNodeKind": {
+        "type": "string",
+        "enum": [
+          "client",
+          "application",
+          "queue",
+          "database",
+          "external"
+        ]
+      },
+      "MapNodeUnit": {
+        "type": "string",
+        "enum": [
+          "requests",
+          "jobs",
+          "queries",
+          "calls"
+        ]
+      },
+      "MapNodeDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MapNodeKind"
+              }
+            ]
+          },
+          "applicationId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Owning application: set on application and database nodes, null on shared ones."
+          },
+          "unit": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MapNodeUnit"
+              }
+            ]
+          },
+          "avgMs": {
+            "type": "number",
+            "nullable": true,
+            "description": "Average duration (ms); null when unknown or nothing was counted."
+          },
+          "errorRate": {
+            "type": "number",
+            "nullable": true,
+            "description": "Share of the count that failed, ratio 0..1; null when nothing was counted."
+          },
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string",
+            "description": "Application name, queue name, database system (`PostgreSQL`, `MySQL`, `SQL Server`,\n`MongoDB`), outbound host (with its port, if any) or `Inbound traffic` for the client node."
+          },
+          "count": {
+            "type": "number",
+            "description": "Requests served (clients: requests from outside), jobs run, queries or calls made."
+          }
+        },
+        "required": [
+          "kind",
+          "applicationId",
+          "unit",
+          "avgMs",
+          "errorRate",
+          "id",
+          "label",
+          "count"
+        ]
+      },
+      "MapEdgeDto": {
+        "type": "object",
+        "properties": {
+          "errorRate": {
+            "type": "number",
+            "nullable": true,
+            "description": "Share of `count` that failed, ratio 0..1; null when `count` is 0."
+          },
+          "source": {
+            "type": "string"
+          },
+          "target": {
+            "type": "string"
+          },
+          "inferred": {
+            "type": "boolean",
+            "description": "True when the link comes from executions sharing a trace id (who enqueued a job,\nwhich application called another), false when the data states it (a job's own\napplication, an outbound span)."
+          },
+          "count": {
+            "type": "number",
+            "description": "Requests, jobs, queries or calls along the link (estimated when `sampled`)."
+          }
+        },
+        "required": [
+          "errorRate",
+          "source",
+          "target",
+          "inferred",
+          "count"
+        ]
+      },
+      "MapDto": {
+        "type": "object",
+        "properties": {
+          "nodes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MapNodeDto"
+            }
+          },
+          "edges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MapEdgeDto"
+            }
+          },
+          "sampled": {
+            "type": "boolean",
+            "description": "True when the trace-id inference only read the latest executions of the window\n(5000 requests and 5000 jobs): the counts of inferred links, and of the links from\nClients, are then scaled up from that sample."
+          }
+        },
+        "required": [
+          "nodes",
+          "edges",
+          "sampled"
         ]
       },
       "DataDaysDto": {
